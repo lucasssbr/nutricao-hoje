@@ -134,7 +134,23 @@
     } else {
       document.getElementById('pageTitle').textContent = shortLabel;
     }
-    document.getElementById('pageDate').textContent = labelDia(dia) + (data.fechado ? ' · fechado' : '');
+    var dateEl = document.getElementById('pageDate');
+    dateEl.textContent = labelDia(dia) + (data.fechado ? ' · fechado' : '');
+    var pesoEl = document.getElementById('pagePeso');
+    if (!pesoEl) {
+      pesoEl = document.createElement('div');
+      pesoEl.id = 'pagePeso';
+      pesoEl.className = 'peso';
+      dateEl.insertAdjacentElement('afterend', pesoEl);
+    }
+    if (data.peso_kg != null && data.peso_kg !== '' && !isNaN(Number(data.peso_kg))) {
+      var pesoStr = String(Number(data.peso_kg)).replace('.', ',');
+      pesoEl.textContent = 'Peso ' + pesoStr + ' kg';
+      pesoEl.hidden = false;
+    } else {
+      pesoEl.textContent = '';
+      pesoEl.hidden = true;
+    }
     if (!isHoje) {
       document.title = shortLabel + ' · Nutrição';
     }

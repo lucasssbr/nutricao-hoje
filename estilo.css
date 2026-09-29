@@ -40,6 +40,7 @@
   }
   .top h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
   .top .date { color: var(--muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
+  .top .peso { color: var(--muted); font-size: 13px; margin-top: 4px; font-weight: 600; }
   .pill {
     background: rgba(10,132,255,0.18); color: #64D2FF;
     font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px;
