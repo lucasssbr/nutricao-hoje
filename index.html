@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#0B1220" />
+<title>Hoje · Nutrição</title>
+<style>
+  :root {
+    --bg: #0B1220;
+    --surface: #121A2B;
+    --surface2: #1A2438;
+    --line: rgba(255,255,255,0.08);
+    --text: #F4F7FC;
+    --muted: #8E9BB3;
+    --kcal: #FF453A;
+    --protein: #0A84FF;
+    --carbs: #FF9F0A;
+    --fat: #30D158;
+    --over: #FF9F0A;
+    --suggest: #BF5AF2;
+    --safe-top: env(safe-area-inset-top, 54px);
+    --safe-bottom: env(safe-area-inset-bottom, 34px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .phone {
+    min-height: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: calc(var(--safe-top) + 8px) 16px calc(var(--safe-bottom) + 20px);
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -5%, rgba(10,132,255,0.22), transparent 60%),
+      var(--bg);
+  }
+  .island {
+    width: 126px; height: 37px; background: #000; border-radius: 20px; margin: 0 auto 14px;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 18px;
+  }
+  .top h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .top .date { color: var(--muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
+  .pill {
+    background: rgba(10,132,255,0.18); color: #64D2FF;
+    font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px;
+  }
+  .hero {
+    background: linear-gradient(180deg, var(--surface2), var(--surface));
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 20px 18px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  }
+  .ring-wrap {
+    display: grid; grid-template-columns: 148px 1fr; gap: 14px; align-items: center;
+  }
+  .ring { width: 148px; height: 148px; position: relative; }
+  .ring svg { transform: rotate(-90deg); width: 148px; height: 148px; }
+  .ring .center {
+    position: absolute; inset: 0; display: grid; place-content: center; text-align: center;
+  }
+  .ring .center .big { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .ring .center .lbl { color: var(--muted); font-size: 11px; margin-top: 4px; font-weight: 600; }
+  .remain-box .k { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .remain-box .v { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+  .remain-box .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .macros {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;
+  }
+  .macro {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 10px 8px 12px;
+    text-align: center;
+  }
+  .macro .name { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+  .macro .name.p { color: var(--protein); }
+  .macro .name.c { color: var(--carbs); }
+  .macro .name.f { color: var(--fat); }
+  .macro .track {
+    height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-bottom: 8px;
+  }
+  .macro .fill { height: 100%; border-radius: 999px; }
+  .macro .fill.p { background: var(--protein); width: 59.4%; }
+  .macro .fill.c { background: var(--over); width: 100%; }
+  .macro .fill.f { background: var(--fat); width: 80.0%; }
+  .macro .nums { font-size: 12px; font-weight: 700; }
+  .macro .nums span { color: var(--muted); font-weight: 500; }
+  .alert {
+    margin-top: 12px;
+    background: rgba(255,159,10,0.12);
+    border: 1px solid rgba(255,159,10,0.28);
+    color: #FFD60A;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 12px; font-weight: 600;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 18px 4px 10px;
+  }
+  .meal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .meal.suggest {
+    background: linear-gradient(180deg, rgba(191,90,242,0.12), var(--surface));
+    border: 1px dashed rgba(191,90,242,0.45);
+  }
+  .meal-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 8px; margin-bottom: 10px;
+  }
+  .meal-head h3 { font-size: 17px; font-weight: 700; }
+  .meal-head .tot { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .meal-head .tot b { color: var(--kcal); }
+  .meal.suggest .meal-head .tot b { color: var(--suggest); }
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+    color: #E9D5FF; background: rgba(191,90,242,0.28);
+    padding: 4px 8px; border-radius: 999px; margin-bottom: 8px;
+  }
+  .hint {
+    color: var(--muted); font-size: 11px; font-weight: 500; margin-bottom: 8px; line-height: 1.35;
+  }
+  .proj {
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(191,90,242,0.35);
+    font-size: 12px; color: #E9D5FF; font-weight: 600;
+  }
+  .food {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 10px; padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .food:first-of-type { border-top: none; padding-top: 2px; }
+  .food .left { min-width: 0; }
+  .food .name { font-size: 14px; font-weight: 600; line-height: 1.25; }
+  .food .qty { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .food .right { text-align: right; flex-shrink: 0; }
+  .food .cal { color: var(--kcal); font-size: 13px; font-weight: 800; }
+  .meal.suggest .food .cal { color: var(--suggest); }
+  .chips { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
+  .chip {
+    font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 999px;
+  }
+  .chip.p { background: rgba(10,132,255,0.18); color: #64D2FF; }
+  .chip.c { background: rgba(255,159,10,0.18); color: #FFD60A; }
+  .chip.f { background: rgba(48,209,88,0.18); color: #30D158; }
+  .footer {
+    text-align: center; color: var(--muted); font-size: 11px;
+    margin-top: 8px; padding-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="island" aria-hidden="true"></div>
+    <div class="top">
+      <div>
+        <h1>Hoje</h1>
+        <div class="date">29 set 2026 · Corte fotos</div>
+      </div>
+      <div class="pill">iPhone</div>
+    </div>
+
+    <section class="hero">
+      <div class="ring-wrap">
+        <div class="ring">
+          <svg viewBox="0 0 148 148" aria-hidden="true">
+            <circle cx="74" cy="74" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" />
+            <circle cx="74" cy="74" r="58" fill="none" stroke="#FF453A" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="92"
+              style="filter: drop-shadow(0 0 8px rgba(255,69,58,0.45));" />
+          </svg>
+          <div class="center">
+            <div class="big">1172</div>
+            <div class="lbl">de 1570 kcal</div>
+          </div>
+        </div>
+        <div class="remain-box">
+          <div class="k">Ainda faltam</div>
+          <div class="v">398</div>
+          <div class="sub">kcal no dia</div>
+          <div class="sub" style="margin-top:10px">75% da meta</div>
+        </div>
+      </div>
+
+      <div class="macros">
+        <div class="macro">
+          <div class="name p">Proteína</div>
+          <div class="track"><div class="fill p"></div></div>
+          <div class="nums">107 <span>/ 180 g</span></div>
+        </div>
+        <div class="macro">
+          <div class="name c">Carbo</div>
+          <div class="track"><div class="fill c"></div></div>
+          <div class="nums">108 <span>/ 100 g</span></div>
+        </div>
+        <div class="macro">
+          <div class="name f">Gordura</div>
+          <div class="track"><div class="fill f"></div></div>
+          <div class="nums">40 <span>/ 50 g</span></div>
+        </div>
+      </div>
+      <div class="alert">Carbo passou ~8 g · faltam 73 g de proteína</div>
+    </section>
+
+    <div class="section-title">Refeições</div>
+
+    <section class="meal">
+      <div class="meal-head">
+        <h3>Refeição 1</h3>
+        <div class="tot"><b>872 kcal</b> · P47 · C102 · G34</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Banana média</div><div class="qty">1 unidade</div></div>
+        <div class="right"><div class="cal">105</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C27</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Batata inglesa crua</div><div class="qty">300 g</div></div>
+        <div class="right"><div class="cal">231</div><div class="chips"><span class="chip p">P6</span><span class="chip c">C52</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Chuck steak Costco</div><div class="qty">200 g crua</div></div>
+        <div class="right"><div class="cal">446</div><div class="chips"><span class="chip p">P40</span><span class="chip c">C0</span><span class="chip f">G34</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Melancia</div><div class="qty">300 g</div></div>
+        <div class="right"><div class="cal">72</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C18</span><span class="chip f">G0</span></div></div>
+      </div>
+    </section>
+
+    <section class="meal">
+      <div class="meal-head">
+        <h3>Refeição 2</h3>
+        <div class="tot"><b>150 kcal</b> · P30 · C3 · G3</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Nurri Vanilla Milk Shake</div><div class="qty">1 lata · 325 ml</div></div>
+        <div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div>
+      </div>
+    </section>
+
+    <section class="meal">
+      <div class="meal-head">
+        <h3>Refeição 3 · Lanche</h3>
+        <div class="tot"><b>150 kcal</b> · P30 · C3 · G3</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Nurri Vanilla Milk Shake</div><div class="qty">1 lata · 325 ml</div></div>
+        <div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div>
+      </div>
+    </section>
+
+    <div class="section-title">Sugestão</div>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head">
+        <h3>Pra fechar o dia</h3>
+        <div class="tot"><b>372 kcal</b> · P76 · C7 · G4</div>
+      </div>
+      <div class="hint">Só aparece aqui. Confirma no chat pra entrar na conta. Sem frango hoje.</div>
+      <div class="food">
+        <div class="left"><div class="name">Nurri Vanilla Milk Shake</div><div class="qty">1 lata · 325 ml</div></div>
+        <div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Claras de ovo</div><div class="qty">380 g</div></div>
+        <div class="right"><div class="cal">198</div><div class="chips"><span class="chip p">P42</span><span class="chip c">C3</span><span class="chip f">G1</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Iogurte grego desnatado</div><div class="qty">40 g</div></div>
+        <div class="right"><div class="cal">24</div><div class="chips"><span class="chip p">P4</span><span class="chip c">C1</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="proj">Se seguir: ~1544 kcal · P183 · C115 · G44 (perto da meta)</div>
+    </section>
+
+    <div class="footer">Meta 1570 · 180P · 100C · 50G</div>
+  </div>
+</body>
+</html>
