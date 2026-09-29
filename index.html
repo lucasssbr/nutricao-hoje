@@ -447,10 +447,14 @@
     });
 
     if (sugestao.length) {
+      var nota = (data.sugestao_nota && String(data.sugestao_nota).trim()) || '';
+      var sugTitle = hasCons ? 'Pra fechar o dia' : 'Sugestão do dia';
       html += '<section class="meal suggest">';
       html += '<div class="badge">NÃO LANÇADO</div>';
-      html += '<div class="meal-head"><h3>Sugestão do dia</h3><div class="tot">' + totLabel(sug) + '</div></div>';
-      html += '<div class="hint">Plano completo para hoje · ovos inteiros cedo; claras apenas à noite para fechar proteína</div>';
+      html += '<div class="meal-head"><h3>' + sugTitle + '</h3><div class="tot">' + totLabel(sug) + '</div></div>';
+      if (nota) {
+        html += '<div class="hint">' + esc(nota) + '</div>';
+      }
       sugestao.forEach(function (meal) {
         var t = sumItens(meal.itens);
         html += '<div class="suggest-meal">';
@@ -458,7 +462,11 @@
         (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
         html += '</div>';
       });
-      html += '<div class="proj">Dia projetado: ' + ri(proj.kcal) + ' kcal · P' + ri(proj.p) + ' · C' + ri(proj.c) + ' · G' + ri(proj.g) + '</div>';
+      html += '<div class="proj">Dia projetado: ' + ri(proj.kcal) + ' kcal · P' + ri(proj.p) + ' · C' + ri(proj.c) + ' · G' + ri(proj.g);
+      if (nota) {
+        html += '<div class="hint" style="margin:6px 0 0;color:#E9D5FF">' + esc(nota) + '</div>';
+      }
+      html += '</div>';
       html += '</section>';
     }
 
