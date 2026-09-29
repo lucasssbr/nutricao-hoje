@@ -190,6 +190,7 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Frango é opcional e pode estar indisponível; não presumir que há frango.
 - **Plano B sem frango** (ordem de prioridade para fechar proteína): ovo inteiro → iogurte grego desnatado → Nurri → claras (só à noite).
 - Ao sugerir refeições, respeitar as metas e essas restrições sem inventar ingredientes ou disponibilidade; macros só por `dados/alimentos.json`.
+- **Proteína distribuída:** ~40–55 g por refeição (≈0,4–0,55 g/kg × 4 refeições). Evitar concentrar tudo numa refeição; o iogurte (pote de 430 g) pode ser dividido entre almoço, lanche e jantar.
 
 ## Regras de UX e conteúdo
 

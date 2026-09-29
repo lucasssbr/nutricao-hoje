@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-29T14:50:11-07:00",
+  "atualizado": "2026-09-29T15:11:57-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -10,10 +10,11 @@
   },
   "peso_kg": null,
   "lancado": [],
-  "sugestao_nota": "ovos inteiros cedo; claras só à noite · chuck 200 g cru · 2 Nurri",
+  "sugestao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · chuck 200 g cru · 2 Nurri · 1 pote de iogurte (430 g) dividido: proteína ~40–55 g por refeição",
   "sugestao": [
     {
       "refeicao": "Café",
+      "favorita": "cafe-padrao",
       "itens": [
         {
           "nome": "Ovo inteiro grande",
@@ -49,6 +50,7 @@
     },
     {
       "refeicao": "Almoço",
+      "favorita": "almoco-padrao",
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
@@ -79,11 +81,22 @@
           "p": 1.4,
           "c": 5.8,
           "g": 0.3
+        },
+        {
+          "nome": "Iogurte grego desnatado",
+          "qtd": "200 g",
+          "alimento": "iogurte-grego-100g",
+          "quantidade": 200,
+          "kcal": 118,
+          "p": 20.4,
+          "c": 7.2,
+          "g": 0.8
         }
       ]
     },
     {
       "refeicao": "Lanche",
+      "favorita": "lanche-padrao",
       "itens": [
         {
           "nome": "Nurri Vanilla Milk Shake",
@@ -104,11 +117,22 @@
           "p": 1.2,
           "c": 15.2,
           "g": 0.4
+        },
+        {
+          "nome": "Iogurte grego desnatado",
+          "qtd": "100 g",
+          "alimento": "iogurte-grego-100g",
+          "quantidade": 100,
+          "kcal": 59,
+          "p": 10.2,
+          "c": 3.6,
+          "g": 0.4
         }
       ]
     },
     {
       "refeicao": "Jantar",
+      "favorita": "jantar-padrao",
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
@@ -142,13 +166,13 @@
         },
         {
           "nome": "Iogurte grego desnatado",
-          "qtd": "430 g",
-          "alimento": "iogurte-grego-430g",
-          "quantidade": 430,
-          "kcal": 253.7,
-          "p": 43.9,
-          "c": 15.5,
-          "g": 1.7
+          "qtd": "130 g",
+          "alimento": "iogurte-grego-100g",
+          "quantidade": 130,
+          "kcal": 76.7,
+          "p": 13.3,
+          "c": 4.7,
+          "g": 0.5
         }
       ]
     }
