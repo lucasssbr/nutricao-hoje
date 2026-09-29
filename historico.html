@@ -6,190 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
 <title>Histórico · Nutrição</title>
-<style>
-
-
-
-  :root {
-    --bg: #0B1220;
-    --surface: #121A2B;
-    --surface2: #1A2438;
-    --line: rgba(255,255,255,0.08);
-    --text: #F4F7FC;
-    --muted: #8E9BB3;
-    --kcal: #FF453A;
-    --protein: #0A84FF;
-    --carbs: #FF9F0A;
-    --fat: #30D158;
-    --over: #FF9F0A;
-    --suggest: #BF5AF2;
-    --safe-top: env(safe-area-inset-top, 54px);
-    --safe-bottom: env(safe-area-inset-bottom, 34px);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-  }
-  .phone {
-    min-height: 100%;
-    max-width: 430px;
-    margin: 0 auto;
-    padding: calc(var(--safe-top) + 8px) 16px calc(var(--safe-bottom) + 20px);
-    background:
-      radial-gradient(ellipse 80% 40% at 50% -5%, rgba(10,132,255,0.22), transparent 60%),
-      var(--bg);
-  }
-  .island {
-    width: 126px; height: 37px; background: #000; border-radius: 20px; margin: 0 auto 14px;
-  }
-  .top {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    margin-bottom: 18px;
-  }
-  .top h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
-  .top .date { color: var(--muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
-  .pill {
-    background: rgba(10,132,255,0.18); color: #64D2FF;
-    font-size: 12px; font-weight: 700; padding: 8px 12px; border-radius: 999px;
-  }
-  .hero {
-    background: linear-gradient(180deg, var(--surface2), var(--surface));
-    border: 1px solid var(--line);
-    border-radius: 28px;
-    padding: 20px 18px 16px;
-    margin-bottom: 14px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
-  }
-  .ring-wrap {
-    display: grid; grid-template-columns: 148px 1fr; gap: 14px; align-items: center;
-  }
-  .ring { width: 148px; height: 148px; position: relative; }
-  .ring svg { transform: rotate(-90deg); width: 148px; height: 148px; }
-  .ring .center {
-    position: absolute; inset: 0; display: grid; place-content: center; text-align: center;
-  }
-  .ring .center .big { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
-  .ring .center .lbl { color: var(--muted); font-size: 11px; margin-top: 4px; font-weight: 600; }
-  .remain-box .k { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-  .remain-box .v { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
-  .remain-box .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
-  .macros {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px;
-  }
-  .macro {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 10px 8px 12px;
-    text-align: center;
-  }
-  .macro .name { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
-  .macro .name.p { color: var(--protein); }
-  .macro .name.c { color: var(--carbs); }
-  .macro .name.f { color: var(--fat); }
-  .macro .track {
-    height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-bottom: 8px;
-  }
-  .macro .fill { height: 100%; border-radius: 999px; }
-  .macro .fill.p { background: var(--protein); width: 59.4%; }
-  .macro .fill.c { background: var(--over); width: 100%; }
-  .macro .fill.f { background: var(--fat); width: 80.0%; }
-  .macro .nums { font-size: 12px; font-weight: 700; }
-  .macro .nums span { color: var(--muted); font-weight: 500; }
-  .alert {
-    margin-top: 12px;
-    background: rgba(255,159,10,0.12);
-    border: 1px solid rgba(255,159,10,0.28);
-    color: #FFD60A;
-    border-radius: 14px;
-    padding: 10px 12px;
-    font-size: 12px; font-weight: 600;
-  }
-  .section-title {
-    font-size: 13px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    margin: 18px 4px 10px;
-  }
-  .meal {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  .meal.suggest {
-    background: linear-gradient(180deg, rgba(191,90,242,0.12), var(--surface));
-    border: 1px dashed rgba(191,90,242,0.45);
-  }
-  .meal-head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    gap: 8px; margin-bottom: 10px;
-  }
-  .meal-head h3 { font-size: 17px; font-weight: 700; }
-  .meal-head .tot { font-size: 12px; color: var(--muted); font-weight: 600; }
-  .meal-head .tot b { color: var(--kcal); }
-  .meal.suggest .meal-head .tot b { color: var(--suggest); }
-  .badge {
-    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
-    color: #E9D5FF; background: rgba(191,90,242,0.28);
-    padding: 4px 8px; border-radius: 999px; margin-bottom: 8px;
-  }
-  .hint {
-    color: var(--muted); font-size: 11px; font-weight: 500; margin-bottom: 8px; line-height: 1.35;
-  }
-  .proj {
-    margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(191,90,242,0.35);
-    font-size: 12px; color: #E9D5FF; font-weight: 600;
-  }
-  .food {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 10px; padding: 10px 0;
-    border-top: 1px solid var(--line);
-  }
-  .food:first-of-type { border-top: none; padding-top: 2px; }
-  .food .left { min-width: 0; }
-  .food .name { font-size: 14px; font-weight: 600; line-height: 1.25; }
-  .food .qty { color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .food .right { text-align: right; flex-shrink: 0; }
-  .food .cal { color: var(--kcal); font-size: 13px; font-weight: 800; }
-  .meal.suggest .food .cal { color: var(--suggest); }
-  .chips { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; flex-wrap: wrap; }
-  .chip {
-    font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 999px;
-  }
-  .chip.p { background: rgba(10,132,255,0.18); color: #64D2FF; }
-  .chip.c { background: rgba(255,159,10,0.18); color: #FFD60A; }
-  .chip.f { background: rgba(48,209,88,0.18); color: #30D158; }
-  .footer {
-    text-align: center; color: var(--muted); font-size: 11px;
-    margin-top: 8px; padding-bottom: 4px;
-  }
-
-  .nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-  .nav a {
-    font-size:12px; font-weight:700; text-decoration:none;
-    padding:8px 12px; border-radius:999px;
-    background:rgba(255,255,255,0.06); color:#64D2FF; border:1px solid var(--line);
-  }
-  .nav a.active { background:rgba(10,132,255,0.22); }
-  .hist-list a {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:14px; margin-bottom:10px; border-radius:18px;
-    background:var(--surface); border:1px solid var(--line);
-    text-decoration:none; color:var(--text);
-  }
-  .hist-list .d { font-weight:700; font-size:16px; }
-  .hist-list .m { color:var(--muted); font-size:12px; margin-top:4px; }
-  .hist-list .m span { color: var(--muted); }
-  .hist-list .m span.over { color: var(--over); }
-  .hist-list .r { text-align:right; color:var(--kcal); font-weight:800; font-size:14px; }
-
-
-</style>
+<link rel="stylesheet" href="./estilo.css?v=2" />
 </head>
 <body>
   <div class="phone">
@@ -200,12 +17,12 @@
       <a href="./dia.html?d=2026-09-30">Plano</a>
     </div>
     <div class="top"><div><h1>Histórico</h1><div class="date">Dias anteriores</div></div></div>
-    <div class="hist-list">
-      <a href="./dia-2026-09-28.html">
-        <div><div class="d">28 set 2026 · 1576 kcal</div><div class="m"><span>P180 (0)</span> · <span class="over">C126 (+26)</span> · <span>G43 (−7)</span></div></div>
-      </a>
-    </div>
+    <div id="histWarn" class="hist-warn" hidden></div>
+    <section class="hist-summary" id="histSummary"></section>
+    <div class="section-title">Dias fechados</div>
+    <div class="hist-list" id="histList"></div>
     <div class="footer">Toque num dia pra ver o detalhe</div>
   </div>
+<script src="./historico.js?v=1"></script>
 </body>
 </html>
