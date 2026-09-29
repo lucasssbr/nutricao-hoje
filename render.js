@@ -145,7 +145,8 @@
     }
     if (data.peso_kg != null && data.peso_kg !== '' && !isNaN(Number(data.peso_kg))) {
       var pesoStr = String(Number(data.peso_kg)).replace('.', ',');
-      pesoEl.textContent = 'Peso ' + pesoStr + ' kg';
+      var lbStr = (Math.round(Number(data.peso_kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
+      pesoEl.textContent = 'Peso ' + pesoStr + ' kg (' + lbStr + ' lb)';
       pesoEl.hidden = false;
     } else {
       pesoEl.textContent = '';

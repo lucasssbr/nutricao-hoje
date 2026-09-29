@@ -30,7 +30,8 @@
 
   function fmtPeso(kg) {
     if (kg == null || kg === '' || isNaN(Number(kg))) return '';
-    return String(Number(kg)).replace('.', ',') + ' kg';
+    var lb = (Math.round(Number(kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
+    return String(Number(kg)).replace('.', ',') + ' kg (' + lb + ' lb)';
   }
 
   function deltaStr(val, meta) {
