@@ -133,7 +133,21 @@
     });
   }
 
-  function renderPeso(todos) {
+  // inclinação (kg/dia) por regressão linear nos pesos dos últimos 14 dias
+  function tendencia(pesos) {
+    if (!pesos.length) return null;
+    var ult = pesos[pesos.length - 1].data;
+    var pts = pesos.filter(function (p) { return diasEntre(p.data, ult) < 14; });
+    if (pts.length < 4 || diasEntre(pts[0].data, ult) < 4) return null;
+    var xs = pts.map(function (p) { return diasEntre(pts[0].data, p.data); }), ys = pts.map(function (p) { return p.kg; });
+    var mx = avg(xs), my = avg(ys), num = 0, den = 0;
+    xs.forEach(function (x, i) { num += (x - mx) * (ys[i] - my); den += (x - mx) * (x - mx); });
+    if (!den) return null;
+    var b = num / den;
+    return { porDia: b, base: pts[0].data, a: my - b * mx };
+  }
+
+  function renderPeso(todos, obj) {
     var box = document.getElementById('pesoCard');
     if (!box) return;
     var pesos = todos.slice(-30);
@@ -157,9 +171,28 @@
     var med = media7(pesos);
     var W = 340, H = 150, L = 34, R = 10, T = 12, B = 22;
     var vals = pesos.map(function (p) { return p.kg; }).concat(med.map(function (m) { return m.kg; }));
+    var metaPts = null, fimX = ult.data;
+    if (obj && window.NutriObjetivo) {
+      var cObj = window.NutriObjetivo.calc(obj, ult.data);
+      var iniM = obj.inicio < pesos[0].data ? pesos[0].data : obj.inicio;
+      metaPts = [{ data: iniM, kg: cObj.esperado(iniM) }, { data: obj.data_alvo, kg: cObj.esperadoAlvo }];
+      if (obj.data_alvo > fimX) fimX = obj.data_alvo;
+      vals.push(metaPts[0].kg, metaPts[1].kg);
+      var tend = tendencia(pesos);
+      linha += '<div class="peso-delta">Meta: ' + kgStr(cObj.esperadoAlvo) + ' kg em ' + window.NutriObjetivo.curta(obj.data_alvo) +
+        ' · esperado hoje ' + kgStr(cObj.esperado(ult.data)) + ' kg</div>';
+      if (tend) {
+        var proj = tend.a + tend.porDia * diasEntre(tend.base, obj.data_alvo);
+        var st = window.NutriObjetivo.status(proj, cObj.esperadoAlvo);
+        linha += '<div class="peso-delta">Ritmo atual: ' + (tend.porDia * 7 > 0 ? '+' : '−') + kgStr(Math.abs(tend.porDia * 7)) + ' kg/semana (meta −' + kgStr(obj.meta_semanal_kg) + ') · ' +
+          'projeção em ' + window.NutriObjetivo.curta(obj.data_alvo) + ': ~' + kgStr(proj) + ' kg <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
+      } else {
+        linha += '<div class="peso-delta">A projeção pelo ritmo aparece com ~5 dias de peso.</div>';
+      }
+    }
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     var pad = Math.max(0.3, (hi - lo) * 0.15); lo -= pad; hi += pad;
-    var d0 = pesos[0].data, span = Math.max(1, diasEntre(d0, ult.data));
+    var d0 = pesos[0].data, span = Math.max(1, diasEntre(d0, fimX));
     function x(d) { return L + (W - L - R) * diasEntre(d0, d) / span; }
     function y(v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); }
     var grid = '';
@@ -172,13 +205,14 @@
       return '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="4" class="pc-dot"/>' +
         '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="14" class="pc-hit" data-i="' + i + '"/>';
     }).join('');
+    var metaSvg = metaPts ? '<line x1="' + x(metaPts[0].data).toFixed(1) + '" y1="' + y(metaPts[0].kg).toFixed(1) + '" x2="' + x(metaPts[1].data).toFixed(1) + '" y2="' + y(metaPts[1].kg).toFixed(1) + '" class="pc-meta"/>' : '';
     var ax = '<text x="' + L + '" y="' + (H - 4) + '" class="pc-ax">' + esc(labelDia(d0).replace(/ \d{4}$/, '')) + '</text>' +
-      '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + '</text>';
+      '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(fimX).replace(/ \d{4}$/, '')) + '</text>';
     box.innerHTML = titulo + linha +
-      '<div class="pc-legend"><span><i class="pc-k-dot"></i>Peso do dia</span><span><i class="pc-k-line"></i>Média 7 dias</span></div>' +
+      '<div class="pc-legend"><span><i class="pc-k-dot"></i>Peso do dia</span><span><i class="pc-k-line"></i>Média 7 dias</span>' + (metaPts ? '<span><i class="pc-k-meta"></i>Meta</span>' : '') + '</div>' +
       '<div class="pc-tip" id="pcTip">Toque num ponto pra ver o valor</div>' +
       '<svg class="pc-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gráfico de peso">' +
-        grid + '<path d="' + path + '" class="pc-line"/>' + dots + ax + '</svg>';
+        grid + metaSvg + '<path d="' + path + '" class="pc-line"/>' + dots + ax + '</svg>';
     var tip = document.getElementById('pcTip');
     box.querySelectorAll('.pc-hit').forEach(function (c) {
       c.addEventListener('click', function () {
@@ -249,7 +283,8 @@
         }
       });
       pesos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
-      renderPeso(pesos);
+      var carregaObj = window.NutriObjetivo ? window.NutriObjetivo.carregar() : Promise.resolve(null);
+      carregaObj.then(function (obj) { renderPeso(pesos, obj); });
       results.forEach(function (r) {
         if (!r.ok) {
           showWarn('Não deu pra carregar ' + r.iso);

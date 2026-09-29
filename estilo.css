@@ -306,3 +306,22 @@
   .hist-summary-comp { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.4; }
 
   .hist-list .d span.over { color: var(--over); }
+
+  /* objetivo com data alvo */
+  .obj-card {
+    background: linear-gradient(180deg, rgba(10,132,255,0.14), var(--surface));
+    border: 1px solid rgba(10,132,255,0.30); border-radius: 22px;
+    padding: 14px 16px; margin-bottom: 14px;
+  }
+  .obj-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; }
+  .obj-nome { color: #64D2FF; }
+  .obj-data { color: var(--muted); white-space: nowrap; }
+  .obj-big { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-top: 4px; }
+  .obj-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin: 8px 0 6px; }
+  .obj-bar div { height: 100%; background: #64D2FF; border-radius: 999px; }
+  .obj-line { font-size: 13px; line-height: 1.45; margin-top: 4px; }
+  .obj-muted { color: var(--muted); font-size: 12px; }
+  .obj-ok { color: var(--fat); font-weight: 700; }
+  .obj-warn { color: var(--over); font-weight: 700; }
+  .pc-meta { stroke: #64D2FF; stroke-width: 1.5; stroke-dasharray: 5 4; opacity: .7; }
+  .pc-k-meta { width: 14px; height: 0; border-top: 2px dashed #64D2FF; display: inline-block; opacity: .8; }

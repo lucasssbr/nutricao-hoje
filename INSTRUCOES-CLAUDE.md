@@ -56,6 +56,13 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 - **`plano_padrao`** = sequência de favoritas usada como **sugestão automática** do dia novo à meia-noite. Lucas pede pra mudar o plano padrão ("no jantar padrão troca batata por banana", "cria um almoço com X") → editar `refeicoes.json` (itens = `[id, quantidade]`), rodar `validar.py`, commit `dados: favoritas`. Mudança vale a partir do próximo dia criado.
 - Depois de lançar uma refeição, refazer `sugestao` só com o que falta; a página mostra a **primeira** refeição de `sugestao` como "Próxima refeição" no topo — manter `sugestao` na ordem do dia.
 
+### Objetivo com data alvo (`dados/objetivo.json`)
+
+- `atual` = objetivo em andamento: `nome`, `inicio`, `data_alvo`, `peso_inicial_kg`, `meta_semanal_kg` (kg a perder por semana). O site mostra no Hoje: dias que faltam, meta da semana, peso de hoje vs esperado; no Histórico: linha tracejada da meta no gráfico e projeção pelo ritmo.
+- Lucas muda algo ("meta de 0,5 kg por semana", "adia a data pra 24/10", "muda o nome") → editar `atual`, `validar.py`, commit `dados: objetivo`.
+- **Novo objetivo** ("novo objetivo: 15/11, perder 0,5 kg por semana") → mover o `atual` para o fim de `anteriores` acrescentando `"peso_final_kg"` (último peso registrado) e `"encerrado_em"` (hoje); criar novo `atual` com `inicio` = hoje e `peso_inicial_kg` = peso mais recente. Confirmar no chat: data alvo, meta semanal, peso esperado na data alvo.
+- Meta acima de 1,2 kg/semana gera aviso na checagem: comentar com o Lucas antes de salvar.
+
 **Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
@@ -153,6 +160,7 @@ Padronizar mensagens assim:
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
+- `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.
 - `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).

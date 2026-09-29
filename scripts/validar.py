@@ -127,8 +127,34 @@ def checar_refeicoes(alimentos):
             erros.append(f"refeicoes.json: plano_padrao cita '{rid}', que não existe")
 
 
+def checar_objetivo():
+    p = DADOS / "objetivo.json"
+    if not p.exists():
+        return
+    o = ler(p)
+    if not isinstance(o, dict):
+        return
+    for nome, obj in [("atual", o.get("atual"))] + [(f"anteriores[{i}]", x) for i, x in enumerate(o.get("anteriores", []))]:
+        if obj is None and nome == "atual":
+            continue
+        if not isinstance(obj, dict):
+            erros.append(f"objetivo.json/{nome}: deve ser objeto")
+            continue
+        for campo in ("inicio", "data_alvo"):
+            if not DATA_RE.match(str(obj.get(campo, ""))):
+                erros.append(f"objetivo.json/{nome}: '{campo}' deve ser AAAA-MM-DD")
+        if str(obj.get("data_alvo", "")) <= str(obj.get("inicio", "")):
+            erros.append(f"objetivo.json/{nome}: data_alvo precisa ser depois do início")
+        for campo in ("peso_inicial_kg", "meta_semanal_kg"):
+            if not num(obj.get(campo)):
+                erros.append(f"objetivo.json/{nome}: '{campo}' deve ser número")
+        if num(obj.get("meta_semanal_kg")) and obj["meta_semanal_kg"] > 1.2:
+            avisos.append(f"objetivo.json/{nome}: meta de {obj['meta_semanal_kg']} kg/semana é bem agressiva")
+
+
 def main():
     alimentos = checar_alimentos()
+    checar_objetivo()
     checar_refeicoes(alimentos)
     dias = ler(DADOS / "dias.json")
     arquivos = sorted(p.name[:-5] for p in DADOS.glob("*.json") if DATA_RE.match(p.name[:-5]))
