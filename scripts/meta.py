@@ -5,7 +5,8 @@
   python3 scripts/meta.py --ver      # só mostra a conta
 
 Conta:
-  gasto (TDEE) = Mifflin-St Jeor (peso mais recente, altura, idade, sexo) × fator de atividade
+  gasto (TDEE) = objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
+                 senão estimativa: Mifflin-St Jeor (peso mais recente, altura, idade, sexo) × fator de atividade
   ingestão     = média de kcal lançadas nos dias fechados do objetivo (dias com < 800 kcal
                  lançadas são ignorados por parecerem incompletos); sem dados → meta de kcal
   déficit/dia  = gasto − ingestão
@@ -60,7 +61,11 @@ def calcular(hoje=None):
     peso = pesos[-1][1] if pesos else float(atual["peso_inicial_kg"])
     anos = idade(perfil["nascimento"], hoje)
     bmr = 10 * peso + 6.25 * perfil["altura_cm"] - 5 * anos + (5 if perfil.get("sexo", "M") == "M" else -161)
-    tdee = bmr * perfil["atividade"]
+    informado = atual.get("gasto_kcal")
+    if isinstance(informado, (int, float)) and not isinstance(informado, bool):
+        tdee, gasto_fonte = float(informado), "informado"
+    else:
+        tdee, gasto_fonte = bmr * perfil["atividade"], "estimado"
     if ingestao:
         comendo, fonte = sum(ingestao) / len(ingestao), f"média de {len(ingestao)} dia(s) lançado(s)"
     else:
@@ -75,6 +80,7 @@ def calcular(hoje=None):
             "bmr": round(bmr),
             "atividade": perfil["atividade"],
             "gasto_estimado": round(tdee),
+            "gasto_fonte": gasto_fonte,
             "ingestao_media": round(comendo),
             "ingestao_fonte": fonte,
             "deficit_dia": round(deficit),
@@ -86,7 +92,10 @@ def calcular(hoje=None):
 def main():
     obj, novo = calcular()
     c = novo["calculo"]
-    print(f"Gasto estimado {c['gasto_estimado']} kcal (BMR {c['bmr']} × {c['atividade']}, {c['idade']} anos, {c['peso_ref_kg']} kg)")
+    if c["gasto_fonte"] == "informado":
+        print(f"Gasto informado pelo Lucas: {c['gasto_estimado']} kcal")
+    else:
+        print(f"Gasto estimado {c['gasto_estimado']} kcal (BMR {c['bmr']} × {c['atividade']}, {c['idade']} anos, {c['peso_ref_kg']} kg)")
     print(f"Comendo {c['ingestao_media']} kcal ({c['ingestao_fonte']}) → déficit {c['deficit_dia']} kcal/dia")
     print(f"Meta semanal: {novo['meta_semanal_kg']} kg")
     if "--ver" in sys.argv:

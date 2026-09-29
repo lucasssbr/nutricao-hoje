@@ -148,6 +148,9 @@ def checar_objetivo():
         for campo in ("peso_inicial_kg", "meta_semanal_kg"):
             if not num(obj.get(campo)):
                 erros.append(f"objetivo.json/{nome}: '{campo}' deve ser número")
+        g = obj.get("gasto_kcal")
+        if g is not None and not (num(g) and 1200 <= g <= 5000):
+            erros.append(f"objetivo.json/{nome}: 'gasto_kcal' deve ser número entre 1200 e 5000 (ou não existir)")
         if num(obj.get("meta_semanal_kg")) and obj["meta_semanal_kg"] > 1.2:
             avisos.append(f"objetivo.json/{nome}: meta de {obj['meta_semanal_kg']} kg/semana é bem agressiva")
 

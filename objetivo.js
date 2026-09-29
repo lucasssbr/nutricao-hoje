@@ -63,7 +63,8 @@
     function mil(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     h += '<div class="obj-line"><b>Meta da semana:</b> −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' até ' + curta(c.fimSemana) + '</div>';
     if (o.calculo) {
-      h += '<div class="obj-line obj-muted">Pelo déficit: gasto ~' + mil(o.calculo.gasto_estimado) + ' − comendo ~' + mil(o.calculo.ingestao_media) +
+      var gastoTxt = o.calculo.gasto_fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado) : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
+      h += '<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
         ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
     }
     if (c.passados < 7) {
