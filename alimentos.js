@@ -67,7 +67,7 @@
       var f = FONTES[a.fonte] || { txt: a.fonte, cls: 'mid' };
       if (a.fonte === 'estimado') estimados++;
       var extra = [];
-      if (a.limite_dia_g) extra.push('limite ' + ri(a.limite_dia_g) + ' g/dia');
+      if (a.plano_ate_g) extra.push('plano até ' + ri(a.plano_ate_g) + ' g/dia');
       if (a.salvo_em) extra.push('salvo ' + data(a.salvo_em));
       if (a.atualizado_em) extra.push('atualizado ' + data(a.atualizado_em));
       return '<details class="ali-card"><summary class="ali-head"><b>' + esc(a.nome) + '</b>' +

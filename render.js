@@ -201,9 +201,15 @@
       remainV = String(-ri(rest.kcal));
       remainSub = 'kcal · P' + ri(rest.p) + ' · C' + ri(rest.c) + ' · G' + ri(rest.g) + ' restantes';
     } else {
-      remainK = 'Restante';
-      remainV = String(ri(rest.kcal));
-      remainSub = 'kcal · P' + ri(rest.p) + ' · C' + ri(rest.c) + ' · G' + ri(rest.g);
+      function faltaOuPassou(letra, v) { return v < 0 ? letra + ' +' + ri(-v) + ' acima' : letra + ri(v); }
+      if (rest.kcal < 0) {
+        remainK = 'Acima da meta';
+        remainV = '+' + ri(-rest.kcal);
+      } else {
+        remainK = 'Restante';
+        remainV = String(ri(rest.kcal));
+      }
+      remainSub = 'kcal · ' + faltaOuPassou('P', rest.p) + ' · ' + faltaOuPassou('C', rest.c) + ' · ' + faltaOuPassou('G', rest.g);
     }
 
     // proteína é piso: passar da meta é bom; carbo/gordura acima da meta = listrado + "+N" (o carbo já é laranja)
@@ -335,7 +341,7 @@
       }
     });
 
-  // Contador de alimentos com limite diário (ex.: acém ≤ 200 g cru), definido em alimentos.json → limite_dia_g
+  // Contador informativo de alimentos com plano_ate_g (ex.: acém) — não é limite, só mostra quanto já foi
   function mostrarLimites(data) {
     fetch('dados/alimentos.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
@@ -349,18 +355,15 @@
         }
         var linhas = [];
         Object.keys(ali).forEach(function (id) {
-          var a = ali[id], lim = a && Number(a.limite_dia_g);
+          var a = ali[id], lim = a && Number(a.plano_ate_g);
           if (!lim) return;
           var comido = soma(data.lancado, id), plano = data.fechado ? 0 : soma(data.sugestao, id);
           if (!comido && !plano) return;
           var nome = (a.apelidos && a.apelidos[0]) || a.nome;
           nome = nome.charAt(0).toUpperCase() + nome.slice(1);
-          var over = comido > lim, overPlano = !over && comido + plano > lim;
-          var txt = '<b>' + esc(nome) + '</b> ' + ri(comido) + ' / ' + ri(lim) + ' g cru';
+          var txt = '<b>' + esc(nome) + '</b> ' + ri(comido) + ' g cru hoje';
           if (plano) txt += ' · +' + ri(plano) + ' g na sugestão';
-          if (over) txt += ' · passou ' + ri(comido - lim) + ' g';
-          else if (overPlano) txt += ' · sugestão passa do limite';
-          linhas.push('<div class="limite' + (over || overPlano ? ' over' : '') + '">' + txt + '</div>');
+          linhas.push('<div class="limite">' + txt + '</div>');
         });
         var hero = document.getElementById('hero');
         var old = document.getElementById('limites');

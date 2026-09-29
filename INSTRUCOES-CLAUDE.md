@@ -106,7 +106,10 @@ Total refeição: 150 kcal | P 30 | C 3 | G 3
 Consumido: 1022 kcal | P 77 | C 105 | G 37
 Meta:      1570 kcal | P 180 | C 100 | G 50
 Restante:  548 kcal | P 103 | C -5 | G 13
+Passou da meta: C +5 g
 ```
+
+Passou da meta em algo (kcal ou macro) → linha extra `Passou da meta: …` com quanto passou. Sem sermão: só o número.
 
 ## Fluxo diário: JSON + HTML
 
@@ -187,7 +190,8 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 ## Regras de alimentação
 
 - Usar **Nurri** como suplemento/bebida; **não usar whey**.
-- Chuck: **≤ 200 g CRU/dia**, tanto no **log** quanto na **sugestão**. O limite fica em `alimentos.json` → `chuck-costco.limite_dia_g` (o Hoje mostra "Acém 150 / 200 g cru" e a checagem avisa). Outro alimento com limite diário: acrescentar `limite_dia_g` nele.
+- **Não existe limite do que o Lucas come.** Existe a **meta** do dia. Comeu mais que o plano ou passou da meta → **registrar normalmente** e avisar no chat quanto passou (ex.: `Passou da meta: +120 kcal · C +15 g`). Nunca recusar, cortar ou "corrigir" o que ele comeu.
+- Chuck: nas **sugestões**, planejar até 200 g cru/dia (`alimentos.json` → `chuck-costco.plano_ate_g`). É referência de planejamento, não limite: o Hoje só mostra quanto já foi ("Acém 250 g cru hoje").
 - Dar preferência a batata, frutas, tomate, iogurte grego desnatado e **ovos inteiros**.
 - Claras de ovo: **só à noite** e somente se forem necessárias para fechar a proteína/macros.
 - Frango é opcional e pode estar indisponível; não presumir que há frango.

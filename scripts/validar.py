@@ -9,7 +9,7 @@ Erros (fazem a checagem falhar):
   - item com "alimento" cujos valores não batem com alimentos.json (tolerância 1) — só em dia aberto;
     dia fechado guarda os valores da época e não é recalculado quando a biblioteca muda
   - dia aberto a partir de 2026-09-29 com item sem "alimento"
-Avisos (não falham): alimento acima do limite_dia_g no dia (ex.: acém 200 g).
+Avisos (não falham): sugestão planejando mais que plano_ate_g de um alimento. O que foi lançado nunca gera aviso.
 """
 import json
 import pathlib
@@ -56,8 +56,8 @@ def checar_alimentos():
                 erros.append(f"alimentos.json/{k}: '{m}' não é número")
         if "fibra" in v and not (num(v["fibra"]) and v["fibra"] >= 0):
             erros.append(f"alimentos.json/{k}: 'fibra' deve ser número ≥ 0")
-        if "limite_dia_g" in v and not (num(v["limite_dia_g"]) and v["limite_dia_g"] > 0):
-            erros.append(f"alimentos.json/{k}: 'limite_dia_g' deve ser número > 0")
+        if "plano_ate_g" in v and not (num(v["plano_ate_g"]) and v["plano_ate_g"] > 0):
+            erros.append(f"alimentos.json/{k}: 'plano_ate_g' deve ser número > 0")
         if v.get("fonte") not in FONTES:
             erros.append(f"alimentos.json/{k}: fonte '{v.get('fonte')}' inválida")
         try:
@@ -111,12 +111,12 @@ def checar_dia(nome, dia, alimentos):
                     ruins.append(f"fibra {it['fibra']}≠{exp['fibra']}")
                 if ruins and not dia.get("fechado"):
                     erros.append(f"{onde}: valores não batem com a biblioteca ({', '.join(ruins)})")
-                if lista == "lancado" and "limite_dia_g" in alimentos[aid]:
+                if lista == "sugestao" and "plano_ate_g" in alimentos[aid]:
                     gramas[aid] = gramas.get(aid, 0.0) + float(it["quantidade"])
     for aid, g in gramas.items():
-        lim = alimentos[aid]["limite_dia_g"]
-        if g > lim:
-            avisos.append(f"{nome}: {aid} lançado = {g:g} g (limite {lim:g} g)")
+        lim = alimentos[aid]["plano_ate_g"]
+        if g > lim and not dia.get("fechado"):
+            avisos.append(f"{nome}: sugestão planeja {g:g} g de {aid} (plano até {lim:g} g)")
 
 
 def checar_refeicoes(alimentos):
