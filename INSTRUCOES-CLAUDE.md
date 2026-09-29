@@ -163,6 +163,7 @@ Padronizar mensagens assim:
 ## Mapa de arquivos
 
 - `dados/dias.json` — índice ordenado de datas (`["YYYY-MM-DD", …]`); todo JSON novo entra aqui.
+- `dados/resumo.json` — **gerado automaticamente** à meia-noite (`scripts/resumo.py`): totais/meta/peso de cada dia, para o Histórico carregar rápido. Ninguém edita à mão; o Histórico busca os 3 dias mais recentes direto do JSON do dia.
 - `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, `sugestao_nota`, meta, `peso_kg`, fechado, carimbo).
 - `index.html` — shell **Hoje**; `body data-dia="YYYY-MM-DD"` + `estilo.css` + `render.js`. Não editar macros no HTML no dia a dia.
 - `dia.html` — shell genérico de qualquer dia; **sem** `data-dia`. Lê `?d=YYYY-MM-DD` e busca `dados/{d}.json`. Título mostra a data (ex.: "30 set"), não "Hoje".

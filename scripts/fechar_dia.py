@@ -7,6 +7,7 @@ Idempotente: pode rodar várias vezes sem estragar nada.
    e a meta do objetivo atual (dados/objetivo.json → atual.metas).
 3. index.html: data-dia -> hoje.
 4. Botão "Plano" (index, dia, historico, alimentos) -> dia.html?d=<amanhã>.
+5. dados/resumo.json (totais de todos os dias, para o Histórico carregar rápido).
 """
 import datetime
 import json
@@ -103,6 +104,13 @@ def main():
         if novo != s:
             f.write_text(novo, encoding="utf-8")
             print(f"atualizado: {nome}")
+
+
+    # 5. resumo do Histórico
+    import sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from resumo import gerar
+    gerar()
 
 
 if __name__ == "__main__":

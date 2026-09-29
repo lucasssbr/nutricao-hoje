@@ -263,7 +263,30 @@
     dates.forEach(function (d) {
       if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && uniq.indexOf(d) < 0) uniq.push(d);
     });
+    // resumo.json (gerado à meia-noite) cobre os dias antigos num arquivo só;
+    // os 3 dias mais recentes e os que faltam no resumo vêm direto do JSON do dia
+    uniq.sort();
+    var corte = uniq.length ? somaDias(uniq[uniq.length - 1], -2) : '';
+    fetch('dados/resumo.json', { cache: 'no-store' })
+      .then(function (res) { if (!res.ok) throw new Error(); return res.json(); })
+      .catch(function () { return []; })
+      .then(function (resumo) {
+        var mapa = {};
+        (Array.isArray(resumo) ? resumo : []).forEach(function (r) { if (r && r.data) mapa[r.data] = r; });
+        carregarDias(uniq, mapa, corte);
+      });
+  }
+
+  function somaDias(iso, n) {
+    return new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
+  }
+
+  function carregarDias(uniq, mapa, corte) {
     Promise.all(uniq.map(function (iso) {
+      var r = mapa[iso];
+      if (r && iso < corte) {
+        return Promise.resolve({ ok: true, iso: iso, data: { data: iso, fechado: r.fechado, meta: r.meta, peso_kg: r.peso, cons: r.cons } });
+      }
       return fetch('dados/' + iso + '.json', { cache: 'no-store' })
         .then(function (res) {
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -294,7 +317,7 @@
         var data = r.data || {};
         if (!data.fechado) return;
         var meta = data.meta || { kcal: 1570, p: 180, c: 100, g: 50 };
-        var cons = sumMeals(data.lancado || []);
+        var cons = data.cons || sumMeals(data.lancado || []);
         closed.push({
           data: data.data || r.iso,
           meta: meta,
