@@ -71,6 +71,7 @@ Restante:  548 kcal | P 103 | C -5 | G 13
 4. Ao fechar o dia:
    - arquivar a página como `dia-YYYY-MM-DD.html`;
    - atualizar `historico.html` com o novo dia;
+   - incluir o dia no histórico com os 4 macros e o desvio.
    - resetar `index.html` para o próximo dia, sem carregar refeições ou consumo do dia anterior;
    - **atualizar `data-dia` e o carimbo** no novo `index.html`;
    - **atualizar a seção Estado atual** neste arquivo.
