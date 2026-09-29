@@ -171,6 +171,7 @@ Padronizar mensagens assim:
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
+- `alimentos.html` + `alimentos.js` — página **Alimentos** (só leitura): favoritas com total, plano padrão do dia e a biblioteca com a fonte de cada alimento.
 - `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
 - `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.

@@ -6,7 +6,7 @@ Idempotente: pode rodar várias vezes sem estragar nada.
 2. Se não existe dados/<hoje>.json, cria o dia com o PLANO PADRÃO (dados/refeicoes.json) como sugestão
    e a meta do objetivo atual (dados/objetivo.json → atual.metas).
 3. index.html: data-dia -> hoje.
-4. Botão "Plano" (index, dia, historico) -> dia.html?d=<amanhã>.
+4. Botão "Plano" (index, dia, historico, alimentos) -> dia.html?d=<amanhã>.
 """
 import datetime
 import json
@@ -94,7 +94,7 @@ def main():
         dias_path.write_text(json.dumps(dias) + "\n", encoding="utf-8")
 
     # 3 e 4. index e botão Plano
-    for nome in ("index.html", "dia.html", "historico.html"):
+    for nome in ("index.html", "dia.html", "historico.html", "alimentos.html"):
         f = ROOT / nome
         s = f.read_text(encoding="utf-8")
         novo = re.sub(r'dia\.html\?d=\d{4}-\d{2}-\d{2}(">Plano<)', rf"dia.html?d={amanha.isoformat()}\1", s)

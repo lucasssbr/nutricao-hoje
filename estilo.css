@@ -331,3 +331,23 @@
   .obj-warn { color: var(--over); font-weight: 700; }
   .pc-meta { stroke: #64D2FF; stroke-width: 1.5; stroke-dasharray: 5 4; opacity: .7; }
   .pc-k-meta { width: 14px; height: 0; border-top: 2px dashed #64D2FF; display: inline-block; opacity: .8; }
+
+  /* página Alimentos */
+  .ali-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    padding: 12px 14px; margin-bottom: 8px;
+  }
+  .ali-head { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+  .ali-head::-webkit-details-marker { display: none; }
+  .ali-head b { font-size: 15px; }
+  .ali-mac { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .ali-fonte, .ali-tag { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 999px; letter-spacing: 0.03em; }
+  .ali-fonte.ok { color: #30D158; background: rgba(48,209,88,0.14); }
+  .ali-fonte.mid { color: #64D2FF; background: rgba(100,210,255,0.14); }
+  .ali-fonte.warn { color: var(--over); background: rgba(255,159,10,0.16); }
+  .ali-tag { color: #E9D5FF; background: rgba(191,90,242,0.28); }
+  .ali-itens { margin-top: 8px; font-size: 13px; line-height: 1.45; }
+  .ali-itens span { color: var(--muted); }
+  .ali-obs { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .ali-plano { font-size: 12px; color: var(--muted); font-weight: 600; margin: 0 2px 8px; }
+  .ali-plano b { color: var(--text); }

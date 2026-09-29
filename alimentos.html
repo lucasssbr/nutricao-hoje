@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
-<title>Histórico · Nutrição</title>
+<title>Alimentos · Nutrição</title>
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-title" content="Nutrição" />
 <link rel="icon" type="image/png" href="./icone-512.png" />
@@ -15,19 +15,17 @@
   <div class="phone">
     <div class="nav">
       <a href="./">Hoje</a>
-      <a class="active" href="./historico.html">Histórico</a>
+      <a href="./historico.html">Histórico</a>
       <a href="./dia.html?d=2026-09-30">Plano</a>
-      <a href="./alimentos.html">Alimentos</a>
+      <a class="active" href="./alimentos.html">Alimentos</a>
     </div>
-    <div class="top"><div><h1>Histórico</h1><div class="date">Dias anteriores</div></div></div>
-    <div id="histWarn" class="hist-warn" hidden></div>
-    <section class="hist-summary" id="histSummary"></section>
-    <section class="hist-summary peso-card" id="pesoCard"></section>
-    <div class="section-title">Dias fechados</div>
-    <div class="hist-list" id="histList"></div>
-    <div class="footer">Toque num dia pra ver o detalhe</div>
+    <div class="top"><div><h1>Alimentos</h1><div class="date" id="aliResumo">Biblioteca e favoritas</div></div></div>
+    <div class="section-title">Refeições favoritas</div>
+    <div id="favoritas"></div>
+    <div class="section-title">Biblioteca</div>
+    <div id="biblioteca"></div>
+    <div class="footer">Valores por base, peso cru · pra mudar ou incluir, fale com o Grok</div>
   </div>
-<script src="./objetivo.js?v=5"></script>
-<script src="./historico.js?v=8"></script>
+<script src="./alimentos.js?v=1"></script>
 </body>
 </html>
