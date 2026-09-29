@@ -37,9 +37,13 @@ def base_de(alimento):
 
 
 def esperado(alimento, quantidade):
+    """Macros (e fibra, se o alimento tiver) para a quantidade, com 1 casa decimal."""
     unidade, n = base_de(alimento)
     f = float(quantidade) / n
-    return {k: round(alimento[k] * f, 1) for k in MACROS}
+    vals = {k: round(alimento[k] * f, 1) for k in MACROS}
+    if isinstance(alimento.get("fibra"), (int, float)):
+        vals["fibra"] = round(alimento["fibra"] * f, 1)
+    return vals
 
 
 def resolver(alimentos, chave):
@@ -106,7 +110,8 @@ def total(refeicoes):
 def imprimir(refeicoes):
     print(json.dumps(refeicoes, ensure_ascii=False, indent=2))
     t = total(refeicoes)
-    print(f"TOTAL: {round(t['kcal'])} kcal | P {round(t['p'])} | C {round(t['c'])} | G {round(t['g'])}")
+    fib = sum(i.get("fibra", 0) for r in refeicoes for i in r["itens"])
+    print(f"TOTAL: {round(t['kcal'])} kcal | P {round(t['p'])} | C {round(t['c'])} | G {round(t['g'])} | fibra {round(fib)} g")
 
 
 def main(args):
@@ -137,7 +142,8 @@ def main(args):
     itens = [montar_item(alimentos, args[i], args[i + 1]) for i in range(0, len(args), 2)]
     tot = {k: round(sum(i[k] for i in itens), 1) for k in MACROS}
     print(json.dumps(itens, ensure_ascii=False, indent=2))
-    print(f"TOTAL: {round(tot['kcal'])} kcal | P {round(tot['p'])} | C {round(tot['c'])} | G {round(tot['g'])}")
+    fib = sum(i.get("fibra", 0) for i in itens)
+    print(f"TOTAL: {round(tot['kcal'])} kcal | P {round(tot['p'])} | C {round(tot['c'])} | G {round(tot['g'])} | fibra {round(fib)} g")
 
 
 if __name__ == "__main__":

@@ -23,6 +23,8 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
 
 `fonte` pode ser: `rotulo` · `usda` · `openfoodfacts` · `lucas` (valor informado pelo Lucas) · `estimado`.
 
+**Fibra (`fibra`, g por base):** registrar junto com os macros ao cadastrar alimento novo (rótulo: "Dietary Fiber"; USDA: "Fiber, total dietary"; sem dado → `0` só se for carne/ovo/laticínio, senão pesquisar). O `item.py` já inclui `fibra` nos itens e no TOTAL; o site mostra a fibra do dia com referência de ~14 g por 1000 kcal. Não é meta, é acompanhamento.
+
 ### Regra de busca (alimento citado no chat)
 
 1. Procurar primeiro em `alimentos.json` (pelo nome ou apelido). Achou → **usar, sem pesquisar**.

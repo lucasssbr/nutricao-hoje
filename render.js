@@ -77,6 +77,25 @@
     return '<b>' + ri(t.kcal) + ' kcal</b> · P' + ri(t.p) + ' · C' + ri(t.c) + ' · G' + ri(t.g);
   }
 
+  // fibra: só aparece quando os itens têm o campo (dias a partir de 29/09); referência ~14 g por 1000 kcal
+  function fibraHtml(lancado, sugestao, meta, data) {
+    var tem = false, comido = 0, plano = 0;
+    function soma(meals) {
+      var t = 0;
+      (meals || []).forEach(function (m) {
+        (m.itens || []).forEach(function (it) { if (it.fibra != null) { tem = true; t += Number(it.fibra) || 0; } });
+      });
+      return t;
+    }
+    comido = soma(lancado);
+    plano = data.fechado ? 0 : soma(sugestao);
+    if (!tem) return '';
+    var ref = Math.round((meta.kcal || 1570) * 14 / 1000);
+    return '<div class="fibra-linha"><b>Fibra</b> ' + ri(comido) + '\u00a0g' +
+      (plano ? ' · dia projetado ' + ri(comido + plano) + '\u00a0g' : '') +
+      ' · ref. ~' + ref + '\u00a0g</div>';
+  }
+
   function barPct(val, meta) {
     if (!meta || meta <= 0) return 0;
     return Math.min(100, (val / meta) * 100);
@@ -222,6 +241,7 @@
         '<div class="macro"><div class="name c">Carbo</div><div class="track">' + macroFill(cons.c, meta.c, 'c') + '</div><div class="nums">' + ri(cons.c) + ' <span>/ ' + ri(meta.c) + ' g</span></div></div>' +
         '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + ri(cons.g) + ' <span>/ ' + ri(meta.g) + ' g</span></div></div>' +
       '</div>' +
+      fibraHtml(lancado, sugestao, meta, data) +
       alertHtml;
 
     if (isHoje && !data.fechado && sugestao.length) {
@@ -364,7 +384,9 @@
         var n = parseFloat(m[1].replace(',', '.')), f = q / n;
         var und = m[2] === 'g' ? ' g' : (m[2] === 'lata' ? ' lata' : ' un');
         function r1(v) { return Math.round(v * f * 10) / 10; }
-        return { nome: a.nome, qtd: q + und, alimento: id, quantidade: q, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
+        var it = { nome: a.nome, qtd: q + und, alimento: id, quantidade: q, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
+        if (a.fibra != null) it.fibra = r1(a.fibra);
+        return it;
       }
       var sugestao = (refs.plano_padrao || []).map(function (rid) {
         var r = refs.refeicoes[rid];

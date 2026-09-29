@@ -54,6 +54,8 @@ def checar_alimentos():
         for m in MACROS:
             if not num(v.get(m)):
                 erros.append(f"alimentos.json/{k}: '{m}' não é número")
+        if "fibra" in v and not (num(v["fibra"]) and v["fibra"] >= 0):
+            erros.append(f"alimentos.json/{k}: 'fibra' deve ser número ≥ 0")
         if "limite_dia_g" in v and not (num(v["limite_dia_g"]) and v["limite_dia_g"] > 0):
             erros.append(f"alimentos.json/{k}: 'limite_dia_g' deve ser número > 0")
         if v.get("fonte") not in FONTES:
@@ -105,6 +107,8 @@ def checar_dia(nome, dia, alimentos):
                     continue
                 exp = esperado(alimentos[aid], it["quantidade"])
                 ruins = [f"{m} {it[m]}≠{exp[m]}" for m in MACROS if abs(it[m] - exp[m]) > TOL]
+                if num(it.get("fibra")) and "fibra" in exp and abs(it["fibra"] - exp["fibra"]) > TOL:
+                    ruins.append(f"fibra {it['fibra']}≠{exp['fibra']}")
                 if ruins and not dia.get("fechado"):
                     erros.append(f"{onde}: valores não batem com a biblioteca ({', '.join(ruins)})")
                 if lista == "lancado" and "limite_dia_g" in alimentos[aid]:

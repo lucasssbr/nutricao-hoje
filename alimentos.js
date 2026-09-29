@@ -73,7 +73,7 @@
       return '<details class="ali-card"><summary class="ali-head"><b>' + esc(a.nome) + '</b>' +
         '<span class="ali-fonte ' + f.cls + '">' + esc(f.txt) + '</span>' +
         '<span class="ali-mac">' + esc(a.base) + ': ' + n1(a.kcal) + ' kcal · P' + n1(a.p) + ' · C' + n1(a.c) + ' · G' + n1(a.g) +
-        (a.fibra != null ? ' · F' + n1(a.fibra) : '') + '</span></summary>' +
+        (a.fibra != null ? ' · fibra ' + n1(a.fibra) : '') + '</span></summary>' +
         (extra.length ? '<div class="ali-obs">' + esc(extra.join(' · ')) + '</div>' : '') +
         (a.apelidos && a.apelidos.length ? '<div class="ali-obs">Apelidos: ' + esc(a.apelidos.join(', ')) + '</div>' : '') +
         (a.obs ? '<div class="ali-obs">' + esc(a.obs) + '</div>' : '') +

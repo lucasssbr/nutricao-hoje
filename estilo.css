@@ -273,6 +273,9 @@
   details.suggest-meal .suggest-items { margin-top: 8px; }
   details.suggest-meal:first-of-type { margin-top: 4px; }
 
+  .fibra-linha { margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .fibra-linha b { color: var(--text); }
+
   /* contador de alimento com limite diário (ex.: acém) */
   .limites { margin-top: 10px; }
   .limite { font-size: 12px; font-weight: 600; color: var(--muted); }
