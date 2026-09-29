@@ -25,7 +25,7 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
 4. Alimento com `fonte: estimado` → perguntar ao Lucas se ele tem o rótulo; com o rótulo, atualizar a entrada e a fonte.
 5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados.
 
-Pendentes de rótulo: **chuck Costco** (`estimado`), **Nurri** (`lucas`), **iogurte grego** (marca usada).
+Pendentes de rótulo: **Nurri** (`lucas`), **iogurte grego** (marca usada).
 
 ### Calcular itens: SEMPRE com o script (não fazer conta à mão)
 

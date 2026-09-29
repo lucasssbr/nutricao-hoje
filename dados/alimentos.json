@@ -19,19 +19,21 @@
   "chuck-costco": {
     "nome": "Chuck steak Costco (cru)",
     "apelidos": [
-      "chuck",
+      "acém",
       "carne",
+      "carne asada",
+      "chuck",
       "chuck costco",
-      "acém"
+      "kirkland chuck"
     ],
     "base": "100 g",
     "kcal": 223,
     "p": 20,
     "c": 0,
     "g": 17,
-    "fonte": "estimado",
-    "salvo_em": "2026-09-28",
-    "obs": "peso sempre cru; máx. 200 g/dia; conferir no rótulo da embalagem Costco"
+    "fonte": "usda",
+    "salvo_em": "2026-09-29",
+    "obs": "Kirkland Beef Chuck Steak Boneless / Carne Asada #34182, blade tenderized — etiqueta sem tabela nutricional. Referência USDA: \"Beef, chuck eye steak, boneless, separable lean and fat, trimmed to 0\" fat, choice, raw\" = 227 | P19 | C0 | G17 por 100 g. Mantido 223 | P20 | G17 (diferença < 2%). Peso sempre cru; máx. 200 g/dia."
   },
   "ovo-inteiro": {
     "nome": "Ovo inteiro grande",
