@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
   group: fechar-dia
@@ -38,7 +39,22 @@ jobs:
           git add -A
           git commit -m "fechar $ONTEM (automático)"
           for i in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "publicado=sim" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             sleep 10
           done
           exit 1
+        id: commit
+      # Push feito com GITHUB_TOKEN não dispara o GitHub Pages sozinho: pedir a publicação.
+      - name: Publicar o site
+        if: steps.commit.outputs.publicado == 'sim' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" \
+            || echo "::warning::Não consegui pedir a publicação do Pages; o site atualiza no próximo push do Grok."
