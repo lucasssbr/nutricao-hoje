@@ -1,0 +1,27 @@
+{
+  "_sobre": "Refeições favoritas do Lucas (combinações que se repetem) e o plano padrão usado como sugestão automática à meia-noite. Itens = [id do alimento, quantidade]. Valores sempre calculados pela biblioteca (scripts/item.py).",
+  "plano_padrao": ["cafe-padrao", "almoco-padrao", "lanche-padrao", "jantar-padrao"],
+  "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · chuck 200 g cru · 2 Nurri",
+  "refeicoes": {
+    "cafe-padrao": {
+      "nome": "Café",
+      "apelidos": ["café padrão", "café de sempre", "café"],
+      "itens": [["ovo-inteiro", 2], ["nurri-vanilla", 1], ["banana", 1]]
+    },
+    "almoco-padrao": {
+      "nome": "Almoço",
+      "apelidos": ["almoço padrão", "almoço de sempre", "almoço"],
+      "itens": [["chuck-costco", 100], ["batata-inglesa", 100], ["tomate", 150]]
+    },
+    "lanche-padrao": {
+      "nome": "Lanche",
+      "apelidos": ["lanche padrão", "lanche de sempre", "lanche"],
+      "itens": [["nurri-vanilla", 1], ["melancia", 200]]
+    },
+    "jantar-padrao": {
+      "nome": "Jantar",
+      "apelidos": ["jantar padrão", "jantar de sempre", "jantar"],
+      "itens": [["chuck-costco", 100], ["batata-inglesa", 80], ["clara-100g", 180], ["iogurte-grego-430g", 430]]
+    }
+  }
+}

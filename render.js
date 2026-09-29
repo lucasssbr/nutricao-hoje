@@ -144,7 +144,7 @@
       dateEl.insertAdjacentElement('afterend', pesoEl);
     }
     if (data.peso_kg != null && data.peso_kg !== '' && !isNaN(Number(data.peso_kg))) {
-      var pesoStr = String(Number(data.peso_kg)).replace('.', ',');
+      var pesoStr = Number(data.peso_kg).toFixed(1).replace('.', ',');
       var lbStr = (Math.round(Number(data.peso_kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
       pesoEl.textContent = 'Peso ' + pesoStr + ' kg (' + lbStr + ' lb)';
       pesoEl.hidden = false;
@@ -193,6 +193,8 @@
     var alertHtml;
     if (data.fechado) {
       alertHtml = '<div class="alert">Dia fechado</div>';
+    } else if (isHoje && sugestao.length) {
+      alertHtml = '';
     } else if (!hasCons) {
       alertHtml = '<div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">' +
         labelDia(dia).replace(/ \d{4}$/, '') + ' limpo — sugestão abaixo não entra no consumo</div>';
@@ -216,6 +218,20 @@
         '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + ri(cons.g) + ' <span>/ ' + ri(meta.g) + ' g</span></div></div>' +
       '</div>' +
       alertHtml;
+
+    if (isHoje && !data.fechado && sugestao.length) {
+      var prox = sugestao[0];
+      var tp = sumItens(prox.itens);
+      var lista = (prox.itens || []).map(function (it) {
+        return esc(String(it.nome || '').replace(/\s*\(.*?\)\s*/g, ' ').trim()) + ' <span>' + esc(it.qtd || '') + '</span>';
+      }).join(' · ');
+      document.getElementById('hero').insertAdjacentHTML('beforeend',
+        '<div class="next-meal">' +
+          '<div class="next-label">Próxima refeição · não lançada</div>' +
+          '<div class="next-head"><b>' + esc(prox.refeicao || 'Refeição') + '</b><span>' + ri(tp.kcal) + ' kcal · P' + ri(tp.p) + ' · C' + ri(tp.c) + ' · G' + ri(tp.g) + '</span></div>' +
+          '<div class="next-items">' + lista + '</div>' +
+        '</div>');
+    }
 
     var mealsEl = document.getElementById('meals');
     var html = '';
@@ -281,9 +297,17 @@
     })
     .catch(function () {
       if (!isHoje && pageDia > localISODate()) {
-        showError('Plano de ' + ddmm(pageDia) + ' ainda não foi feito — peça ao Grok');
+        showError('O plano de ' + ddmm(pageDia) + ' aparece sozinho à meia-noite (plano padrão). Pra mudar antes, peça ao Grok.');
       } else {
         showError('Não consegui carregar os dados de ' + ddmm(pageDia));
       }
     });
+})();
+
+// Recarrega ao voltar pro app depois de 1 min (dados sempre frescos)
+(function () {
+  var t0 = Date.now();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && Date.now() - t0 > 60000) location.reload();
+  });
 })();

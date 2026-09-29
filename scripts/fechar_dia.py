@@ -3,7 +3,7 @@
 
 Idempotente: pode rodar várias vezes sem estragar nada.
 1. Todo dia em dados/dias.json anterior a hoje e ainda aberto -> "fechado": true.
-2. Se não existe dados/<hoje>.json, cria um dia vazio (sem sugestão; o Grok faz de manhã).
+2. Se não existe dados/<hoje>.json, cria o dia com o PLANO PADRÃO (dados/refeicoes.json) como sugestão.
 3. index.html: data-dia -> hoje.
 4. Botão "Plano" (index, dia, historico) -> dia.html?d=<amanhã>.
 """
@@ -56,6 +56,16 @@ def main():
     hoje_iso = hoje.isoformat()
     p_hoje = DADOS / f"{hoje_iso}.json"
     if not p_hoje.exists():
+        sugestao, nota = [], "Sugestão do dia ainda não feita — peça ao Grok"
+        try:
+            import sys
+            sys.path.insert(0, str(ROOT / "scripts"))
+            from item import carregar_refeicoes, montar_plano
+            refs = carregar_refeicoes()
+            sugestao = montar_plano(refs=refs)
+            nota = refs.get("plano_padrao_nota", "Plano padrão automático")
+        except Exception as e:  # noqa: BLE001 — sem plano, o dia abre vazio
+            print(f"aviso: plano padrão indisponível ({e})")
         salvar(p_hoje, {
             "data": hoje_iso,
             "atualizado": carimbo,
@@ -63,10 +73,10 @@ def main():
             "meta": meta,
             "peso_kg": None,
             "lancado": [],
-            "sugestao_nota": "Sugestão do dia ainda não feita — peça ao Grok",
-            "sugestao": [],
+            "sugestao_nota": nota,
+            "sugestao": sugestao,
         })
-        print(f"criado: {hoje_iso}")
+        print(f"criado: {hoje_iso} ({len(sugestao)} refeições no plano)")
     if hoje_iso not in dias:
         dias.append(hoje_iso)
         dias.sort()

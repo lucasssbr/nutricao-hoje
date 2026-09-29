@@ -48,6 +48,14 @@ python3 scripts/item.py --lista      # ids e bases
 
 Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quando é "1 un"/"1 lata". O script imprime os itens prontos (com `alimento` e `quantidade`) e o total — é só colar em `lancado` ou `sugestao`. Alimento que não está na biblioteca: cadastrar primeiro, depois rodar o script.
 
+### Refeições favoritas e plano padrão (`dados/refeicoes.json`)
+
+- Combinações que o Lucas repete: `cafe-padrao`, `almoco-padrao`, `lanche-padrao`, `jantar-padrao` (com apelidos "café padrão", "café de sempre"…).
+- Lucas diz "comi o café padrão" → `python3 scripts/item.py --refeicao cafe-padrao` e cola a refeição em `lancado`. Se ele disser uma variação ("café padrão sem banana", "com 3 ovos"), montar os itens com o script normal.
+- `python3 scripts/item.py --refeicoes` lista as favoritas; `--plano` mostra o plano padrão inteiro.
+- **`plano_padrao`** = sequência de favoritas usada como **sugestão automática** do dia novo à meia-noite. Lucas pede pra mudar o plano padrão ("no jantar padrão troca batata por banana", "cria um almoço com X") → editar `refeicoes.json` (itens = `[id, quantidade]`), rodar `validar.py`, commit `dados: favoritas`. Mudança vale a partir do próximo dia criado.
+- Depois de lançar uma refeição, refazer `sugestao` só com o que falta; a página mostra a **primeira** refeição de `sugestao` como "Próxima refeição" no topo — manter `sugestao` na ordem do dia.
+
 **Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
@@ -113,11 +121,11 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
 6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/fechar-dia.yml` → `scripts/fechar_dia.py`) faz sozinho:
    1. `fechado: true` em todo dia passado ainda aberto;
-   2. cria o JSON do novo dia se não existir (vazio, com nota "peça ao Grok") e inclui em `dados/dias.json`;
+   2. cria o JSON do novo dia se não existir, **já com o plano padrão como sugestão** (`dados/refeicoes.json`), e inclui em `dados/dias.json`;
    3. muda `data-dia` do `index.html` para o novo dia;
    4. aponta o botão **Plano** para o dia seguinte.
    Commit `fechar DD/MM (automático)`. **Ninguém precisa fechar o dia na mão.** Se o Lucas pedir "fecha o dia" antes da meia-noite, basta `fechado: true` no JSON; o resto o script faz.
-   **Grok, de manhã:** `git pull`, e se o dia estiver sem sugestão, fazer a sugestão completa no JSON de hoje. Plano de amanhã pode ser criado antes (`dados/<amanhã>.json` + `dias.json`); o script usa o que existir.
+   **Grok, de manhã:** `git pull`. O dia já vem com o plano padrão; só refazer a sugestão se o Lucas pedir algo diferente. Plano de amanhã pode ser criado antes (`dados/<amanhã>.json` + `dias.json`); o script usa o que existir.
 
 Arquivos `dia-YYYY-MM-DD.html` antigos (ex.: `dia-2026-09-28.html`) ficam no repo como arquivo estático legado — **não** tocá-los e **não** criar cópias novas do index. Dias a partir da generic `dia.html` abrem via query string.
 
@@ -145,7 +153,9 @@ Padronizar mensagens assim:
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
-- `scripts/item.py` — calculadora de itens (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
+- `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
+- `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.
+- `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 

@@ -31,7 +31,7 @@
   function fmtPeso(kg) {
     if (kg == null || kg === '' || isNaN(Number(kg))) return '';
     var lb = (Math.round(Number(kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
-    return String(Number(kg)).replace('.', ',') + ' kg (' + lb + ' lb)';
+    return (Math.round(Number(kg) * 10) / 10).toFixed(1).replace('.', ',') + ' kg (' + lb + ' lb)';
   }
 
   function deltaStr(val, meta) {
@@ -105,6 +105,74 @@
       pesoLine;
   }
 
+  function kgStr(n) { return (Math.round(n * 10) / 10).toFixed(1).replace('.', ','); }
+  function lbStr(n) { return (Math.round(n * 2.20462 * 10) / 10).toFixed(1).replace('.', ','); }
+  function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
+
+  // média dos pesos dos 7 dias corridos terminando em cada data
+  function media7(pesos) {
+    return pesos.map(function (p) {
+      var win = pesos.filter(function (q) { var d = diasEntre(q.data, p.data); return d >= 0 && d < 7; });
+      return { data: p.data, kg: avg(win.map(function (q) { return q.kg; })) };
+    });
+  }
+
+  function renderPeso(todos) {
+    var box = document.getElementById('pesoCard');
+    if (!box) return;
+    var pesos = todos.slice(-30);
+    var titulo = '<div class="hist-summary-title">Peso · últimos 30 dias</div>';
+    if (!pesos.length) {
+      box.innerHTML = titulo + '<div class="hist-summary-empty">Mande o peso pro Grok ("peso 88,9") e ele aparece aqui.</div>';
+      return;
+    }
+    var ult = pesos[pesos.length - 1];
+    var semana = pesos.filter(function (p) { return diasEntre(p.data, ult.data) < 7; });
+    var linha = '<div class="peso-now"><b>' + kgStr(ult.kg) + ' kg</b> <span>(' + lbStr(ult.kg) + ' lb) · ' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + '</span></div>';
+    if (semana.length >= 2) {
+      var dlt = semana[semana.length - 1].kg - semana[0].kg;
+      linha += '<div class="peso-delta">7 dias: ' + kgStr(semana[0].kg) + ' → ' + kgStr(ult.kg) + ' kg (' +
+        (dlt > 0 ? '+' : dlt < 0 ? '−' : '') + kgStr(Math.abs(dlt)) + ' kg)</div>';
+    }
+    if (pesos.length < 2) {
+      box.innerHTML = titulo + linha + '<div class="hist-summary-empty">O gráfico aparece a partir de 2 dias com peso.</div>';
+      return;
+    }
+    var med = media7(pesos);
+    var W = 340, H = 150, L = 34, R = 10, T = 12, B = 22;
+    var vals = pesos.map(function (p) { return p.kg; }).concat(med.map(function (m) { return m.kg; }));
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = Math.max(0.3, (hi - lo) * 0.15); lo -= pad; hi += pad;
+    var d0 = pesos[0].data, span = Math.max(1, diasEntre(d0, ult.data));
+    function x(d) { return L + (W - L - R) * diasEntre(d0, d) / span; }
+    function y(v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); }
+    var grid = '';
+    [hi - pad, lo + pad].forEach(function (v) {
+      grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" class="pc-grid"/>' +
+        '<text x="' + (L - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" class="pc-ax" text-anchor="end">' + kgStr(v) + '</text>';
+    });
+    var path = med.map(function (m, i) { return (i ? 'L' : 'M') + x(m.data).toFixed(1) + ',' + y(m.kg).toFixed(1); }).join('');
+    var dots = pesos.map(function (p, i) {
+      return '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="4" class="pc-dot"/>' +
+        '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="14" class="pc-hit" data-i="' + i + '"/>';
+    }).join('');
+    var ax = '<text x="' + L + '" y="' + (H - 4) + '" class="pc-ax">' + esc(labelDia(d0).replace(/ \d{4}$/, '')) + '</text>' +
+      '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + '</text>';
+    box.innerHTML = titulo + linha +
+      '<div class="pc-legend"><span><i class="pc-k-dot"></i>Peso do dia</span><span><i class="pc-k-line"></i>Média 7 dias</span></div>' +
+      '<div class="pc-tip" id="pcTip">Toque num ponto pra ver o valor</div>' +
+      '<svg class="pc-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gráfico de peso">' +
+        grid + '<path d="' + path + '" class="pc-line"/>' + dots + ax + '</svg>';
+    var tip = document.getElementById('pcTip');
+    box.querySelectorAll('.pc-hit').forEach(function (c) {
+      c.addEventListener('click', function () {
+        var i = Number(c.getAttribute('data-i'));
+        var p = pesos[i];
+        tip.textContent = labelDia(p.data).replace(/ \d{4}$/, '') + ': ' + kgStr(p.kg) + ' kg (' + lbStr(p.kg) + ' lb) · média 7d ' + kgStr(med[i].kg) + ' kg';
+      });
+    });
+  }
+
   function renderList(days) {
     var list = document.getElementById('histList');
     if (!list) return;
@@ -157,6 +225,14 @@
         });
     })).then(function (results) {
       var closed = [];
+      var pesos = [];
+      results.forEach(function (r) {
+        if (r.ok && r.data && r.data.peso_kg != null && !isNaN(Number(r.data.peso_kg))) {
+          pesos.push({ data: r.data.data || r.iso, kg: Number(r.data.peso_kg) });
+        }
+      });
+      pesos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+      renderPeso(pesos);
       results.forEach(function (r) {
         if (!r.ok) {
           showWarn('Não deu pra carregar ' + r.iso);
@@ -192,4 +268,12 @@
       renderSummary([]);
       renderList([]);
     });
+})();
+
+// Recarrega ao voltar pro app depois de 1 min (dados sempre frescos)
+(function () {
+  var t0 = Date.now();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && Date.now() - t0 > 60000) location.reload();
+  });
 })();

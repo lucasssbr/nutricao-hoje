@@ -110,8 +110,26 @@ def checar_dia(nome, dia, alimentos):
         avisos.append(f"{nome}: chuck lançado = {chuck_g:g} g (limite 200 g)")
 
 
+def checar_refeicoes(alimentos):
+    p = DADOS / "refeicoes.json"
+    if not p.exists():
+        return
+    refs = ler(p)
+    if not isinstance(refs, dict):
+        return
+    todas = refs.get("refeicoes", {})
+    for rid, r in todas.items():
+        for par in r.get("itens", []):
+            if not (isinstance(par, list) and len(par) == 2 and par[0] in alimentos and num(par[1])):
+                erros.append(f"refeicoes.json/{rid}: item inválido {par!r} (precisa [id existente, quantidade])")
+    for rid in refs.get("plano_padrao", []):
+        if rid not in todas:
+            erros.append(f"refeicoes.json: plano_padrao cita '{rid}', que não existe")
+
+
 def main():
     alimentos = checar_alimentos()
+    checar_refeicoes(alimentos)
     dias = ler(DADOS / "dias.json")
     arquivos = sorted(p.name[:-5] for p in DADOS.glob("*.json") if DATA_RE.match(p.name[:-5]))
     if isinstance(dias, list):

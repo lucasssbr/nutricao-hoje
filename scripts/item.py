@@ -5,6 +5,9 @@ Uso:
   python3 scripts/item.py chuck-costco 200 batata-inglesa 300 ovo-inteiro 2
   python3 scripts/item.py chuck 150            # aceita apelido, se não for ambíguo
   python3 scripts/item.py --lista              # mostra ids e bases
+  python3 scripts/item.py --refeicao cafe-padrao   # refeição favorita pronta
+  python3 scripts/item.py --refeicoes          # lista as favoritas
+  python3 scripts/item.py --plano              # plano padrão do dia inteiro
 
 Quantidade: em gramas quando a base do alimento é em gramas (ex. "100 g"),
 em unidades quando a base é "1 un" / "1 lata". Imprime os itens em JSON
@@ -68,6 +71,44 @@ def montar_item(alimentos, chave, qtd):
     return item
 
 
+def carregar_refeicoes():
+    return json.loads((ROOT / "dados" / "refeicoes.json").read_text(encoding="utf-8"))
+
+
+def resolver_refeicao(refs, chave):
+    chave_l = chave.lower().strip()
+    todas = refs["refeicoes"]
+    if chave_l in todas:
+        return chave_l
+    achados = [k for k, v in todas.items() if chave_l in [x.lower() for x in v.get("apelidos", [])]]
+    if len(achados) == 1:
+        return achados[0]
+    raise SystemExit(f"Refeição '{chave}' não encontrada/ambígua. Opções: {', '.join(todas)}")
+
+
+def montar_refeicao(alimentos, refs, chave):
+    rid = resolver_refeicao(refs, chave)
+    r = refs["refeicoes"][rid]
+    return {"refeicao": r["nome"], "favorita": rid,
+            "itens": [montar_item(alimentos, a, q) for a, q in r["itens"]]}
+
+
+def montar_plano(alimentos=None, refs=None):
+    alimentos = alimentos or carregar_alimentos()
+    refs = refs or carregar_refeicoes()
+    return [montar_refeicao(alimentos, refs, rid) for rid in refs["plano_padrao"]]
+
+
+def total(refeicoes):
+    return {k: round(sum(i[k] for r in refeicoes for i in r["itens"]), 1) for k in MACROS}
+
+
+def imprimir(refeicoes):
+    print(json.dumps(refeicoes, ensure_ascii=False, indent=2))
+    t = total(refeicoes)
+    print(f"TOTAL: {round(t['kcal'])} kcal | P {round(t['p'])} | C {round(t['c'])} | G {round(t['g'])}")
+
+
 def main(args):
     alimentos = carregar_alimentos()
     if not args or args[0] in ("-h", "--help"):
@@ -76,6 +117,20 @@ def main(args):
     if args[0] == "--lista":
         for k, v in alimentos.items():
             print(f"{k:22} base {v['base']:18} {v['kcal']} kcal | P{v['p']} C{v['c']} G{v['g']}  ({v['fonte']})")
+        return
+    if args[0] == "--refeicoes":
+        refs = carregar_refeicoes()
+        for k, v in refs["refeicoes"].items():
+            t = total([montar_refeicao(alimentos, refs, k)])
+            print(f"{k:16} {v['nome']:10} {round(t['kcal'])} kcal | P{round(t['p'])} C{round(t['c'])} G{round(t['g'])}  apelidos: {', '.join(v.get('apelidos', []))}")
+        print("plano_padrao:", " → ".join(refs["plano_padrao"]))
+        return
+    if args[0] == "--refeicao":
+        refs = carregar_refeicoes()
+        imprimir([montar_refeicao(alimentos, refs, k) for k in args[1:]])
+        return
+    if args[0] == "--plano":
+        imprimir(montar_plano(alimentos))
         return
     if len(args) % 2:
         raise SystemExit("Passe pares: <alimento> <quantidade> ...")
