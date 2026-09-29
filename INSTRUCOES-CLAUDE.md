@@ -183,7 +183,7 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 ## Regras de alimentação
 
 - Usar **Nurri** como suplemento/bebida; **não usar whey**.
-- Chuck: **≤ 200 g CRU/dia**, tanto no **log** quanto na **sugestão**.
+- Chuck: **≤ 200 g CRU/dia**, tanto no **log** quanto na **sugestão**. O limite fica em `alimentos.json` → `chuck-costco.limite_dia_g` (o Hoje mostra "Acém 150 / 200 g cru" e a checagem avisa). Outro alimento com limite diário: acrescentar `limite_dia_g` nele.
 - Dar preferência a batata, frutas, tomate, iogurte grego desnatado e **ovos inteiros**.
 - Claras de ovo: **só à noite** e somente se forem necessárias para fechar a proteína/macros.
 - Frango é opcional e pode estar indisponível; não presumir que há frango.

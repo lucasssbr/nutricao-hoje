@@ -9,7 +9,7 @@ Erros (fazem a checagem falhar):
   - item com "alimento" cujos valores não batem com alimentos.json (tolerância 1) — só em dia aberto;
     dia fechado guarda os valores da época e não é recalculado quando a biblioteca muda
   - dia aberto a partir de 2026-09-29 com item sem "alimento"
-Avisos (não falham): chuck acima de 200 g no dia.
+Avisos (não falham): alimento acima do limite_dia_g no dia (ex.: acém 200 g).
 """
 import json
 import pathlib
@@ -54,6 +54,8 @@ def checar_alimentos():
         for m in MACROS:
             if not num(v.get(m)):
                 erros.append(f"alimentos.json/{k}: '{m}' não é número")
+        if "limite_dia_g" in v and not (num(v["limite_dia_g"]) and v["limite_dia_g"] > 0):
+            erros.append(f"alimentos.json/{k}: 'limite_dia_g' deve ser número > 0")
         if v.get("fonte") not in FONTES:
             erros.append(f"alimentos.json/{k}: fonte '{v.get('fonte')}' inválida")
         try:
@@ -74,7 +76,7 @@ def checar_dia(nome, dia, alimentos):
         erros.append(f"{nome}: 'meta' inválida")
     if dia.get("peso_kg") is not None and not num(dia.get("peso_kg")):
         erros.append(f"{nome}: 'peso_kg' deve ser número ou null")
-    chuck_g = 0.0
+    gramas = {}
     for lista in ("lancado", "sugestao"):
         refeicoes = dia.get(lista)
         if not isinstance(refeicoes, list):
@@ -105,10 +107,12 @@ def checar_dia(nome, dia, alimentos):
                 ruins = [f"{m} {it[m]}≠{exp[m]}" for m in MACROS if abs(it[m] - exp[m]) > TOL]
                 if ruins and not dia.get("fechado"):
                     erros.append(f"{onde}: valores não batem com a biblioteca ({', '.join(ruins)})")
-                if aid == "chuck-costco" and lista == "lancado":
-                    chuck_g += float(it["quantidade"])
-    if chuck_g > 200:
-        avisos.append(f"{nome}: chuck lançado = {chuck_g:g} g (limite 200 g)")
+                if lista == "lancado" and "limite_dia_g" in alimentos[aid]:
+                    gramas[aid] = gramas.get(aid, 0.0) + float(it["quantidade"])
+    for aid, g in gramas.items():
+        lim = alimentos[aid]["limite_dia_g"]
+        if g > lim:
+            avisos.append(f"{nome}: {aid} lançado = {g:g} g (limite {lim:g} g)")
 
 
 def checar_refeicoes(alimentos):

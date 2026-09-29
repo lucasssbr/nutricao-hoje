@@ -294,6 +294,7 @@
     })
     .then(function (data) {
       render(data);
+      mostrarLimites(data);
       if (isHoje && window.NutriObjetivo) window.NutriObjetivo.montarHoje(data.peso_kg, data.data);
     })
     .catch(function () {
@@ -303,6 +304,45 @@
         showError('Não consegui carregar os dados de ' + ddmm(pageDia));
       }
     });
+
+  // Contador de alimentos com limite diário (ex.: acém ≤ 200 g cru), definido em alimentos.json → limite_dia_g
+  function mostrarLimites(data) {
+    fetch('dados/alimentos.json', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function (ali) {
+        function soma(meals, id) {
+          var g = 0;
+          (meals || []).forEach(function (m) {
+            (m.itens || []).forEach(function (it) { if (it.alimento === id) g += Number(it.quantidade) || 0; });
+          });
+          return g;
+        }
+        var linhas = [];
+        Object.keys(ali).forEach(function (id) {
+          var a = ali[id], lim = a && Number(a.limite_dia_g);
+          if (!lim) return;
+          var comido = soma(data.lancado, id), plano = data.fechado ? 0 : soma(data.sugestao, id);
+          if (!comido && !plano) return;
+          var nome = (a.apelidos && a.apelidos[0]) || a.nome;
+          nome = nome.charAt(0).toUpperCase() + nome.slice(1);
+          var over = comido > lim, overPlano = !over && comido + plano > lim;
+          var txt = '<b>' + esc(nome) + '</b> ' + ri(comido) + ' / ' + ri(lim) + ' g cru';
+          if (plano) txt += ' · +' + ri(plano) + ' g na sugestão';
+          if (over) txt += ' · passou ' + ri(comido - lim) + ' g';
+          else if (overPlano) txt += ' · sugestão passa do limite';
+          linhas.push('<div class="limite' + (over || overPlano ? ' over' : '') + '">' + txt + '</div>');
+        });
+        var hero = document.getElementById('hero');
+        var old = document.getElementById('limites');
+        if (old) old.remove();
+        if (linhas.length && hero) {
+          var macros = hero.querySelector('.macros');
+          var html = '<div id="limites" class="limites">' + linhas.join('') + '</div>';
+          if (macros) macros.insertAdjacentHTML('afterend', html); else hero.insertAdjacentHTML('beforeend', html);
+        }
+      })
+      .catch(function () { /* sem biblioteca: não mostra o contador */ });
+  }
 
   // Dia futuro sem arquivo: calcula o plano padrão aqui mesmo (mesma conta do scripts/item.py)
   function previaPlano() {
@@ -319,17 +359,19 @@
         var n = parseFloat(m[1].replace(',', '.')), f = q / n;
         var und = m[2] === 'g' ? ' g' : (m[2] === 'lata' ? ' lata' : ' un');
         function r1(v) { return Math.round(v * f * 10) / 10; }
-        return { nome: a.nome, qtd: q + und, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
+        return { nome: a.nome, qtd: q + und, alimento: id, quantidade: q, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
       }
       var sugestao = (refs.plano_padrao || []).map(function (rid) {
         var r = refs.refeicoes[rid];
         return { refeicao: r.nome, itens: r.itens.map(function (par) { return item(par[0], par[1]); }) };
       });
-      render({
+      var previa = {
         data: pageDia, fechado: false, previa: true, lancado: [], sugestao: sugestao,
         meta: metas || { kcal: 1570, p: 180, c: 100, g: 50 },
         sugestao_nota: 'Prévia do plano padrão · vira o plano oficial à meia-noite (pra mudar, peça ao Grok)'
-      });
+      };
+      render(previa);
+      mostrarLimites(previa);
       var stamp = document.getElementById('updateStamp');
       if (stamp) stamp.textContent = 'Prévia · ainda não é um dia salvo';
     }).catch(function () {

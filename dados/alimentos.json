@@ -1,5 +1,5 @@
 {
-  "_sobre": "Biblioteca de alimentos do Lucas. Fonte única dos valores nutricionais. Pesos sempre crus. Valores = por 'base'. fonte: rotulo | usda | openfoodfacts | lucas | estimado.",
+  "_sobre": "Biblioteca de alimentos do Lucas. Fonte única dos valores nutricionais. Pesos sempre crus. Valores = por 'base'. fonte: rotulo | usda | openfoodfacts | lucas | estimado. limite_dia_g (opcional): máximo por dia em gramas cruas — o site mostra o contador e a checagem avisa.",
   "nurri-vanilla": {
     "nome": "Nurri Vanilla Milk Shake",
     "apelidos": [
@@ -31,6 +31,7 @@
     "p": 20,
     "c": 0,
     "g": 17,
+    "limite_dia_g": 200,
     "fonte": "usda",
     "salvo_em": "2026-09-29",
     "obs": "Kirkland Beef Chuck Steak Boneless / Carne Asada #34182, blade tenderized — etiqueta sem tabela nutricional. Referência USDA: \"Beef, chuck eye steak, boneless, separable lean and fat, trimmed to 0\" fat, choice, raw\" = 227 | P19 | C0 | G17 por 100 g. Mantido 223 | P20 | G17 (diferença < 2%). Peso sempre cru; máx. 200 g/dia."

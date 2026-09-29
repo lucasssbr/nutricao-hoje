@@ -273,6 +273,12 @@
   details.suggest-meal .suggest-items { margin-top: 8px; }
   details.suggest-meal:first-of-type { margin-top: 4px; }
 
+  /* contador de alimento com limite diário (ex.: acém) */
+  .limites { margin-top: 10px; }
+  .limite { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .limite b { color: var(--text); }
+  .limite.over, .limite.over b { color: var(--over); }
+
   /* card "Próxima refeição" dentro do hero */
   .next-meal {
     margin-top: 12px; padding: 12px 14px; border-radius: 16px;
