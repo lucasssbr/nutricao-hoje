@@ -65,38 +65,60 @@ Meta:      1570 kcal | P 180 | C 100 | G 50
 Restante:  548 kcal | P 103 | C -5 | G 13
 ```
 
-## Fluxo diário: chat + HTML
+## Fluxo diário: JSON + HTML
 
-1. No início do dia, preparar uma **sugestão completa** para o dia.
-2. Quando uma refeição for lançada/confirmada, recalcular o que já foi consumido e refazer a sugestão do **restante do dia**.
-3. Uma sugestão **NUNCA conta como consumo** até que o usuário a confirme explicitamente. Não transformar alimentos apenas sugeridos em refeições lançadas.
-- `sugestao-*.html` de dia futuro é rascunho. No início desse dia, refazer a sugestão com a tabela antes de usar.
-4. Ao fechar o dia:
-   1. Arquivar index → dia-YYYY-MM-DD.html
-   2. Histórico: novo dia no topo, com 4 macros + desvio
-   3. Novo index: data-dia, título, carimbo, consumo zerado
-   4. Menu "Plano": aponta pro próximo sugestao-*.html, ou some
-   5. Atualizar "Estado atual" no INSTRUCOES
-   6. Commit `fechar DD/MM` + push
-   7. Conferir no diff que só o dia recém-arquivado é arquivo novo
+Fonte da verdade do dia corrente: `dados/YYYY-MM-DD.json`. O `index.html` só lê esse JSON (`fetch` com `cache: 'no-store'`) via `body data-dia` e **não** deve ser editado no dia a dia para lançar/sugerir.
 
-O chat orienta as mudanças e o HTML é o registro visível. Manter datas, valores de consumo e valores sugeridos claramente separados.
+Schema mínimo do JSON:
+
+```json
+{
+  "data": "YYYY-MM-DD",
+  "atualizado": "YYYY-MM-DDTHH:MM:SS-07:00",
+  "fechado": false,
+  "meta": { "kcal": 1570, "p": 180, "c": 100, "g": 50 },
+  "peso_kg": null,
+  "lancado": [ { "refeicao": "…", "itens": [ { "nome", "qtd", "kcal", "p", "c", "g" } ] } ],
+  "sugestao": [ { "refeicao": "…", "itens": [ … ] } ]
+}
+```
+
+`atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
+
+1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só pela tabela). Ajustar `index.html` `data-dia` para essa data (uma vez).
+2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
+3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
+4. `sugestao-*.html` de dia futuro continua como rascunho de referência. No início desse dia, montar o JSON do dia com a tabela antes de usar.
+5. **Fechar o dia**:
+   1. No JSON do dia: `fechado: true` e `atualizado` atual.
+   2. Copiar o `index.html` atual → `dia-YYYY-MM-DD.html` (manter `data-dia` fixo nesse arquivo arquivado; ele continua lendo o JSON daquele dia).
+   3. Criar o JSON do **próximo** dia com `lancado: []`, meta, sugestão inicial.
+   4. Mudar `index.html` `data-dia` para o novo dia.
+   5. Histórico: ainda **manual** por enquanto (ver #06) — novo dia no topo com 4 macros + desvio.
+   6. Menu "Plano": aponta pro próximo `sugestao-*.html`, ou some.
+   7. Atualizar "Estado atual" neste arquivo.
+   8. Commit `fechar DD/MM` + push.
+   9. Conferir no diff que só o dia recém-arquivado (e o JSON novo) são arquivos novos esperados.
+
+O chat orienta; o **JSON** é o registro editável do dia; o HTML renderiza. Manter datas, consumo (`lancado`) e sugestão claramente separados.
 
 ## Commits
 
 Padronizar mensagens assim:
 
-- `log DD/MM: <refeição>` — refeição lançada/confirmada
-- `sugestao DD/MM: refeita` — sugestão do dia ou do restante refeita
-- `fechar DD/MM` — arquivar o dia e resetar o index
+- `log DD/MM: <refeição>` — item(ns) em `lancado` + `atualizado` no JSON
+- `sugestao DD/MM: refeita` — array `sugestao` reescrito no JSON
+- `fechar DD/MM` — `fechado: true`, arquivar dia-*.html, JSON do próximo dia, `data-dia` no index
+- `dados: DD/MM em JSON` — criar/ajustar arquivo do dia
 - `docs: <assunto>` — só documentação (ex.: este arquivo)
 
 ## Mapa de arquivos
 
-- `index.html` — página **Hoje**, o dia corrente e seu estado atual.
-- `historico.html` — índice/lista dos dias arquivados.
-- `dia-*.html` — páginas fechadas e arquivadas; são registros históricos e não devem ser quebradas.
-- `sugestao-*.html` — sugestões completas de um dia, inclusive sugestões futuras ainda não lançadas.
+- `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, meta, fechado, carimbo).
+- `index.html` — shell **Hoje**; lê `dados/` + `data-dia`. Não editar macros no HTML no dia a dia.
+- `historico.html` — índice/lista dos dias arquivados (ainda manual; automação em #06).
+- `dia-*.html` — cópias arquivadas do index no fechamento; `data-dia` fixo; não quebrar.
+- `sugestao-*.html` — rascunhos/planos de referência (não são log).
 - `INSTRUCOES-CLAUDE.md` — estas regras (tabela, fluxo, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
@@ -118,7 +140,7 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 - Manter a interface em português.
 - Manter o badge **NÃO LANÇADO** quando uma refeição/plano ainda for apenas sugestão.
 - Não apagar, reescrever ou quebrar dias arquivados ao editar o dia atual.
-- Não mudar o conteúdo das refeições do `index.html` sem uma confirmação explícita do usuário; sugestões e consumo confirmado devem permanecer distinguíveis.
+- Não mudar `lancado` / `sugestao` no JSON sem confirmação explícita do usuário; sugestões e consumo confirmado devem permanecer distinguíveis. No dia a dia, editar o JSON — não o HTML do index.
 
 ## Como editar com segurança
 
@@ -134,8 +156,9 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 Atualizar **esta seção a cada fechamento de dia**.
 
 - Data de referência: **2026-09-29**
-- Dia **28 set 2026** arquivado em `dia-2026-09-28.html` (total 1576 | P180 | C126 | G43).
-- Dia **29 set 2026** = **Hoje** (`index.html`): consumido **0**, com sugestão completa **não lançada** (~1549 | P180 | C100 | G50).
+- Dia **28 set 2026** arquivado em `dia-2026-09-28.html` (total 1576 | P180 | C126 | G43) — HTML estático pré-JSON.
+- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (1549 | P180 | C100 | G50), `fechado: false`.
 - `sugestao-2026-09-30.html` existe (plano de referência, não é log).
+- Histórico ainda manual (#06).
 
 Conferir os arquivos no repo antes de assumir que o estado continua igual.
