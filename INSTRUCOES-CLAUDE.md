@@ -145,6 +145,15 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Não apagar, reescrever ou quebrar dias arquivados ao editar o dia atual.
 - Não mudar `lancado` / `sugestao` no JSON sem confirmação explícita do usuário; sugestões e consumo confirmado devem permanecer distinguíveis. No dia a dia, editar o JSON — não o HTML do index.
 
+## Quem mexe em quê
+
+Dois assistentes trabalham neste repo:
+
+- **Grok** — uso diário: refeições, sugestões, peso, fechar o dia, alimentos novos. Mexe só em `dados/` (e em `index.html` apenas no `data-dia`, ao virar o dia).
+- **Claude** — melhorias do site: `render.js`, `estilo.css`, `historico.js`, páginas HTML e este arquivo.
+
+**Sempre** rodar `git pull --rebase origin main` antes de editar e antes do push. Se aparecer conflito, parar e avisar o Lucas.
+
 ## Como editar com segurança
 
 1. Alterar os arquivos dentro deste repositório (`/workspace/nutricao-hoje-pages/`), nunca uma cópia solta como fonte final.
