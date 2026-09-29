@@ -90,15 +90,16 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
-1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só pela tabela). Ajustar `index.html` `data-dia` para essa data (uma vez).
+1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só pela tabela). **Acrescentar a data em `dados/dias.json`**. Ajustar `index.html` `data-dia` para essa data (uma vez).
 2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
-5. **Fechar o dia** (simplificado — **não** copiar mais `index` → `dia-*.html`):
+5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
+6. **Fechar o dia** (simplificado — **não** copiar mais `index` → `dia-*.html`):
    1. No JSON do dia: `fechado: true` e `atualizado` atual.
-   2. Histórico: acrescentar o dia **manualmente** com link `dia.html?d=YYYY-MM-DD` (automação #07 depois) — macros + desvio no topo.
+   2. Histórico atualiza **sozinho** (`historico.html` + `historico.js` lê `dados/dias.json` e só lista `fechado: true`) — **não** editar o HTML do histórico.
    3. Mudar `index.html` `data-dia` para o **próximo** dia; se o JSON desse dia já existir, ele vira o Hoje.
-   4. Criar o JSON do próximo dia (plano/sugestão) se ainda não existir + apontar o botão **Plano** do menu para `dia.html?d=YYYY-MM-DD` desse plano.
+   4. Criar o JSON do próximo dia (plano/sugestão) se ainda não existir, **incluir a data em `dados/dias.json`**, e apontar o botão **Plano** do menu para `dia.html?d=YYYY-MM-DD` desse plano.
    5. Atualizar "Estado atual" neste arquivo.
    6. Commit `fechar DD/MM` + push.
 
@@ -112,18 +113,20 @@ Padronizar mensagens assim:
 
 - `log DD/MM: <refeição>` — item(ns) em `lancado` + `atualizado` no JSON
 - `sugestao DD/MM: refeita` — array `sugestao` reescrito no JSON
-- `fechar DD/MM` — `fechado: true`, histórico + `data-dia` no próximo, JSON/plano do próximo, push (sem copiar index→dia-*.html)
-- `dados: DD/MM em JSON` — criar/ajustar arquivo do dia
+- `fechar DD/MM` — `fechado: true`, `data-dia` no próximo, JSON/plano do próximo (+ `dias.json`), push (sem copiar index→dia-*.html; histórico é automático)
+- `peso DD/MM` — `peso_kg` no JSON do dia + `atualizado`
+- `dados: DD/MM em JSON` — criar/ajustar arquivo do dia (+ entrada em `dias.json` se for novo)
 - `docs: <assunto>` — só documentação (ex.: este arquivo)
 
 ## Mapa de arquivos
 
-- `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, `sugestao_nota`, meta, fechado, carimbo).
+- `dados/dias.json` — índice ordenado de datas (`["YYYY-MM-DD", …]`); todo JSON novo entra aqui.
+- `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, `sugestao_nota`, meta, `peso_kg`, fechado, carimbo).
 - `index.html` — shell **Hoje**; `body data-dia="YYYY-MM-DD"` + `estilo.css` + `render.js`. Não editar macros no HTML no dia a dia.
 - `dia.html` — shell genérico de qualquer dia; **sem** `data-dia`. Lê `?d=YYYY-MM-DD` e busca `dados/{d}.json`. Título mostra a data (ex.: "30 set"), não "Hoje".
 - `estilo.css` — CSS compartilhado (extraído do index).
 - `render.js` — script compartilhado: se `body[data-dia]` → modo Hoje (index); senão → usa `?d=` (dia.html). Erro: "Não consegui carregar os dados de DD/MM".
-- `historico.html` — índice/lista dos dias (ainda manual; automação em #07). Links para `dia.html?d=…`.
+- `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
 - `INSTRUCOES-CLAUDE.md` — estas regras (tabela, fluxo, commits).
@@ -164,11 +167,12 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 Atualizar **esta seção a cada fechamento de dia**.
 
 - Data de referência: **2026-09-29**
-- Dia **28 set 2026** legado em `dia-2026-09-28.html` (total 1576 | P180 | C126 | G43) — HTML estático pré-JSON; **não tocar**.
-- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (~1549 | P180 | C100 | G50) + `sugestao_nota`, `fechado: false`.
+- Índice: `dados/dias.json` → 28, 29 e 30 set 2026.
+- Dia **28 set 2026**: `dados/2026-09-28.json` (`fechado: true`, ~1576 | P181 | C126 | G43) + HTML legado `dia-2026-09-28.html` (**não tocar**).
+- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (~1549 | P180 | C100 | G50) + `sugestao_nota`, `fechado: false`, `peso_kg: null`.
 - Plano **30 set 2026**: `dados/2026-09-30.json` (`fechado: false`, `lancado: []`, sugestão ~1568 | P185 | C104 | G50). Menu **Plano** → `dia.html?d=2026-09-30`.
 - `sugestao-2026-09-30.html` permanece no repo (rascunho antigo); **fora** dos menus.
-- Shells: `estilo.css` + `render.js`; `dia.html?d=` para qualquer dia.
-- Histórico ainda manual (#07).
+- Shells: `estilo.css` + `render.js`; `dia.html?d=` para qualquer dia; peso sob a data quando `peso_kg` está no JSON.
+- Histórico automático (#07): `historico.html` + `historico.js` (só `fechado: true`).
 
 Conferir os arquivos no repo antes de assumir que o estado continua igual.
