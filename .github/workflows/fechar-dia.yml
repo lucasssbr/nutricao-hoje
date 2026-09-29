@@ -3,8 +3,11 @@ name: Fechar o dia
 on:
   schedule:
     # 07:05 e 08:05 UTC = 00:05 em Los Angeles (verão / inverno). A outra execução não faz nada.
+    # 08:35 UTC = segunda tentativa (o GitHub às vezes atrasa ou descarta execuções agendadas).
+    # O script é idempotente: se o dia já foi fechado, não faz nada.
     - cron: "5 7 * * *"
     - cron: "5 8 * * *"
+    - cron: "35 8 * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,8 +22,8 @@ jobs:
   fechar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Fechar dia e abrir o novo
