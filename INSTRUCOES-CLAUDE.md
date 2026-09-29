@@ -79,26 +79,30 @@ Schema mínimo do JSON:
   "meta": { "kcal": 1570, "p": 180, "c": 100, "g": 50 },
   "peso_kg": null,
   "lancado": [ { "refeicao": "…", "itens": [ { "nome", "qtd", "kcal", "p", "c", "g" } ] } ],
-  "sugestao": [ { "refeicao": "…", "itens": [ … ] } ]
+  "sugestao": [ { "refeicao": "…", "itens": [ … ] } ],
+  "sugestao_nota": "opcional — dica do card e sob o Dia projetado"
 }
 ```
+
+`sugestao_nota` é **opcional**. Se presente (string não vazia): vira o hint do card de sugestão **e** aparece debaixo de "Dia projetado". Se ausente: não mostra nenhum dos dois. **Sem** hint hardcoded no JS.
+
+Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazio; **"Pra fechar o dia"** quando `lancado` tem itens.
 
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
 1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só pela tabela). Ajustar `index.html` `data-dia` para essa data (uma vez).
 2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
-4. `sugestao-*.html` de dia futuro continua como rascunho de referência. No início desse dia, montar o JSON do dia com a tabela antes de usar.
-5. **Fechar o dia**:
+4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
+5. **Fechar o dia** (simplificado — **não** copiar mais `index` → `dia-*.html`):
    1. No JSON do dia: `fechado: true` e `atualizado` atual.
-   2. Copiar o `index.html` atual → `dia-YYYY-MM-DD.html` (manter `data-dia` fixo nesse arquivo arquivado; ele continua lendo o JSON daquele dia).
-   3. Criar o JSON do **próximo** dia com `lancado: []`, meta, sugestão inicial.
-   4. Mudar `index.html` `data-dia` para o novo dia.
-   5. Histórico: ainda **manual** por enquanto (ver #06) — novo dia no topo com 4 macros + desvio.
-   6. Menu "Plano": aponta pro próximo `sugestao-*.html`, ou some.
-   7. Atualizar "Estado atual" neste arquivo.
-   8. Commit `fechar DD/MM` + push.
-   9. Conferir no diff que só o dia recém-arquivado (e o JSON novo) são arquivos novos esperados.
+   2. Histórico: acrescentar o dia **manualmente** com link `dia.html?d=YYYY-MM-DD` (automação #07 depois) — macros + desvio no topo.
+   3. Mudar `index.html` `data-dia` para o **próximo** dia; se o JSON desse dia já existir, ele vira o Hoje.
+   4. Criar o JSON do próximo dia (plano/sugestão) se ainda não existir + apontar o botão **Plano** do menu para `dia.html?d=YYYY-MM-DD` desse plano.
+   5. Atualizar "Estado atual" neste arquivo.
+   6. Commit `fechar DD/MM` + push.
+
+Arquivos `dia-YYYY-MM-DD.html` antigos (ex.: `dia-2026-09-28.html`) ficam no repo como arquivo estático legado — **não** tocá-los e **não** criar cópias novas do index. Dias a partir da generic `dia.html` abrem via query string.
 
 O chat orienta; o **JSON** é o registro editável do dia; o HTML renderiza. Manter datas, consumo (`lancado`) e sugestão claramente separados.
 
@@ -108,17 +112,20 @@ Padronizar mensagens assim:
 
 - `log DD/MM: <refeição>` — item(ns) em `lancado` + `atualizado` no JSON
 - `sugestao DD/MM: refeita` — array `sugestao` reescrito no JSON
-- `fechar DD/MM` — `fechado: true`, arquivar dia-*.html, JSON do próximo dia, `data-dia` no index
+- `fechar DD/MM` — `fechado: true`, histórico + `data-dia` no próximo, JSON/plano do próximo, push (sem copiar index→dia-*.html)
 - `dados: DD/MM em JSON` — criar/ajustar arquivo do dia
 - `docs: <assunto>` — só documentação (ex.: este arquivo)
 
 ## Mapa de arquivos
 
-- `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, meta, fechado, carimbo).
-- `index.html` — shell **Hoje**; lê `dados/` + `data-dia`. Não editar macros no HTML no dia a dia.
-- `historico.html` — índice/lista dos dias arquivados (ainda manual; automação em #06).
-- `dia-*.html` — cópias arquivadas do index no fechamento; `data-dia` fixo; não quebrar.
-- `sugestao-*.html` — rascunhos/planos de referência (não são log).
+- `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, `sugestao_nota`, meta, fechado, carimbo).
+- `index.html` — shell **Hoje**; `body data-dia="YYYY-MM-DD"` + `estilo.css` + `render.js`. Não editar macros no HTML no dia a dia.
+- `dia.html` — shell genérico de qualquer dia; **sem** `data-dia`. Lê `?d=YYYY-MM-DD` e busca `dados/{d}.json`. Título mostra a data (ex.: "30 set"), não "Hoje".
+- `estilo.css` — CSS compartilhado (extraído do index).
+- `render.js` — script compartilhado: se `body[data-dia]` → modo Hoje (index); senão → usa `?d=` (dia.html). Erro: "Não consegui carregar os dados de DD/MM".
+- `historico.html` — índice/lista dos dias (ainda manual; automação em #07). Links para `dia.html?d=…`.
+- `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
+- `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
 - `INSTRUCOES-CLAUDE.md` — estas regras (tabela, fluxo, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
@@ -136,7 +143,7 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 
 ## Regras de UX e conteúdo
 
-- Mobile-first, escuro e direto; CSS inline é aceitável.
+- Mobile-first, escuro e direto; CSS em `estilo.css` (compartilhado). CSS inline só em páginas legadas.
 - Manter a interface em português.
 - Manter o badge **NÃO LANÇADO** quando uma refeição/plano ainda for apenas sugestão.
 - Não apagar, reescrever ou quebrar dias arquivados ao editar o dia atual.
@@ -147,7 +154,7 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 1. Alterar os arquivos dentro deste repositório (`/workspace/nutricao-hoje-pages/`), nunca uma cópia solta como fonte final.
 2. Antes de editar, conferir a data corrente, o status do Git e os arquivos arquivados.
 3. Fazer mudanças pequenas e verificáveis; preservar links, datas, metas, badges e a estrutura HTML existente.
-4. Revisar o diff e confirmar que nenhum `dia-*.html` foi alterado acidentalmente (salvo fechamento de dia intencional).
+4. Revisar o diff e confirmar que nenhum `dia-*.html` legado foi alterado acidentalmente.
 5. Fazer commit na branch `main` e publicar com `git push origin main`.
 6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário.
 
@@ -156,9 +163,11 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 Atualizar **esta seção a cada fechamento de dia**.
 
 - Data de referência: **2026-09-29**
-- Dia **28 set 2026** arquivado em `dia-2026-09-28.html` (total 1576 | P180 | C126 | G43) — HTML estático pré-JSON.
-- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (1549 | P180 | C100 | G50), `fechado: false`.
-- `sugestao-2026-09-30.html` existe (plano de referência, não é log).
-- Histórico ainda manual (#06).
+- Dia **28 set 2026** legado em `dia-2026-09-28.html` (total 1576 | P180 | C126 | G43) — HTML estático pré-JSON; **não tocar**.
+- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (~1549 | P180 | C100 | G50) + `sugestao_nota`, `fechado: false`.
+- Plano **30 set 2026**: `dados/2026-09-30.json` (`fechado: false`, `lancado: []`, sugestão ~1568 | P185 | C104 | G50). Menu **Plano** → `dia.html?d=2026-09-30`.
+- `sugestao-2026-09-30.html` permanece no repo (rascunho antigo); **fora** dos menus.
+- Shells: `estilo.css` + `render.js`; `dia.html?d=` para qualquer dia.
+- Histórico ainda manual (#07).
 
 Conferir os arquivos no repo antes de assumir que o estado continua igual.
