@@ -83,11 +83,11 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
-1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só por `alimentos.json`). **Acrescentar a data em `dados/dias.json`**. Ajustar `index.html` `data-dia` para essa data (uma vez).
+1. **Início do dia** — o JSON do dia e o `data-dia` já foram criados pelo fechamento automático da meia-noite. O Grok só faz `git pull` e, se `sugestao` estiver vazia, escreve a sugestão completa (macros só por `alimentos.json`). **Não** mexer no `data-dia` do index.
 2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
-5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
+5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
 6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/fechar-dia.yml` → `scripts/fechar_dia.py`) faz sozinho:
    1. `fechado: true` em todo dia passado ainda aberto;
    2. cria o JSON do novo dia se não existir (vazio, com nota "peça ao Grok") e inclui em `dados/dias.json`;
@@ -106,7 +106,7 @@ Padronizar mensagens assim:
 
 - `log DD/MM: <refeição>` — item(ns) em `lancado` + `atualizado` no JSON
 - `sugestao DD/MM: refeita` — array `sugestao` reescrito no JSON
-- `fechar DD/MM` — `fechado: true`, `data-dia` no próximo, JSON/plano do próximo (+ `dias.json`), push (sem copiar index→dia-*.html; histórico é automático)
+- `fechar DD/MM (automático)` — feito pelo GitHub Actions à meia-noite; manual só `fechado: true` se o Lucas pedir antes
 - `peso DD/MM` — `peso_kg` no JSON do dia + `atualizado`
 - `dados: DD/MM em JSON` — criar/ajustar arquivo do dia (+ entrada em `dias.json` se for novo)
 - `docs: <assunto>` — só documentação (ex.: este arquivo)
@@ -149,8 +149,8 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 
 Dois assistentes trabalham neste repo:
 
-- **Grok** — uso diário: refeições, sugestões, peso, fechar o dia, alimentos novos. Mexe só em `dados/` (e em `index.html` apenas no `data-dia`, ao virar o dia).
-- **Claude** — melhorias do site: `render.js`, `estilo.css`, `historico.js`, páginas HTML e este arquivo.
+- **Grok** — uso diário: refeições, sugestões, peso, alimentos novos. Mexe só em `dados/`. Virar o dia é automático (não mexer no `data-dia`).
+- **Claude** — melhorias do site: `render.js`, `estilo.css`, `historico.js`, páginas HTML, `scripts/`, `.github/` e este arquivo.
 
 **Sempre** rodar `git pull --rebase origin main` antes de editar e antes do push. Se aparecer conflito, parar e avisar o Lucas.
 
@@ -162,7 +162,7 @@ Dois assistentes trabalham neste repo:
 4. Revisar o diff e confirmar que nenhum `dia-*.html` legado foi alterado acidentalmente.
 5. Fazer commit na branch `main` e publicar com `git push origin main`.
 6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário.
-7. Toda alteração em `render.js` ou `estilo.css` deve incrementar o `?v=` nos dois HTML (`index.html` e `dia.html`).
+7. Toda alteração em `render.js`, `estilo.css` ou `historico.js` deve incrementar o `?v=` nos HTML que os carregam.
 
 ## Estado atual
 

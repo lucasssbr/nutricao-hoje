@@ -183,7 +183,7 @@
     }
 
     function macroFill(val, m, cls) {
-      var over = val > m;
+      var over = cls !== 'p' && val > m; // proteína é piso: passar da meta é bom
       var w = barPct(val, m);
       var bg = over ? 'var(--over)' : (cls === 'p' ? 'var(--protein)' : cls === 'c' ? 'var(--carbs)' : 'var(--fat)');
       var overClass = over ? ' --over' : '';
