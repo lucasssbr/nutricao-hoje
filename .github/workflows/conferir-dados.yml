@@ -5,8 +5,10 @@ on:
     branches: [main]
     paths:
       - "dados/**"
-      - "index.html"
       - "scripts/**"
+      - "*.html"
+      - "*.js"
+      - "*.css"
   workflow_dispatch:
 
 jobs:
@@ -19,3 +21,18 @@ jobs:
           python-version: "3.12"
       - name: Conferir JSON e contas
         run: python scripts/validar.py
+
+  # Abre as páginas num navegador de verdade e falha se alguma quebrar (erro de JS, dado faltando).
+  paginas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Instalar navegador de teste (Playwright + Chromium)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Testar páginas
+        run: |
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          sleep 1
+          node scripts/testar_paginas.js http://localhost:8765

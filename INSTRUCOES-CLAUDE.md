@@ -75,7 +75,7 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 - Lucas quer uma meta fixa ("quero 0,5 kg por semana") → `meta_modo: "manual"` + `meta_semanal_kg`. Voltar pro cálculo: `meta_modo: "auto"` + `meta.py`.
 - Meta acima de 1,2 kg/semana gera aviso na checagem: comentar com o Lucas antes de salvar.
 
-**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
+**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. O mesmo workflow também **abre as páginas num navegador** (`scripts/testar_paginas.js`: Hoje, dia, prévia, Histórico, Alimentos) e falha se alguma quebrar. Claude: ao mexer em HTML/JS/CSS, rodar local antes do push (`python3 -m http.server 8765 &` + `node scripts/testar_paginas.js http://localhost:8765`). A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
 
