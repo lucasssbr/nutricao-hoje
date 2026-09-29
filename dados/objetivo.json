@@ -19,6 +19,7 @@
       "bmr": 1878,
       "atividade": 1.45,
       "gasto_estimado": 2723,
+      "gasto_fonte": "estimado",
       "ingestao_media": 1570,
       "ingestao_fonte": "meta de kcal (ainda sem dias fechados no objetivo)",
       "deficit_dia": 1153,
