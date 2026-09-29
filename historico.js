@@ -23,9 +23,44 @@
         t.p += Number(i.p) || 0;
         t.c += Number(i.c) || 0;
         t.g += Number(i.g) || 0;
+        if (i.fibra != null) t.fibra = (t.fibra || 0) + (Number(i.fibra) || 0);
       });
     });
     return t;
+  }
+
+  // Planilha (CSV) com todos os dias: pra fazer as contas por fora (Numbers, Excel, Google Sheets)
+  function csvDias(dias) {
+    function n(v) { return v == null || v === '' || isNaN(Number(v)) ? '' : String(Math.round(Number(v) * 10) / 10); }
+    var linhas = ['data,fechado,kcal,proteina_g,carbo_g,gordura_g,fibra_g,peso_kg,meta_kcal,meta_p,meta_c,meta_g'];
+    dias.forEach(function (d) {
+      var m = d.meta || {};
+      linhas.push([d.data, d.fechado ? 'sim' : 'nao', n(d.cons.kcal), n(d.cons.p), n(d.cons.c), n(d.cons.g),
+        n(d.cons.fibra), n(d.peso), n(m.kcal), n(m.p), n(m.c), n(m.g)].join(','));
+    });
+    return '\ufeff' + linhas.join('\n') + '\n';
+  }
+
+  function ligarBotaoCsv(dias) {
+    var btn = document.getElementById('csvBtn');
+    if (!btn || !dias.length) return;
+    btn.hidden = false;
+    btn.onclick = function () {
+      var nome = 'nutricao-' + dias[0].data + '-a-' + dias[dias.length - 1].data + '.csv';
+      var blob = new Blob([csvDias(dias)], { type: 'text/csv;charset=utf-8' });
+      var arq = typeof File === 'function' ? new File([blob], nome, { type: 'text/csv' }) : null;
+      // iPhone: menu de compartilhar (salvar em Arquivos, abrir no Numbers, mandar); senão, download
+      if (arq && navigator.canShare && navigator.canShare({ files: [arq] })) {
+        navigator.share({ files: [arq], title: nome }).catch(function () {});
+        return;
+      }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
   }
 
   function fmtPeso(kg) {
@@ -328,6 +363,14 @@
       closed.sort(function (a, b) {
         return a.data < b.data ? 1 : (a.data > b.data ? -1 : 0);
       });
+      var todos = [];
+      results.forEach(function (r) {
+        if (!r.ok) return;
+        var dd = r.data || {};
+        todos.push({ data: dd.data || r.iso, fechado: !!dd.fechado, meta: dd.meta, cons: dd.cons || sumMeals(dd.lancado || []), peso: dd.peso_kg });
+      });
+      todos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+      ligarBotaoCsv(todos);
       renderSummary(closed);
       renderList(closed);
     });

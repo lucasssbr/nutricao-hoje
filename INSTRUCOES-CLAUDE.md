@@ -171,7 +171,7 @@ Padronizar mensagens assim:
 - `dia.html` — shell genérico de qualquer dia; **sem** `data-dia`. Lê `?d=YYYY-MM-DD` e busca `dados/{d}.json`. Título mostra a data (ex.: "30 set"), não "Hoje".
 - `estilo.css` — CSS compartilhado (extraído do index).
 - `render.js` — script compartilhado: se `body[data-dia]` → modo Hoje (index); senão → usa `?d=` (dia.html). Erro: "Não consegui carregar os dados de DD/MM".
-- `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
+- `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`; botão **Baixar planilha (CSV)** com todos os dias (kcal, macros, fibra, peso, metas) — no iPhone abre o menu de compartilhar.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
 - `alimentos.html` + `alimentos.js` — página **Alimentos** (só leitura): favoritas com total, plano padrão do dia e a biblioteca com a fonte de cada alimento.
