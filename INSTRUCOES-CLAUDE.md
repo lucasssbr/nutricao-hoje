@@ -129,7 +129,7 @@ Padronizar mensagens assim:
 - `INSTRUCOES-CLAUDE.md` — estas regras (tabela, fluxo, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
-O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o PNG correspondente quando esse fluxo for usado. A cópia deste repositório é a que deve ser publicada: depois de revisar, fazer commit na `main` e push para `origin/main` para o GitHub Pages atualizar.
+O repositório é a única fonte do site; não manter espelho local separado. Para gerar PNG para o chat, fazer screenshot do site publicado ou de um servidor local servindo esta pasta do repo e esperar o render terminar. Mac/iCloud é opcional: se necessário, copiar a pasta inteira, incluindo HTML, CSS, JS e `dados/`.
 
 ## Regras de alimentação
 
