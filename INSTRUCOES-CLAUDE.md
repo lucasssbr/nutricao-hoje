@@ -221,7 +221,7 @@ Dois assistentes trabalham neste repo:
 1. **⚠️ Importante — leia** — o que o Lucas precisa saber ou fazer (ex.: algo quebrou, conferir no iPhone, risco).
 2. **❓ Preciso da sua decisão** — perguntas ou pedidos de permissão, numerados, cada um com a recomendação do Claude. Se não houver, omitir.
 3. **✅ Feito e testado** — o que mudou, como foi testado, commit.
-4. **🔜 Próximo** — o que o Claude vai fazer em seguida (ou sugestões opcionais).
+4. **🔜 Próximo** — **sempre presente ao terminar uma tarefa**: próximos passos, decisões pendentes do Lucas e se o Claude **já pode começar** (ex.: "Posso começar pelo X?").
 
 Curto e direto; detalhe técnico só se ajudar a decidir.
 

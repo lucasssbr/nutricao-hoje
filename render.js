@@ -206,10 +206,15 @@
       remainSub = 'kcal · P' + ri(rest.p) + ' · C' + ri(rest.c) + ' · G' + ri(rest.g);
     }
 
+    // proteína é piso: passar da meta é bom; carbo/gordura acima da meta = listrado + "+N" (o carbo já é laranja)
+    function acima(val, m, cls) { return cls !== 'p' && ri(val) > ri(m); }
+    function macroNums(val, m, cls) {
+      return ri(val) + ' <span>/ ' + ri(m) + ' g</span>' + (acima(val, m, cls) ? ' <em class="excesso">+' + (ri(val) - ri(m)) + '</em>' : '');
+    }
     function macroFill(val, m, cls) {
-      var over = cls !== 'p' && val > m; // proteína é piso: passar da meta é bom
+      var over = acima(val, m, cls);
       var w = barPct(val, m);
-      var bg = over ? 'var(--over)' : (cls === 'p' ? 'var(--protein)' : cls === 'c' ? 'var(--carbs)' : 'var(--fat)');
+      var bg = over ? 'repeating-linear-gradient(135deg, var(--over) 0 6px, rgba(255,255,255,0.55) 6px 9px)' : (cls === 'p' ? 'var(--protein)' : cls === 'c' ? 'var(--carbs)' : 'var(--fat)');
       var overClass = over ? ' --over' : '';
       return '<div class="fill ' + cls + overClass + '" style="width:' + w.toFixed(1) + '%;background:' + bg + '"></div>';
     }
@@ -237,9 +242,9 @@
         '<div class="remain-box"><div class="k">' + remainK + '</div><div class="v">' + remainV + '</div><div class="sub">' + remainSub + '</div></div>' +
       '</div>' +
       '<div class="macros">' +
-        '<div class="macro"><div class="name p">Proteína</div><div class="track">' + macroFill(cons.p, meta.p, 'p') + '</div><div class="nums">' + ri(cons.p) + ' <span>/ ' + ri(meta.p) + ' g</span></div></div>' +
-        '<div class="macro"><div class="name c">Carbo</div><div class="track">' + macroFill(cons.c, meta.c, 'c') + '</div><div class="nums">' + ri(cons.c) + ' <span>/ ' + ri(meta.c) + ' g</span></div></div>' +
-        '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + ri(cons.g) + ' <span>/ ' + ri(meta.g) + ' g</span></div></div>' +
+        '<div class="macro"><div class="name p">Proteína</div><div class="track">' + macroFill(cons.p, meta.p, 'p') + '</div><div class="nums">' + macroNums(cons.p, meta.p, 'p') + '</div></div>' +
+        '<div class="macro"><div class="name c">Carbo</div><div class="track">' + macroFill(cons.c, meta.c, 'c') + '</div><div class="nums">' + macroNums(cons.c, meta.c, 'c') + '</div></div>' +
+        '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + macroNums(cons.g, meta.g, 'f') + '</div></div>' +
       '</div>' +
       fibraHtml(lancado, sugestao, meta, data) +
       alertHtml;
