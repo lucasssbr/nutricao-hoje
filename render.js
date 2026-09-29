@@ -244,15 +244,13 @@
       }
       sugestao.forEach(function (meal) {
         var t = sumItens(meal.itens);
-        html += '<div class="suggest-meal">';
-        html += '<div class="meal-head"><h3>' + esc(meal.refeicao) + '</h3><div class="tot">' + totLabel(t) + '</div></div>';
+        html += '<details class="suggest-meal">';
+        html += '<summary class="meal-head"><h3>' + esc(meal.refeicao) + '</h3><div class="tot">' + totLabel(t) + '</div></summary>';
+        html += '<div class="suggest-items">';
         (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
-        html += '</div>';
+        html += '</div></details>';
       });
       html += '<div class="proj">Dia projetado: ' + ri(proj.kcal) + ' kcal · P' + ri(proj.p) + ' · C' + ri(proj.c) + ' · G' + ri(proj.g);
-      if (nota) {
-        html += '<div class="hint" style="margin:6px 0 0;color:#E9D5FF">' + esc(nota) + '</div>';
-      }
       html += '</div>';
       html += '</section>';
     }

@@ -27,6 +27,17 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
 
 Pendentes de rótulo: **chuck Costco** (`estimado`), **Nurri** (`lucas`), **iogurte grego** (marca usada).
 
+### Calcular itens: SEMPRE com o script (não fazer conta à mão)
+
+```bash
+python3 scripts/item.py chuck-costco 200 batata-inglesa 300 ovo-inteiro 2
+python3 scripts/item.py --lista      # ids e bases
+```
+
+Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quando é "1 un"/"1 lata". O script imprime os itens prontos (com `alimento` e `quantidade`) e o total — é só colar em `lancado` ou `sugestao`. Alimento que não está na biblioteca: cadastrar primeiro, depois rodar o script.
+
+**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 30/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
+
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
 
 **kcal de cada item** = valor de `alimentos.json` × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
@@ -71,13 +82,13 @@ Schema mínimo do JSON:
   "fechado": false,
   "meta": { "kcal": 1570, "p": 180, "c": 100, "g": 50 },
   "peso_kg": null,
-  "lancado": [ { "refeicao": "…", "itens": [ { "nome", "qtd", "kcal", "p", "c", "g" } ] } ],
+  "lancado": [ { "refeicao": "…", "itens": [ { "nome", "qtd", "alimento", "quantidade", "kcal", "p", "c", "g" } ] } ],
   "sugestao": [ { "refeicao": "…", "itens": [ … ] } ],
   "sugestao_nota": "opcional — dica do card e sob o Dia projetado"
 }
 ```
 
-`sugestao_nota` é **opcional**. Se presente (string não vazia): vira o hint do card de sugestão **e** aparece debaixo de "Dia projetado". Se ausente: não mostra nenhum dos dois. **Sem** hint hardcoded no JS.
+`sugestao_nota` é **opcional**. Se presente (string não vazia): vira o hint do card de sugestão. Na página, cada refeição da sugestão aparece recolhida (nome + total); o toque abre os itens.
 
 Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazio; **"Pra fechar o dia"** quando `lancado` tem itens.
 
@@ -122,6 +133,7 @@ Padronizar mensagens assim:
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
+- `scripts/item.py` — calculadora de itens (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 

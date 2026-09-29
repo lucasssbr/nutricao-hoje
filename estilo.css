@@ -261,3 +261,14 @@
     color: var(--muted); font-size: 13px; font-weight: 600;
     padding: 8px 2px;
   }
+
+  /* sugestão: cada refeição recolhida, toque abre */
+  details.suggest-meal > summary { list-style: none; cursor: pointer; margin-bottom: 0; }
+  details.suggest-meal > summary::-webkit-details-marker { display: none; }
+  details.suggest-meal > summary h3::after {
+    content: '›'; display: inline-block; margin-left: 8px; color: var(--muted);
+    transition: transform .15s ease;
+  }
+  details.suggest-meal[open] > summary h3::after { transform: rotate(90deg); }
+  details.suggest-meal .suggest-items { margin-top: 8px; }
+  details.suggest-meal:first-of-type { margin-top: 4px; }

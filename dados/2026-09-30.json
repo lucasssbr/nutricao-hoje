@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-29T10:45:00-07:00",
+  "atualizado": "2026-09-29T11:55:26-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -16,16 +16,20 @@
       "refeicao": "Café",
       "itens": [
         {
-          "nome": "Ovos inteiros grandes",
-          "qtd": "2 unidades",
+          "nome": "Ovo inteiro grande",
+          "qtd": "2 un",
+          "alimento": "ovo-inteiro",
+          "quantidade": 2,
           "kcal": 144,
           "p": 14,
           "c": 2,
           "g": 10
         },
         {
-          "nome": "Nurri Vanilla",
+          "nome": "Nurri Vanilla Milk Shake",
           "qtd": "1 lata",
+          "alimento": "nurri-vanilla",
+          "quantidade": 1,
           "kcal": 150,
           "p": 30,
           "c": 3,
@@ -33,7 +37,9 @@
         },
         {
           "nome": "Banana média",
-          "qtd": "1 unidade",
+          "qtd": "1 un",
+          "alimento": "banana",
+          "quantidade": 1,
           "kcal": 105,
           "p": 1,
           "c": 27,
@@ -45,16 +51,20 @@
       "refeicao": "Almoço",
       "itens": [
         {
-          "nome": "Chuck Costco crua",
+          "nome": "Chuck steak Costco (cru)",
           "qtd": "100 g",
+          "alimento": "chuck-costco",
+          "quantidade": 100,
           "kcal": 223,
           "p": 20,
           "c": 0,
           "g": 17
         },
         {
-          "nome": "Batata inglesa crua",
+          "nome": "Batata inglesa (crua)",
           "qtd": "100 g",
+          "alimento": "batata-inglesa",
+          "quantidade": 100,
           "kcal": 77,
           "p": 2,
           "c": 17,
@@ -63,6 +73,8 @@
         {
           "nome": "Tomate",
           "qtd": "150 g",
+          "alimento": "tomate",
+          "quantidade": 150,
           "kcal": 27,
           "p": 1.5,
           "c": 6,
@@ -74,8 +86,10 @@
       "refeicao": "Lanche",
       "itens": [
         {
-          "nome": "Nurri Vanilla",
+          "nome": "Nurri Vanilla Milk Shake",
           "qtd": "1 lata",
+          "alimento": "nurri-vanilla",
+          "quantidade": 1,
           "kcal": 150,
           "p": 30,
           "c": 3,
@@ -84,6 +98,8 @@
         {
           "nome": "Melancia",
           "qtd": "200 g",
+          "alimento": "melancia",
+          "quantidade": 200,
           "kcal": 60,
           "p": 2,
           "c": 16,
@@ -95,16 +111,20 @@
       "refeicao": "Jantar",
       "itens": [
         {
-          "nome": "Chuck Costco crua",
+          "nome": "Chuck steak Costco (cru)",
           "qtd": "100 g",
+          "alimento": "chuck-costco",
+          "quantidade": 100,
           "kcal": 223,
           "p": 20,
           "c": 0,
           "g": 17
         },
         {
-          "nome": "Batata inglesa crua",
+          "nome": "Batata inglesa (crua)",
           "qtd": "80 g",
+          "alimento": "batata-inglesa",
+          "quantidade": 80,
           "kcal": 61.6,
           "p": 1.6,
           "c": 13.6,
@@ -113,6 +133,8 @@
         {
           "nome": "Claras de ovo",
           "qtd": "180 g",
+          "alimento": "clara-100g",
+          "quantidade": 180,
           "kcal": 93.6,
           "p": 19.8,
           "c": 1.8,
@@ -121,6 +143,8 @@
         {
           "nome": "Iogurte grego desnatado",
           "qtd": "430 g",
+          "alimento": "iogurte-grego-430g",
+          "quantidade": 430,
           "kcal": 254,
           "p": 43,
           "c": 15,
