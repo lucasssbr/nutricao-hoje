@@ -36,7 +36,7 @@ python3 scripts/item.py --lista      # ids e bases
 
 Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quando é "1 un"/"1 lata". O script imprime os itens prontos (com `alimento` e `quantidade`) e o total — é só colar em `lancado` ou `sugestao`. Alimento que não está na biblioteca: cadastrar primeiro, depois rodar o script.
 
-**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 30/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
+**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
 

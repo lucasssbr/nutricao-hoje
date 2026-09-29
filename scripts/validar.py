@@ -21,7 +21,7 @@ from item import MACROS, base_de, carregar_alimentos, esperado  # noqa: E402
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DADOS = ROOT / "dados"
 DATA_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-EXIGE_ID_DESDE = "2026-09-30"
+EXIGE_ID_DESDE = "2026-09-29"
 FONTES = {"rotulo", "usda", "openfoodfacts", "lucas", "estimado"}
 TOL = 1.0
 
