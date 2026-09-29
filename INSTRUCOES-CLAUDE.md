@@ -70,13 +70,15 @@ Restante:  548 kcal | P 103 | C -5 | G 13
 1. No início do dia, preparar uma **sugestão completa** para o dia.
 2. Quando uma refeição for lançada/confirmada, recalcular o que já foi consumido e refazer a sugestão do **restante do dia**.
 3. Uma sugestão **NUNCA conta como consumo** até que o usuário a confirme explicitamente. Não transformar alimentos apenas sugeridos em refeições lançadas.
+- `sugestao-*.html` de dia futuro é rascunho. No início desse dia, refazer a sugestão com a tabela antes de usar.
 4. Ao fechar o dia:
-   - arquivar a página como `dia-YYYY-MM-DD.html`;
-   - atualizar `historico.html` com o novo dia;
-   - incluir o dia no histórico com os 4 macros e o desvio.
-   - resetar `index.html` para o próximo dia, sem carregar refeições ou consumo do dia anterior;
-   - **atualizar `data-dia` e o carimbo** no novo `index.html`;
-   - **atualizar a seção Estado atual** neste arquivo.
+   1. Arquivar index → dia-YYYY-MM-DD.html
+   2. Histórico: novo dia no topo, com 4 macros + desvio
+   3. Novo index: data-dia, título, carimbo, consumo zerado
+   4. Menu "Plano": aponta pro próximo sugestao-*.html, ou some
+   5. Atualizar "Estado atual" no INSTRUCOES
+   6. Commit `fechar DD/MM` + push
+   7. Conferir no diff que só o dia recém-arquivado é arquivo novo
 
 O chat orienta as mudanças e o HTML é o registro visível. Manter datas, valores de consumo e valores sugeridos claramente separados.
 
