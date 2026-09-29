@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
-<meta name="dash-version" content="hoje-29-v6" />
+<meta name="dash-version" content="hoje-29-json-v1" />
 <title>Hoje · Nutrição</title>
 <style>
 
@@ -96,9 +96,10 @@
     height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-bottom: 8px;
   }
   .macro .fill { height: 100%; border-radius: 999px; }
-  .macro .fill.p { background: var(--protein); width: 59.4%; }
-  .macro .fill.c { background: var(--over); width: 100%; }
-  .macro .fill.f { background: var(--fat); width: 80.0%; }
+  .macro .fill.p { background: var(--protein); width: 0%; }
+  .macro .fill.c { background: var(--carbs); width: 0%; }
+  .macro .fill.f { background: var(--fat); width: 0%; }
+  .macro .fill.--over { background: var(--over); }
   .macro .nums { font-size: 12px; font-weight: 700; }
   .macro .nums span { color: var(--muted); font-weight: 500; }
   .alert {
@@ -167,7 +168,6 @@
   .chip.f { background: rgba(48,209,88,0.18); color: #30D158; }
   .suggest-meal { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(191,90,242,0.22); }
   .suggest-meal:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
-  .suggest-meal .meal-head { margin-bottom: 8px; }
   .footer {
     text-align: center; color: var(--muted); font-size: 11px;
     margin-top: 8px; padding-bottom: 4px;
@@ -214,91 +214,276 @@
     text-align: center;
   }
   .stale-banner.show { display: block; }
+  .load-error {
+    background: rgba(255,69,58,0.12);
+    border: 1px solid rgba(255,69,58,0.35);
+    color: #FF8A80;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 12px 0;
+    text-align: center;
+  }
 </style>
 </head>
 <body data-dia="2026-09-29">
   <div class="phone">
     <div class="island"></div>
     <div id="staleBanner" class="stale-banner" role="status"></div>
-    <div class="stamp" id="updateStamp">Atualizado 29/09 · 09:57</div>
+    <div class="stamp" id="updateStamp">Carregando…</div>
     <div class="nav">
       <a class="active" href="./">Hoje</a>
       <a href="./historico.html">Histórico</a>
       <a href="./sugestao-2026-09-30.html">Plano</a>
     </div>
-    <div class="top"><div><h1>Hoje</h1><div class="date">29 set 2026</div></div></div>
-    <section class="hero">
-      <div class="ring-wrap">
-        <div class="ring">
-          <svg viewBox="0 0 148 148"><circle cx="74" cy="74" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" />
-          <circle cx="74" cy="74" r="58" fill="none" stroke="#FF453A" stroke-width="12" stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="364.4" /></svg>
-          <div class="center"><div class="big">0</div><div class="lbl">de 1570 kcal</div></div>
-        </div>
-        <div class="remain-box"><div class="k">Meta do dia</div><div class="v">1570</div><div class="sub">kcal · ainda sem refeições</div></div>
-      </div>
-      <div class="macros">
-        <div class="macro"><div class="name p">Proteína</div><div class="track"><div class="fill p" style="width:0%;background:var(--protein)"></div></div><div class="nums">0 <span>/ 180 g</span></div></div>
-        <div class="macro"><div class="name c">Carbo</div><div class="track"><div class="fill c" style="width:0%;background:var(--carbs)"></div></div><div class="nums">0 <span>/ 100 g</span></div></div>
-        <div class="macro"><div class="name f">Gordura</div><div class="track"><div class="fill f" style="width:0%;background:var(--fat)"></div></div><div class="nums">0 <span>/ 50 g</span></div></div>
-      </div>
-      <div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">29 set limpo — sugestão abaixo não entra no consumo</div>
-    </section>
-    <div class="section-title">Refeições</div>
-    <section class="meal suggest">
-      <div class="badge">NÃO LANÇADO</div>
-      <div class="meal-head"><h3>Sugestão do dia</h3><div class="tot"><b>1549 kcal</b> · P180 · C100 · G50</div></div>
-      <div class="hint">Plano completo para hoje · ovos inteiros cedo; claras apenas à noite para fechar proteína</div>
-
-      <div class="suggest-meal">
-        <div class="meal-head"><h3>Café</h3><div class="tot"><b>399 kcal</b> · P44 · C31 · G13</div></div>
-        <div class="food"><div class="left"><div class="name">Ovos inteiros grandes</div><div class="qty">2 unidades</div></div><div class="right"><div class="cal">144</div><div class="chips"><span class="chip p">P13</span><span class="chip c">C1</span><span class="chip f">G10</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div><div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Banana média</div><div class="qty">1 unidade</div></div><div class="right"><div class="cal">105</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C27</span><span class="chip f">G0</span></div></div></div>
-      </div>
-
-      <div class="suggest-meal">
-        <div class="meal-head"><h3>Almoço</h3><div class="tot"><b>327 kcal</b> · P23 · C23 · G17</div></div>
-        <div class="food"><div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div><div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Batata inglesa crua</div><div class="qty">100 g</div></div><div class="right"><div class="cal">77</div><div class="chips"><span class="chip p">P2</span><span class="chip c">C17</span><span class="chip f">G0</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Tomate</div><div class="qty">150 g</div></div><div class="right"><div class="cal">27</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C6</span><span class="chip f">G0</span></div></div></div>
-      </div>
-
-      <div class="suggest-meal">
-        <div class="meal-head"><h3>Lanche</h3><div class="tot"><b>201 kcal</b> · P31 · C16 · G3</div></div>
-        <div class="food"><div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div><div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Melancia</div><div class="qty">170 g</div></div><div class="right"><div class="cal">51</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C13</span><span class="chip f">G0</span></div></div></div>
-      </div>
-
-      <div class="suggest-meal">
-        <div class="meal-head"><h3>Jantar</h3><div class="tot"><b>622 kcal</b> · P82 · C30 · G17</div></div>
-        <div class="food"><div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div><div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Batata inglesa crua</div><div class="qty">80 g</div></div><div class="right"><div class="cal">62</div><div class="chips"><span class="chip p">P2</span><span class="chip c">C14</span><span class="chip f">G0</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Claras de ovo</div><div class="qty">160 g</div></div><div class="right"><div class="cal">83</div><div class="chips"><span class="chip p">P17</span><span class="chip c">C1</span><span class="chip f">G0</span></div></div></div>
-        <div class="food"><div class="left"><div class="name">Iogurte grego desnatado</div><div class="qty">430 g</div></div><div class="right"><div class="cal">254</div><div class="chips"><span class="chip p">P43</span><span class="chip c">C15</span><span class="chip f">G0</span></div></div></div>
-      </div>
-
-      <div class="proj">Dia projetado: 1549 kcal · P180 · C100 · G50 · chuck 200 g cru · 2 Nurri · ovos inteiros no café · claras só à noite</div>
-    </section>
-    <div class="footer">Sugestão do dia preservada · não conta no consumo de 29 set</div>
+    <div class="top"><div><h1 id="pageTitle">Hoje</h1><div class="date" id="pageDate">—</div></div></div>
+    <div id="app">
+      <section class="hero" id="hero"></section>
+      <div class="section-title">Refeições</div>
+      <div id="meals"></div>
+      <div class="footer" id="footer"></div>
+    </div>
   </div>
 
 <script>
 (function () {
+  var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var CIRC = 364.4;
   var body = document.body;
   var pageDia = body.getAttribute('data-dia');
   if (!pageDia) return;
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = String(now.getMonth() + 1).padStart(2, '0');
-  var d = String(now.getDate()).padStart(2, '0');
-  var local = y + '-' + m + '-' + d;
-  var parts = pageDia.split('-');
-  if (parts.length !== 3) return;
-  var el = document.getElementById('staleBanner');
-  if (local !== pageDia && el) {
-    el.textContent = 'Página de ' + parts[2] + '/' + parts[1] + ' — dia ainda não fechado (ou cache antigo)';
-    el.classList.add('show');
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  function localISODate() {
+    var now = new Date();
+    return now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
   }
+
+  function ddmm(iso) {
+    var p = (iso || '').split('-');
+    if (p.length !== 3) return iso || '—';
+    return p[2] + '/' + p[1];
+  }
+
+  function labelDia(iso) {
+    var p = (iso || '').split('-');
+    if (p.length !== 3) return iso || '—';
+    var mi = parseInt(p[1], 10) - 1;
+    return parseInt(p[2], 10) + ' ' + (MESES[mi] || p[1]) + ' ' + p[0];
+  }
+
+  function sumItens(itens) {
+    var t = { kcal: 0, p: 0, c: 0, g: 0 };
+    (itens || []).forEach(function (i) {
+      t.kcal += Number(i.kcal) || 0;
+      t.p += Number(i.p) || 0;
+      t.c += Number(i.c) || 0;
+      t.g += Number(i.g) || 0;
+    });
+    return t;
+  }
+
+  function sumMeals(meals) {
+    var t = { kcal: 0, p: 0, c: 0, g: 0 };
+    (meals || []).forEach(function (m) {
+      var s = sumItens(m.itens);
+      t.kcal += s.kcal; t.p += s.p; t.c += s.c; t.g += s.g;
+    });
+    return t;
+  }
+
+  function ri(n) { return Math.round(Number(n) || 0); }
+
+  function fmtStamp(iso) {
+    if (!iso) return '';
+    var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!m) return '';
+    return 'Atualizado ' + m[3] + '/' + m[2] + ' · ' + m[4] + ':' + m[5];
+  }
+
+  function foodHtml(item) {
+    return '<div class="food"><div class="left"><div class="name">' + esc(item.nome) +
+      '</div><div class="qty">' + esc(item.qtd || '') + '</div></div><div class="right"><div class="cal">' +
+      ri(item.kcal) + '</div><div class="chips"><span class="chip p">P' + ri(item.p) +
+      '</span><span class="chip c">C' + ri(item.c) + '</span><span class="chip f">G' + ri(item.g) +
+      '</span></div></div></div>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function totLabel(t) {
+    return '<b>' + ri(t.kcal) + ' kcal</b> · P' + ri(t.p) + ' · C' + ri(t.c) + ' · G' + ri(t.g);
+  }
+
+  function barPct(val, meta) {
+    if (!meta || meta <= 0) return 0;
+    return Math.min(100, (val / meta) * 100);
+  }
+
+  function showError(msg) {
+    var app = document.getElementById('app');
+    if (app) app.innerHTML = '<div class="load-error">' + esc(msg) + '</div>';
+    var stamp = document.getElementById('updateStamp');
+    if (stamp) stamp.textContent = '';
+  }
+
+  function updateBanner(data) {
+    var el = document.getElementById('staleBanner');
+    if (!el) return;
+    el.classList.remove('show');
+    el.textContent = '';
+    var dia = data.data || pageDia;
+    var parts = dia.split('-');
+    if (data.fechado) {
+      // no yellow stale when closed
+      return;
+    }
+    if (localISODate() !== dia && parts.length === 3) {
+      el.textContent = 'Página de ' + parts[2] + '/' + parts[1] + ' — dia ainda não fechado (ou cache antigo)';
+      el.classList.add('show');
+    }
+  }
+
+  function render(data) {
+    var meta = data.meta || { kcal: 1570, p: 180, c: 100, g: 50 };
+    var lancado = data.lancado || [];
+    var sugestao = data.sugestao || [];
+    var cons = sumMeals(lancado);
+    var sug = sumMeals(sugestao);
+    var proj = {
+      kcal: cons.kcal + sug.kcal,
+      p: cons.p + sug.p,
+      c: cons.c + sug.c,
+      g: cons.g + sug.g
+    };
+    var rest = {
+      kcal: meta.kcal - cons.kcal,
+      p: meta.p - cons.p,
+      c: meta.c - cons.c,
+      g: meta.g - cons.g
+    };
+    var dia = data.data || pageDia;
+    var hasCons = cons.kcal > 0 || cons.p > 0 || cons.c > 0 || cons.g > 0 || lancado.length > 0;
+
+    document.getElementById('pageTitle').textContent = data.fechado ? labelDia(dia).replace(/ \d{4}$/, '') : 'Hoje';
+    document.getElementById('pageDate').textContent = labelDia(dia) + (data.fechado ? ' · fechado' : '');
+
+    var stamp = document.getElementById('updateStamp');
+    if (stamp) stamp.textContent = fmtStamp(data.atualizado) || '';
+
+    updateBanner(data);
+
+    var pct = meta.kcal > 0 ? Math.min(1, cons.kcal / meta.kcal) : 0;
+    var offset = CIRC * (1 - pct);
+    var ringFilter = cons.kcal > 0
+      ? ' style="filter: drop-shadow(0 0 8px rgba(255,69,58,0.45));"'
+      : '';
+
+    var remainK, remainV, remainSub;
+    if (data.fechado) {
+      remainK = 'Dia fechado';
+      remainV = String(Math.abs(ri(rest.kcal)));
+      remainSub = rest.kcal < 0 ? 'kcal acima da meta' : (rest.kcal > 0 ? 'kcal abaixo da meta' : 'na meta');
+    } else if (!hasCons) {
+      remainK = 'Meta do dia';
+      remainV = String(ri(meta.kcal));
+      remainSub = 'kcal · ainda sem refeições';
+    } else {
+      remainK = 'Restante';
+      remainV = String(ri(rest.kcal));
+      remainSub = 'kcal · P' + ri(rest.p) + ' · C' + ri(rest.c) + ' · G' + ri(rest.g);
+    }
+
+    function macroFill(val, m, cls) {
+      var over = val > m;
+      var w = barPct(val, m);
+      var bg = over ? 'var(--over)' : (cls === 'p' ? 'var(--protein)' : cls === 'c' ? 'var(--carbs)' : 'var(--fat)');
+      var overClass = over ? ' --over' : '';
+      return '<div class="fill ' + cls + overClass + '" style="width:' + w.toFixed(1) + '%;background:' + bg + '"></div>';
+    }
+
+    var alertHtml;
+    if (data.fechado) {
+      alertHtml = '<div class="alert">Dia fechado</div>';
+    } else if (!hasCons) {
+      alertHtml = '<div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">' +
+        labelDia(dia).replace(/ \d{4}$/, '') + ' limpo — sugestão abaixo não entra no consumo</div>';
+    } else {
+      alertHtml = '<div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">' +
+        'Sugestão abaixo não entra no consumo até lançar</div>';
+    }
+
+    document.getElementById('hero').innerHTML =
+      '<div class="ring-wrap">' +
+        '<div class="ring">' +
+          '<svg viewBox="0 0 148 148"><circle cx="74" cy="74" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" />' +
+          '<circle cx="74" cy="74" r="58" fill="none" stroke="#FF453A" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + CIRC + '" stroke-dashoffset="' + offset.toFixed(1) + '"' + ringFilter + ' /></svg>' +
+          '<div class="center"><div class="big">' + ri(cons.kcal) + '</div><div class="lbl">de ' + ri(meta.kcal) + ' kcal</div></div>' +
+        '</div>' +
+        '<div class="remain-box"><div class="k">' + remainK + '</div><div class="v">' + remainV + '</div><div class="sub">' + remainSub + '</div></div>' +
+      '</div>' +
+      '<div class="macros">' +
+        '<div class="macro"><div class="name p">Proteína</div><div class="track">' + macroFill(cons.p, meta.p, 'p') + '</div><div class="nums">' + ri(cons.p) + ' <span>/ ' + ri(meta.p) + ' g</span></div></div>' +
+        '<div class="macro"><div class="name c">Carbo</div><div class="track">' + macroFill(cons.c, meta.c, 'c') + '</div><div class="nums">' + ri(cons.c) + ' <span>/ ' + ri(meta.c) + ' g</span></div></div>' +
+        '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + ri(cons.g) + ' <span>/ ' + ri(meta.g) + ' g</span></div></div>' +
+      '</div>' +
+      alertHtml;
+
+    var mealsEl = document.getElementById('meals');
+    var html = '';
+
+    lancado.forEach(function (meal) {
+      var t = sumItens(meal.itens);
+      html += '<section class="meal">';
+      html += '<div class="meal-head"><h3>' + esc(meal.refeicao || 'Refeição') + '</h3><div class="tot">' + totLabel(t) + '</div></div>';
+      (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
+      html += '</section>';
+    });
+
+    if (sugestao.length) {
+      html += '<section class="meal suggest">';
+      html += '<div class="badge">NÃO LANÇADO</div>';
+      html += '<div class="meal-head"><h3>Sugestão do dia</h3><div class="tot">' + totLabel(sug) + '</div></div>';
+      html += '<div class="hint">Plano completo para hoje · ovos inteiros cedo; claras apenas à noite para fechar proteína</div>';
+      sugestao.forEach(function (meal) {
+        var t = sumItens(meal.itens);
+        html += '<div class="suggest-meal">';
+        html += '<div class="meal-head"><h3>' + esc(meal.refeicao) + '</h3><div class="tot">' + totLabel(t) + '</div></div>';
+        (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
+        html += '</div>';
+      });
+      html += '<div class="proj">Dia projetado: ' + ri(proj.kcal) + ' kcal · P' + ri(proj.p) + ' · C' + ri(proj.c) + ' · G' + ri(proj.g) + '</div>';
+      html += '</section>';
+    }
+
+    mealsEl.innerHTML = html;
+
+    var footer = document.getElementById('footer');
+    if (data.fechado) {
+      footer.textContent = 'Meta ' + ri(meta.kcal) + ' · ' + ri(meta.p) + 'P · ' + ri(meta.c) + 'C · ' + ri(meta.g) + 'G · dia fechado';
+    } else {
+      footer.textContent = 'Sugestão do dia preservada · não conta no consumo de ' + labelDia(dia).replace(/ \d{4}$/, '');
+    }
+  }
+
+  var url = 'dados/' + pageDia + '.json';
+  fetch(url, { cache: 'no-store' })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      render(data);
+    })
+    .catch(function () {
+      showError('Não consegui carregar os dados de ' + ddmm(pageDia));
+    });
 })();
 </script>
 </body>
