@@ -302,3 +302,7 @@
   .pc-line { fill: none; stroke: var(--protein); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .pc-dot { fill: var(--text); stroke: var(--surface); stroke-width: 2; }
   .pc-hit { fill: transparent; cursor: pointer; }
+
+  .hist-summary-comp { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.4; }
+
+  .hist-list .d span.over { color: var(--over); }

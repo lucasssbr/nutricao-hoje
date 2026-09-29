@@ -73,7 +73,9 @@
   function renderSummary(days) {
     var box = document.getElementById('histSummary');
     if (!box) return;
-    var last7 = days.slice(0, 7);
+    var last7 = days.length ? days.filter(function (d) {
+      return Math.round((Date.parse(days[0].data) - Date.parse(d.data)) / 86400000) < 7;
+    }) : [];
     if (!last7.length) {
       box.innerHTML = '<div class="hist-summary-title">Últimos 7 dias</div>' +
         '<div class="hist-summary-empty">Nenhum dia fechado ainda</div>';
@@ -93,6 +95,20 @@
     if (pesos.length) {
       pesoLine = '<div class="hist-summary-peso">Peso médio ' + esc(fmtPeso(Math.round(avg(pesos) * 10) / 10)) + '</div>';
     }
+    // semana anterior (7 a 13 dias antes do dia fechado mais recente)
+    var ref = days[0].data;
+    var ant = days.filter(function (d) {
+      var k = Math.round((Date.parse(ref) - Date.parse(d.data)) / 86400000);
+      return k >= 7 && k < 14;
+    });
+    var compLine = '';
+    if (ant.length) {
+      var aK = avg(ant.map(function (d) { return d.cons.kcal; })), aP = avg(ant.map(function (d) { return d.cons.p; }));
+      var nK = avg(kcals), nP = avg(ps);
+      function dif(n, a) { var x = ri(n) - ri(a); return x === 0 ? '0' : (x > 0 ? '+' : '−') + Math.abs(x); }
+      compLine = '<div class="hist-summary-comp">vs semana anterior: kcal ' + ri(aK) + ' → ' + ri(nK) + ' (' + dif(nK, aK) + ')' +
+        ' · P ' + ri(aP) + ' → ' + ri(nP) + ' (' + dif(nP, aP) + ') · ' + ant.length + ' dia' + (ant.length > 1 ? 's' : '') + '</div>';
+    }
     box.innerHTML =
       '<div class="hist-summary-title">Últimos 7 dias</div>' +
       '<div class="hist-summary-avgs">' +
@@ -102,7 +118,7 @@
         '<span><b>G' + ri(avg(gs)) + '</b></span>' +
       '</div>' +
       '<div class="hist-summary-meta">' + ok + ' de ' + last7.length + ' dias na meta</div>' +
-      pesoLine;
+      pesoLine + compLine;
   }
 
   function kgStr(n) { return (Math.round(n * 10) / 10).toFixed(1).replace('.', ','); }
@@ -184,18 +200,19 @@
     days.forEach(function (d) {
       var o = isOrange(d.cons, d.meta);
       var peso = fmtPeso(d.peso);
-      var top = labelDia(d.data) + ' · ' + ri(d.cons.kcal) + ' kcal';
-      if (peso) top += ' · ' + peso;
       html += '<a href="./dia.html?d=' + encodeURIComponent(d.data) + '">';
       html += '<div>';
-      html += '<div class="d' + (o.kcal ? ' over' : '') + '">' + esc(top) + '</div>';
+      html += '<div class="d">' + esc(labelDia(d.data).replace(/ \d{4}$/, '')) + ' · <span class="' + (o.kcal ? 'over' : '') + '">' +
+        ri(d.cons.kcal) + ' kcal (' + deltaStr(d.cons.kcal, d.meta.kcal) + ')</span></div>';
       html += '<div class="m">';
       html += '<span class="' + (o.p ? 'over' : '') + '">P' + ri(d.cons.p) + ' (' + deltaStr(d.cons.p, d.meta.p) + ')</span>';
       html += ' · ';
       html += '<span class="' + (o.c ? 'over' : '') + '">C' + ri(d.cons.c) + ' (' + deltaStr(d.cons.c, d.meta.c) + ')</span>';
       html += ' · ';
       html += '<span class="' + (o.g ? 'over' : '') + '">G' + ri(d.cons.g) + ' (' + deltaStr(d.cons.g, d.meta.g) + ')</span>';
-      html += '</div></div></a>';
+      html += '</div>';
+      if (peso) html += '<div class="m">Peso ' + esc(peso) + '</div>';
+      html += '</div></a>';
     });
     list.innerHTML = html;
   }

@@ -117,7 +117,7 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 1. **Início do dia** — o JSON do dia e o `data-dia` já foram criados pelo fechamento automático da meia-noite. O Grok só faz `git pull` e, se `sugestao` estiver vazia, escreve a sugestão completa (macros só por `alimentos.json`). **Não** mexer no `data-dia` do index.
 2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
-4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
+4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos foram removidos; dia futuro sem arquivo mostra uma prévia do plano padrão em `dia.html?d=`.
 5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
 6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/fechar-dia.yml` → `scripts/fechar_dia.py`) faz sozinho:
    1. `fechado: true` em todo dia passado ainda aberto;
@@ -152,7 +152,6 @@ Padronizar mensagens assim:
 - `render.js` — script compartilhado: se `body[data-dia]` → modo Hoje (index); senão → usa `?d=` (dia.html). Erro: "Não consegui carregar os dados de DD/MM".
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
-- `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
 - `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.
 - `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.

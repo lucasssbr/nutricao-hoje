@@ -193,7 +193,7 @@
     var alertHtml;
     if (data.fechado) {
       alertHtml = '<div class="alert">Dia fechado</div>';
-    } else if (isHoje && sugestao.length) {
+    } else if ((isHoje && sugestao.length) || data.previa) {
       alertHtml = '';
     } else if (!hasCons) {
       alertHtml = '<div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">' +
@@ -297,11 +297,42 @@
     })
     .catch(function () {
       if (!isHoje && pageDia > localISODate()) {
-        showError('O plano de ' + ddmm(pageDia) + ' aparece sozinho à meia-noite (plano padrão). Pra mudar antes, peça ao Grok.');
+        previaPlano();
       } else {
         showError('Não consegui carregar os dados de ' + ddmm(pageDia));
       }
     });
+
+  // Dia futuro sem arquivo: calcula o plano padrão aqui mesmo (mesma conta do scripts/item.py)
+  function previaPlano() {
+    function get(u) {
+      return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); });
+    }
+    Promise.all([get('dados/alimentos.json'), get('dados/refeicoes.json')]).then(function (res) {
+      var ali = res[0], refs = res[1];
+      function item(id, q) {
+        var a = ali[id];
+        var m = /^\s*([\d.,]+)\s*(g|un|lata)\b/.exec(a.base);
+        var n = parseFloat(m[1].replace(',', '.')), f = q / n;
+        var und = m[2] === 'g' ? ' g' : (m[2] === 'lata' ? ' lata' : ' un');
+        function r1(v) { return Math.round(v * f * 10) / 10; }
+        return { nome: a.nome, qtd: q + und, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
+      }
+      var sugestao = (refs.plano_padrao || []).map(function (rid) {
+        var r = refs.refeicoes[rid];
+        return { refeicao: r.nome, itens: r.itens.map(function (par) { return item(par[0], par[1]); }) };
+      });
+      render({
+        data: pageDia, fechado: false, previa: true, lancado: [], sugestao: sugestao,
+        meta: { kcal: 1570, p: 180, c: 100, g: 50 },
+        sugestao_nota: 'Prévia do plano padrão · vira o plano oficial à meia-noite (pra mudar, peça ao Grok)'
+      });
+      var stamp = document.getElementById('updateStamp');
+      if (stamp) stamp.textContent = 'Prévia · ainda não é um dia salvo';
+    }).catch(function () {
+      showError('O plano de ' + ddmm(pageDia) + ' aparece sozinho à meia-noite. Pra mudar antes, peça ao Grok.');
+    });
+  }
 })();
 
 // Recarrega ao voltar pro app depois de 1 min (dados sempre frescos)
