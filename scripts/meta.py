@@ -8,7 +8,8 @@ Conta:
   gasto (TDEE) = objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
                  senão estimativa: Mifflin-St Jeor (peso mais recente, altura, idade, sexo) × fator de atividade
   ingestão     = média de kcal lançadas nos dias fechados do objetivo (dias com < 800 kcal
-                 lançadas são ignorados por parecerem incompletos); sem dados → meta de kcal
+                 lançadas são ignorados por parecerem incompletos); com menos de 3 dias → meta de kcal
+                 (um dia só distorce muito a média)
   déficit/dia  = gasto − ingestão
   meta_semanal = déficit × 7 / 7700   (≈ 7700 kcal por kg de gordura)
 
@@ -24,6 +25,7 @@ import zoneinfo
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DADOS = ROOT / "dados"
 KCAL_POR_KG = 7700
+MIN_DIAS = 3  # dias fechados mínimos para usar a média real de ingestão
 
 
 def ler(nome):
@@ -66,10 +68,10 @@ def calcular(hoje=None):
         tdee, gasto_fonte = float(informado), "informado"
     else:
         tdee, gasto_fonte = bmr * perfil["atividade"], "estimado"
-    if ingestao:
-        comendo, fonte = sum(ingestao) / len(ingestao), f"média de {len(ingestao)} dia(s) lançado(s)"
+    if len(ingestao) >= MIN_DIAS:
+        comendo, fonte = sum(ingestao) / len(ingestao), f"média de {len(ingestao)} dias lançados"
     else:
-        comendo, fonte = float(meta_kcal), "meta de kcal (ainda sem dias fechados no objetivo)"
+        comendo, fonte = float(meta_kcal), f"meta de kcal (menos de {MIN_DIAS} dias fechados no objetivo)"
     deficit = tdee - comendo
     semanal = max(0.0, deficit * 7 / KCAL_POR_KG)
     return obj, {
