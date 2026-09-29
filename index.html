@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
-<meta name="dash-version" content="hoje-29-v1" />
+<meta name="dash-version" content="hoje-29-v2" />
 <title>Hoje · Nutrição</title>
 <style>
 
@@ -165,6 +165,9 @@
   .chip.p { background: rgba(10,132,255,0.18); color: #64D2FF; }
   .chip.c { background: rgba(255,159,10,0.18); color: #FFD60A; }
   .chip.f { background: rgba(48,209,88,0.18); color: #30D158; }
+  .suggest-meal { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(191,90,242,0.22); }
+  .suggest-meal:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .suggest-meal .meal-head { margin-bottom: 8px; }
   .footer {
     text-align: center; color: var(--muted); font-size: 11px;
     margin-top: 8px; padding-bottom: 4px;
@@ -214,11 +217,45 @@
         <div class="macro"><div class="name c">Carbo</div><div class="track"><div class="fill c" style="width:0%;background:var(--carbs)"></div></div><div class="nums">0 <span>/ 100 g</span></div></div>
         <div class="macro"><div class="name f">Gordura</div><div class="track"><div class="fill f" style="width:0%;background:var(--fat)"></div></div><div class="nums">0 <span>/ 50 g</span></div></div>
       </div>
-      <div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">29 set limpo — logue as refeições de hoje</div>
+      <div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">29 set limpo — sugestão abaixo não entra no consumo</div>
     </section>
     <div class="section-title">Refeições</div>
-    <p style="color:var(--muted);font-size:14px;padding:8px 4px">Nenhuma ainda. Plano do dia 30 está em “Plano 30”.</p>
-    <div class="footer">Meta 1570 · 180P · 100C · 50G</div>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head"><h3>Sugestão do dia</h3><div class="tot"><b>1495 kcal</b> · P184 · C102 · G41</div></div>
+      <div class="hint">Plano completo para hoje · sugestão, não lançamento</div>
+
+      <div class="suggest-meal">
+        <div class="meal-head"><h3>Café</h3><div class="tot"><b>385 kcal</b> · P59 · C31 · G3</div></div>
+        <div class="food"><div class="left"><div class="name">Banana média</div><div class="qty">1 unidade</div></div><div class="right"><div class="cal">105</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C27</span><span class="chip f">G0</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Claras de ovo</div><div class="qty">250 g</div></div><div class="right"><div class="cal">130</div><div class="chips"><span class="chip p">P28</span><span class="chip c">C1</span><span class="chip f">G0</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div><div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div></div>
+      </div>
+
+      <div class="suggest-meal">
+        <div class="meal-head"><h3>Almoço</h3><div class="tot"><b>389 kcal</b> · P25 · C37 · G17</div></div>
+        <div class="food"><div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div><div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Batata inglesa crua</div><div class="qty">180 g</div></div><div class="right"><div class="cal">139</div><div class="chips"><span class="chip p">P4</span><span class="chip c">C31</span><span class="chip f">G0</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Tomate</div><div class="qty">150 g</div></div><div class="right"><div class="cal">27</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C6</span><span class="chip f">G0</span></div></div></div>
+      </div>
+
+      <div class="suggest-meal">
+        <div class="meal-head"><h3>Lanche</h3><div class="tot"><b>201 kcal</b> · P31 · C16 · G3</div></div>
+        <div class="food"><div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div><div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Melancia</div><div class="qty">170 g</div></div><div class="right"><div class="cal">51</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C13</span><span class="chip f">G0</span></div></div></div>
+      </div>
+
+      <div class="suggest-meal">
+        <div class="meal-head"><h3>Jantar</h3><div class="tot"><b>520 kcal</b> · P69 · C18 · G18</div></div>
+        <div class="food"><div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div><div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Claras de ovo</div><div class="qty">330 g</div></div><div class="right"><div class="cal">172</div><div class="chips"><span class="chip p">P36</span><span class="chip c">C2</span><span class="chip f">G1</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Batata inglesa crua</div><div class="qty">70 g</div></div><div class="right"><div class="cal">54</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C12</span><span class="chip f">G0</span></div></div></div>
+        <div class="food"><div class="left"><div class="name">Iogurte grego desnatado</div><div class="qty">120 g</div></div><div class="right"><div class="cal">71</div><div class="chips"><span class="chip p">P12</span><span class="chip c">C4</span><span class="chip f">G0</span></div></div></div>
+      </div>
+
+      <div class="proj">Dia projetado: 1495 kcal · P184 · C102 · G41 · chuck 200 g cru · 2 Nurri · sem frango</div>
+    </section>
+    <div class="footer">Sugestão do dia preservada · não conta no consumo de 29 set</div>
   </div>
 </body>
 </html>
