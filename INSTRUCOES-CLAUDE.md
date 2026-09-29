@@ -203,6 +203,15 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Não apagar, reescrever ou quebrar dias arquivados ao editar o dia atual.
 - Não mudar `lancado` / `sugestao` no JSON sem confirmação explícita do usuário; sugestões e consumo confirmado devem permanecer distinguíveis. No dia a dia, editar o JSON — não o HTML do index.
 
+## Comunicação Claude ↔ Grok (via Lucas)
+
+O Lucas copia e cola mensagens entre os dois assistentes. Pra ficar claro de quem é cada pedido:
+
+- Mensagem que começa com **`[CLAUDE → GROK] #N`** foi escrita pelo **Claude** e só repassada pelo Lucas. Tratar como pedido técnico do Claude (mudança de regra, arquivo, script) — não como algo que o Lucas comeu ou pediu no dia a dia.
+- Mensagem **sem** esse cabeçalho é do **Lucas** (refeições, peso, pedidos dele).
+- Ao responder algo que vai de volta pro Claude, começar com **`[GROK → CLAUDE] #N`** (mesmo número).
+- Se o Lucas e o Claude pedirem coisas diferentes, vale o que o Lucas pedir; avise no chat.
+
 ## Quem mexe em quê
 
 Dois assistentes trabalham neste repo:
