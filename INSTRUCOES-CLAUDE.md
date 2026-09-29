@@ -34,7 +34,7 @@ Notas da tabela:
 - Chuck, Nurri, banana, batata e iogurte (430 g) batem com o log do **dia 28** / sugestão do **dia 29**.
 - Melancia usa o padrão do **dia 29** (USDA): 100 g = 30 | P1 | C8 | G0. O `dia-2026-09-28.html` permanece com o valor antigo (arquivo fechado).
 - Ovo inteiro, clara (por unidade) e tomate (100 g) são referência genérica arredondada a partir dos valores já usados no HTML → marcados **(ref)**: ovo, clara/un, tomate.
-- Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C52 | G0; melancia 300 g = 90 | P2 | C23 | G1.
+- Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C52 | G0; melancia 300 g = 90 | P3 | C24 | G0.
 
 **kcal de cada item** = valor da tabela × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
 
