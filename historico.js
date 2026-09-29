@@ -186,7 +186,10 @@
   function renderPeso(todos, obj) {
     var box = document.getElementById('pesoCard');
     if (!box) return;
-    var pesos = todos.slice(-30);
+    // preenche dias sem peso (média entre vizinhos / repete o último) — só na tela, nunca nos dados
+    var reais = todos.slice();
+    var pesos = window.NutriObjetivo ? window.NutriObjetivo.serieDiaria(reais, window.NutriObjetivo.hojeISO()).slice(-30) : todos.slice(-30);
+    var soReais = pesos.filter(function (p) { return !p.estimado; });
     var titulo = '<div class="hist-summary-title">Peso · últimos 30 dias</div>';
     if (!pesos.length) {
       box.innerHTML = titulo + '<div class="hist-summary-empty">Mande o peso pro Grok ("peso 88,9") e ele aparece aqui.</div>';
@@ -194,13 +197,13 @@
     }
     var ult = pesos[pesos.length - 1];
     var semana = pesos.filter(function (p) { return diasEntre(p.data, ult.data) < 7; });
-    var linha = '<div class="peso-now"><b>' + kgStr(ult.kg) + ' kg</b> <span>(' + lbStr(ult.kg) + ' lb) · ' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + '</span></div>';
+    var linha = '<div class="peso-now"><b>' + (ult.estimado ? '~' : '') + kgStr(ult.kg) + ' kg</b> <span>(' + lbStr(ult.kg) + ' lb) · ' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + (ult.estimado ? ' · estimado' : '') + '</span></div>';
     if (semana.length >= 2) {
       var dlt = semana[semana.length - 1].kg - semana[0].kg;
       linha += '<div class="peso-delta">7 dias: ' + kgStr(semana[0].kg) + ' → ' + kgStr(ult.kg) + ' kg (' +
         (dlt > 0 ? '+' : dlt < 0 ? '−' : '') + kgStr(Math.abs(dlt)) + ' kg)</div>';
     }
-    if (pesos.length < 2) {
+    if (soReais.length < 2) {
       box.innerHTML = titulo + linha + '<div class="hist-summary-empty">O gráfico aparece a partir de 2 dias com peso.</div>';
       return;
     }
@@ -214,7 +217,7 @@
       metaPts = [{ data: iniM, kg: cObj.esperado(iniM) }, { data: obj.data_alvo, kg: cObj.esperadoAlvo }];
       if (obj.data_alvo > fimX) fimX = obj.data_alvo;
       vals.push(metaPts[0].kg, metaPts[1].kg);
-      var tend = tendencia(pesos);
+      var tend = tendencia(soReais);
       linha += '<div class="peso-delta">Meta: ' + pesoStr(cObj.esperadoAlvo) + ' em ' + window.NutriObjetivo.curta(obj.data_alvo) +
         ' · esperado hoje ' + pesoStr(cObj.esperado(ult.data)) + '</div>';
       if (tend) {
@@ -238,14 +241,14 @@
     });
     var path = med.map(function (m, i) { return (i ? 'L' : 'M') + x(m.data).toFixed(1) + ',' + y(m.kg).toFixed(1); }).join('');
     var dots = pesos.map(function (p, i) {
-      return '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="4" class="pc-dot"/>' +
+      return '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="4" class="' + (p.estimado ? 'pc-dot pc-est' : 'pc-dot') + '"/>' +
         '<circle cx="' + x(p.data).toFixed(1) + '" cy="' + y(p.kg).toFixed(1) + '" r="14" class="pc-hit" data-i="' + i + '"/>';
     }).join('');
     var metaSvg = metaPts ? '<line x1="' + x(metaPts[0].data).toFixed(1) + '" y1="' + y(metaPts[0].kg).toFixed(1) + '" x2="' + x(metaPts[1].data).toFixed(1) + '" y2="' + y(metaPts[1].kg).toFixed(1) + '" class="pc-meta"/>' : '';
     var ax = '<text x="' + L + '" y="' + (H - 4) + '" class="pc-ax">' + esc(labelDia(d0).replace(/ \d{4}$/, '')) + '</text>' +
       '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(fimX).replace(/ \d{4}$/, '')) + '</text>';
     box.innerHTML = titulo + linha +
-      '<div class="pc-legend"><span><i class="pc-k-dot"></i>Peso do dia</span><span><i class="pc-k-line"></i>Média 7 dias</span>' + (metaPts ? '<span><i class="pc-k-meta"></i>Meta</span>' : '') + '</div>' +
+      '<div class="pc-legend"><span><i class="pc-k-dot"></i>Peso do dia</span><span><i class="pc-k-line"></i>Média 7 dias</span>' + (pesos.some(function (p) { return p.estimado; }) ? '<span><i class="pc-k-est"></i>Estimado</span>' : '') + (metaPts ? '<span><i class="pc-k-meta"></i>Meta</span>' : '') + '</div>' +
       '<div class="pc-tip" id="pcTip">Toque num ponto pra ver o valor</div>' +
       '<svg class="pc-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gráfico de peso">' +
         grid + metaSvg + '<path d="' + path + '" class="pc-line"/>' + dots + ax + '</svg>';
@@ -254,7 +257,8 @@
       c.addEventListener('click', function () {
         var i = Number(c.getAttribute('data-i'));
         var p = pesos[i];
-        tip.textContent = labelDia(p.data).replace(/ \d{4}$/, '') + ': ' + kgStr(p.kg) + ' kg (' + lbStr(p.kg) + ' lb) · média 7d ' + pesoStr(med[i].kg);
+        tip.textContent = labelDia(p.data).replace(/ \d{4}$/, '') + ': ' + (p.estimado ? '~' : '') + kgStr(p.kg) + ' kg (' + lbStr(p.kg) + ' lb)' +
+          (p.estimado ? ' · estimado (' + p.estimado + ')' : '') + ' · média 7d ' + pesoStr(med[i].kg);
       });
     });
   }

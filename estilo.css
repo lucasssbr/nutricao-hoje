@@ -363,3 +363,5 @@
     color: #64D2FF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
   }
   .btn-csv[hidden] { display: none; }
+  .pc-dot.pc-est { fill: var(--surface); stroke: var(--text); stroke-width: 1.5; }
+  .pc-k-est { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text); display: inline-block; box-sizing: border-box; }

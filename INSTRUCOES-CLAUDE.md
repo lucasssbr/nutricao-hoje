@@ -64,6 +64,12 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 - **`plano_padrao`** = sequência de favoritas usada como **sugestão automática** do dia novo à meia-noite. Lucas pede pra mudar o plano padrão ("no jantar padrão troca batata por banana", "cria um almoço com X") → editar `refeicoes.json` (itens = `[id, quantidade]`), rodar `validar.py`, commit `dados: favoritas`. Mudança vale a partir do próximo dia criado.
 - Depois de lançar uma refeição, refazer `sugestao` só com o que falta; a página mostra a **primeira** refeição de `sugestao` como "Próxima refeição" no topo — manter `sugestao` na ordem do dia.
 
+### Peso: dia sem registro
+
+- Pesar é **opcional**. Dia sem peso = `peso_kg: null` (nunca inventar nem copiar valor pro JSON).
+- O site preenche só na tela: dia sem peso **entre** dois registros = média proporcional dos vizinhos; **depois** do último registro = repete o último. Aparece como "estimado" (bolinha vazada no gráfico, "~" no número).
+- Lucas manda um peso atrasado ("ontem pesei 88,5") → gravar no JSON **daquele dia**, mesmo se já fechado (só o `peso_kg`), rodar `meta.py`. O preenchimento se ajusta sozinho.
+
 ### Objetivo com data alvo (`dados/objetivo.json`)
 
 - `atual` = objetivo em andamento: `nome`, `inicio`, `data_alvo`, `metas` (kcal/p/c/g do dia), `gasto_kcal` (opcional, informado pelo Lucas), `peso_inicial_kg`, `meta_semanal_kg` (kg a perder por semana). O site mostra no Hoje: dias que faltam, meta da semana, peso de hoje vs esperado; no Histórico: linha tracejada da meta no gráfico e projeção pelo ritmo.

@@ -44,7 +44,7 @@
     return { cls: 'warn', txt: 'atrás ' + kg(d) + ' kg' };
   }
 
-  function cardHoje(o, hoje, pesoHoje) {
+  function cardHoje(o, hoje, pesoHoje, estimado) {
     var c = calc(o, hoje);
     var h = '<section class="obj-card">';
     h += '<div class="obj-top"><span class="obj-nome">🎯 ' + esc(o.nome || 'Objetivo') + '</span><span class="obj-data">alvo ' + curta(o.data_alvo) + '</span></div>';
@@ -73,7 +73,10 @@
     if (c.passados < 7) {
       h += '<div class="obj-line obj-muted">1ª semana: a balança costuma cair mais (água e glicogênio), não é tudo gordura.</div>';
     }
-    if (pesoHoje != null) {
+    if (pesoHoje != null && estimado) {
+      var st2 = status(pesoHoje, c.esperadoHoje);
+      h += '<div class="obj-line">Hoje ~' + peso(pesoHoje) + ' <span class="obj-muted">(estimado: ' + esc(estimado) + ')</span> · esperado ' + peso(c.esperadoHoje) + ' · <span class="obj-' + st2.cls + '">' + st2.txt + '</span></div>';
+    } else if (pesoHoje != null) {
       var st = status(pesoHoje, c.esperadoHoje);
       h += '<div class="obj-line">Hoje ' + peso(pesoHoje) + ' · esperado ' + peso(c.esperadoHoje) + ' · <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
     } else {
@@ -95,10 +98,42 @@
     var el = document.getElementById('objetivo');
     if (!el) return;
     var peso = (pesoHoje == null || pesoHoje === '' || isNaN(Number(pesoHoje))) ? null : Number(pesoHoje);
-    carregar().then(function (o) {
-      el.innerHTML = o ? cardHoje(o, dia || hojeISO(), peso) : '';
+    var d = dia || hojeISO();
+    var ultimo = peso != null ? Promise.resolve(null) :
+      fetch('dados/resumo.json', { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+        .then(function (lista) {
+          var reais = (lista || []).filter(function (x) { return x.peso != null && x.data < d; })
+            .map(function (x) { return { data: x.data, kg: Number(x.peso) }; })
+            .sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+          return reais.length ? reais[reais.length - 1] : null;
+        })
+        .catch(function () { return null; });
+    Promise.all([carregar(), ultimo]).then(function (r) {
+      var o = r[0], u = r[1];
+      if (!o) { el.innerHTML = ''; return; }
+      el.innerHTML = u ? cardHoje(o, d, u.kg, 'repetindo o de ' + curta(u.data) + ' até você se pesar')
+                       : cardHoje(o, d, peso);
     });
   }
 
-  window.NutriObjetivo = { calc: calc, peso: peso, carregar: carregar, montarHoje: montarHoje, status: status, curta: curta, hojeISO: hojeISO };
+  // Série diária de peso sem buracos: dia sem registro entre dois pesos = média proporcional
+  // (interpolação); depois do último peso = repete o último. Nada disso é gravado nos dados.
+  function serieDiaria(reais, ate) {
+    if (!reais.length) return [];
+    var mapa = {};
+    reais.forEach(function (r) { mapa[r.data] = r.kg; });
+    var fim = ate && ate > reais[reais.length - 1].data ? ate : reais[reais.length - 1].data;
+    var out = [];
+    for (var dd = reais[0].data; dd <= fim; dd = somaDias(dd, 1)) {
+      if (mapa[dd] != null) { out.push({ data: dd, kg: mapa[dd], estimado: false }); continue; }
+      var prev = null, next = null;
+      reais.forEach(function (r) { if (r.data < dd) prev = r; if (r.data > dd && !next) next = r; });
+      var v = next ? prev.kg + (next.kg - prev.kg) * dias(prev.data, dd) / dias(prev.data, next.data) : prev.kg;
+      out.push({ data: dd, kg: Math.round(v * 10) / 10, estimado: next ? 'média entre os dias vizinhos' : 'repetindo o último peso' });
+    }
+    return out;
+  }
+
+  window.NutriObjetivo = { serieDiaria: serieDiaria, calc: calc, peso: peso, carregar: carregar, montarHoje: montarHoje, status: status, curta: curta, hojeISO: hojeISO };
 })();
