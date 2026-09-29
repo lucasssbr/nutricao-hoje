@@ -123,6 +123,7 @@
 
   function kgStr(n) { return (Math.round(n * 10) / 10).toFixed(1).replace('.', ','); }
   function lbStr(n) { return (Math.round(n * 2.20462 * 10) / 10).toFixed(1).replace('.', ','); }
+  function pesoStr(n) { return kgStr(n) + '\u00a0kg (' + lbStr(n) + '\u00a0lb)'; }
   function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
 
   // média dos pesos dos 7 dias corridos terminando em cada data
@@ -179,13 +180,13 @@
       if (obj.data_alvo > fimX) fimX = obj.data_alvo;
       vals.push(metaPts[0].kg, metaPts[1].kg);
       var tend = tendencia(pesos);
-      linha += '<div class="peso-delta">Meta: ' + kgStr(cObj.esperadoAlvo) + ' kg em ' + window.NutriObjetivo.curta(obj.data_alvo) +
-        ' · esperado hoje ' + kgStr(cObj.esperado(ult.data)) + ' kg</div>';
+      linha += '<div class="peso-delta">Meta: ' + pesoStr(cObj.esperadoAlvo) + ' em ' + window.NutriObjetivo.curta(obj.data_alvo) +
+        ' · esperado hoje ' + pesoStr(cObj.esperado(ult.data)) + '</div>';
       if (tend) {
         var proj = tend.a + tend.porDia * diasEntre(tend.base, obj.data_alvo);
         var st = window.NutriObjetivo.status(proj, cObj.esperadoAlvo);
         linha += '<div class="peso-delta">Ritmo atual: ' + (tend.porDia * 7 > 0 ? '+' : '−') + kgStr(Math.abs(tend.porDia * 7)) + ' kg/semana (meta −' + kgStr(obj.meta_semanal_kg) + ') · ' +
-          'projeção em ' + window.NutriObjetivo.curta(obj.data_alvo) + ': ~' + kgStr(proj) + ' kg <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
+          'projeção em ' + window.NutriObjetivo.curta(obj.data_alvo) + ': ~' + pesoStr(proj) + ' <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
       } else {
         linha += '<div class="peso-delta">A projeção pelo ritmo aparece com ~5 dias de peso.</div>';
       }
@@ -218,7 +219,7 @@
       c.addEventListener('click', function () {
         var i = Number(c.getAttribute('data-i'));
         var p = pesos[i];
-        tip.textContent = labelDia(p.data).replace(/ \d{4}$/, '') + ': ' + kgStr(p.kg) + ' kg (' + lbStr(p.kg) + ' lb) · média 7d ' + kgStr(med[i].kg) + ' kg';
+        tip.textContent = labelDia(p.data).replace(/ \d{4}$/, '') + ': ' + kgStr(p.kg) + ' kg (' + lbStr(p.kg) + ' lb) · média 7d ' + pesoStr(med[i].kg);
       });
     });
   }
