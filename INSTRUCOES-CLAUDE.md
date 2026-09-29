@@ -199,6 +199,19 @@ Dois assistentes trabalham neste repo:
 
 **Sempre** rodar `git pull --rebase origin main` antes de editar e antes do push. Se aparecer conflito, parar e avisar o Lucas.
 
+## Como o Claude trabalha e responde ao Lucas
+
+**Autonomia:** o Lucas autorizou o Claude a fazer as melhorias do site sem pedir aprovação do plano: fazer uma coisa por vez, testar, commit e push. Continua precisando perguntar antes: redesign grande, mudança de arquitetura ou do fluxo com o Grok, apagar algo, mexer em `dados/` (área do Grok) ou em metas/dieta, e qualquer coisa fora deste repo.
+
+**Formato das respostas** (em português), sempre nesta ordem e só com as seções que tiverem conteúdo:
+
+1. **⚠️ Importante — leia** — o que o Lucas precisa saber ou fazer (ex.: algo quebrou, conferir no iPhone, risco).
+2. **❓ Preciso da sua decisão** — perguntas ou pedidos de permissão, numerados, cada um com a recomendação do Claude. Se não houver, omitir.
+3. **✅ Feito e testado** — o que mudou, como foi testado, commit.
+4. **🔜 Próximo** — o que o Claude vai fazer em seguida (ou sugestões opcionais).
+
+Curto e direto; detalhe técnico só se ajudar a decidir.
+
 ## Como editar com segurança
 
 1. Alterar os arquivos dentro deste repositório (`/workspace/nutricao-hoje-pages/`), nunca uma cópia solta como fonte final.
@@ -206,7 +219,7 @@ Dois assistentes trabalham neste repo:
 3. Fazer mudanças pequenas e verificáveis; preservar links, datas, metas, badges e a estrutura HTML existente.
 4. Revisar o diff e confirmar que nenhum `dia-*.html` legado foi alterado acidentalmente.
 5. Fazer commit na branch `main` e publicar com `git push origin main`.
-6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário.
+6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário (ver "Como o Claude trabalha e responde ao Lucas").
 7. Toda alteração em `render.js`, `estilo.css` ou `historico.js` deve incrementar o `?v=` nos HTML que os carregam.
 
 ## Estado atual
