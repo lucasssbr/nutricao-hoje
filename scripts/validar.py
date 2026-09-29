@@ -6,8 +6,9 @@
 Erros (fazem a checagem falhar):
   - JSON inválido, campo faltando, número inválido
   - dias.json e arquivos de dia desencontrados; data-dia do index sem arquivo
-  - item com "alimento" cujos valores não batem com alimentos.json (tolerância 1)
-  - dia aberto a partir de 2026-09-30 com item sem "alimento"
+  - item com "alimento" cujos valores não batem com alimentos.json (tolerância 1) — só em dia aberto;
+    dia fechado guarda os valores da época e não é recalculado quando a biblioteca muda
+  - dia aberto a partir de 2026-09-29 com item sem "alimento"
 Avisos (não falham): chuck acima de 200 g no dia.
 """
 import json
@@ -102,7 +103,7 @@ def checar_dia(nome, dia, alimentos):
                     continue
                 exp = esperado(alimentos[aid], it["quantidade"])
                 ruins = [f"{m} {it[m]}≠{exp[m]}" for m in MACROS if abs(it[m] - exp[m]) > TOL]
-                if ruins:
+                if ruins and not dia.get("fechado"):
                     erros.append(f"{onde}: valores não batem com a biblioteca ({', '.join(ruins)})")
                 if aid == "chuck-costco" and lista == "lancado":
                     chuck_g += float(it["quantidade"])
