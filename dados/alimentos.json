@@ -10,11 +10,11 @@
     "base": "1 lata (325 ml)",
     "kcal": 150,
     "p": 30,
-    "c": 3,
-    "g": 3,
-    "fonte": "lucas",
-    "salvo_em": "2026-09-28",
-    "obs": "valores informados pelo Lucas; conferir no rótulo da lata"
+    "c": 4,
+    "g": 2.5,
+    "fonte": "rotulo",
+    "salvo_em": "2026-09-29",
+    "obs": "rótulo lata 325 mL: 150 kcal, Fat 2.5g, Total Carbohydrate 4g (Fiber 1g, Sugars 1g), Protein 30g; atualizado de lucas 150/P30/C3/G3"
   },
   "chuck-costco": {
     "nome": "Chuck steak Costco (cru)",
