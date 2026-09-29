@@ -163,9 +163,10 @@
 
     var pct = meta.kcal > 0 ? Math.min(1, cons.kcal / meta.kcal) : 0;
     var offset = CIRC * (1 - pct);
-    var ringFilter = cons.kcal > 0
-      ? ' style="filter: drop-shadow(0 0 8px rgba(255,69,58,0.45));"'
-      : '';
+    // cor neutra dentro da meta; laranja só se passar (sem vermelho de "erro")
+    var ringOver = cons.kcal > meta.kcal;
+    var ringCor = ringOver ? 'var(--over)' : 'var(--kcal)';
+    var ringStyle = ' style="stroke:' + ringCor + (cons.kcal > 0 ? ';filter: drop-shadow(0 0 8px ' + (ringOver ? 'rgba(255,159,10,0.45)' : 'rgba(64,200,224,0.40)') + ')' : '') + '"';
 
     var remainK, remainV, remainSub;
     if (data.fechado) {
@@ -176,6 +177,10 @@
       remainK = 'Meta do dia';
       remainV = String(ri(meta.kcal));
       remainSub = 'kcal · ainda sem refeições';
+    } else if (ri(rest.kcal) < 0) {
+      remainK = 'Acima da meta';
+      remainV = String(-ri(rest.kcal));
+      remainSub = 'kcal · P' + ri(rest.p) + ' · C' + ri(rest.c) + ' · G' + ri(rest.g) + ' restantes';
     } else {
       remainK = 'Restante';
       remainV = String(ri(rest.kcal));
@@ -207,7 +212,7 @@
       '<div class="ring-wrap">' +
         '<div class="ring">' +
           '<svg viewBox="0 0 148 148"><circle cx="74" cy="74" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" />' +
-          '<circle cx="74" cy="74" r="58" fill="none" stroke="#FF453A" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + CIRC + '" stroke-dashoffset="' + offset.toFixed(1) + '"' + ringFilter + ' /></svg>' +
+          '<circle cx="74" cy="74" r="58" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + CIRC + '" stroke-dashoffset="' + offset.toFixed(1) + '"' + ringStyle + ' /></svg>' +
           '<div class="center"><div class="big">' + ri(cons.kcal) + '</div><div class="lbl">de ' + ri(meta.kcal) + ' kcal</div></div>' +
         '</div>' +
         '<div class="remain-box"><div class="k">' + remainK + '</div><div class="v">' + remainV + '</div><div class="sub">' + remainSub + '</div></div>' +

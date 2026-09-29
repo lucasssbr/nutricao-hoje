@@ -5,7 +5,7 @@
     --line: rgba(255,255,255,0.08);
     --text: #F4F7FC;
     --muted: #8E9BB3;
-    --kcal: #FF453A;
+    --kcal: #40C8E0; /* neutro (antes vermelho); passar da meta usa --over */
     --protein: #0A84FF;
     --carbs: #FF9F0A;
     --fat: #30D158;
