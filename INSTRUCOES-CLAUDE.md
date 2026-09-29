@@ -41,7 +41,7 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
      ```
 3. **Antes de logar**, salvar o alimento novo em `alimentos.json` com `fonte` e `salvo_em`, e avisar no chat: "novo na biblioteca: X (fonte)". Commit `dados: alimento <nome>`.
 4. Alimento com `fonte: estimado` → perguntar ao Lucas se ele tem o rótulo; com o rótulo, atualizar a entrada e a fonte.
-5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados.
+5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados quando a biblioteca muda (única exceção de mexer em dia fechado: refeição atrasada, ver "Fechar o dia").
 
 Pendentes de rótulo: **Nurri** (`lucas`), **iogurte grego** (marca usada).
 
@@ -142,6 +142,7 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
    3. muda `data-dia` do `index.html` para o novo dia;
    4. aponta o botão **Plano** para o dia seguinte.
    Commit `fechar DD/MM (automático)`. **Ninguém precisa fechar o dia na mão.** Se o Lucas pedir "fecha o dia" antes da meia-noite, basta `fechado: true` no JSON; o resto o script faz.
+   **Refeição que atravessa a meia-noite — vale a hora em que o Lucas comeu.** Comeu às 23:50 e mandou depois da meia-noite → lançar no JSON do **dia anterior** (em `lancado`, mesmo com `fechado: true`; **não** mexer em `fechado`), atualizar `atualizado`, commit `log DD/MM: <refeição> (atrasado)`. Comeu depois da meia-noite → dia novo. Na dúvida sobre a hora, perguntar. O fechamento automático não reabre nada.
    **Grok, de manhã:** `git pull`. O dia já vem com o plano padrão; só refazer a sugestão se o Lucas pedir algo diferente. Plano de amanhã pode ser criado antes (`dados/<amanhã>.json` + `dias.json`); o script usa o que existir.
 
 Arquivos `dia-YYYY-MM-DD.html` antigos (ex.: `dia-2026-09-28.html`) ficam no repo como arquivo estático legado — **não** tocá-los e **não** criar cópias novas do index. Dias a partir da generic `dia.html` abrem via query string.
