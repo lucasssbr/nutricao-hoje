@@ -59,7 +59,15 @@
     var pct = c.tot ? Math.round(100 * c.passados / c.tot) : 100;
     h += '<div class="obj-bar"><div style="width:' + pct + '%"></div></div>';
     h += '<div class="obj-line obj-muted">Dia ' + (c.passados + 1) + ' de ' + (c.tot + 1) + ' · semana ' + c.semana + '</div>';
+    function mil(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     h += '<div class="obj-line"><b>Meta da semana:</b> −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + kg(c.esperadoFimSemana) + ' kg até ' + curta(c.fimSemana) + '</div>';
+    if (o.calculo) {
+      h += '<div class="obj-line obj-muted">Pelo déficit: gasto ~' + mil(o.calculo.gasto_estimado) + ' − comendo ~' + mil(o.calculo.ingestao_media) +
+        ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
+    }
+    if (c.passados < 7) {
+      h += '<div class="obj-line obj-muted">1ª semana: a balança costuma cair mais (água e glicogênio), não é tudo gordura.</div>';
+    }
     if (pesoHoje != null) {
       var st = status(pesoHoje, c.esperadoHoje);
       h += '<div class="obj-line">Hoje ' + kg(pesoHoje) + ' kg · esperado ' + kg(c.esperadoHoje) + ' kg · <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';

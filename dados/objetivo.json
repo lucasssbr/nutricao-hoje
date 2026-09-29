@@ -5,8 +5,19 @@
     "inicio": "2026-09-29",
     "data_alvo": "2026-10-17",
     "peso_inicial_kg": 88.9,
-    "meta_semanal_kg": 0.7,
-    "obs": "meta_semanal_kg = sugestão inicial (~0,8% do peso por semana); o Lucas pode ajustar"
+    "meta_semanal_kg": 1.05,
+    "meta_modo": "auto",
+    "calculo": {
+      "peso_ref_kg": 88.9,
+      "idade": 32,
+      "bmr": 1878,
+      "atividade": 1.45,
+      "gasto_estimado": 2723,
+      "ingestao_media": 1570,
+      "ingestao_fonte": "meta de kcal (ainda sem dias fechados no objetivo)",
+      "deficit_dia": 1153,
+      "atualizado": "2026-09-29"
+    }
   },
   "anteriores": []
 }

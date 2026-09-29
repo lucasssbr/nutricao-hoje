@@ -1,0 +1,8 @@
+{
+  "_sobre": "Dados do Lucas usados pra estimar o gasto calórico (Mifflin-St Jeor × fator de atividade). Repo público: guardar só o necessário.",
+  "altura_cm": 183,
+  "nascimento": "1993-10",
+  "sexo": "M",
+  "atividade": 1.45,
+  "atividade_obs": "1.2 sedentário · 1.375 leve (1–3 treinos/sem) · 1.45 padrão provisório · 1.55 moderado (3–5 treinos/sem) · 1.725 intenso"
+}

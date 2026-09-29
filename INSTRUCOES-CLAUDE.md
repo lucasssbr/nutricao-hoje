@@ -61,6 +61,9 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 - `atual` = objetivo em andamento: `nome`, `inicio`, `data_alvo`, `peso_inicial_kg`, `meta_semanal_kg` (kg a perder por semana). O site mostra no Hoje: dias que faltam, meta da semana, peso de hoje vs esperado; no Histórico: linha tracejada da meta no gráfico e projeção pelo ritmo.
 - Lucas muda algo ("meta de 0,5 kg por semana", "adia a data pra 24/10", "muda o nome") → editar `atual`, `validar.py`, commit `dados: objetivo`.
 - **Novo objetivo** ("novo objetivo: 15/11, perder 0,5 kg por semana") → mover o `atual` para o fim de `anteriores` acrescentando `"peso_final_kg"` (último peso registrado) e `"encerrado_em"` (hoje); criar novo `atual` com `inicio` = hoje e `peso_inicial_kg` = peso mais recente. Confirmar no chat: data alvo, meta semanal, peso esperado na data alvo.
+- **Meta semanal automática (`meta_modo: "auto"`)**: `python3 scripts/meta.py` calcula pelo déficit — gasto estimado (Mifflin-St Jeor com `dados/perfil.json` × fator de atividade) − média de kcal lançadas nos dias fechados do objetivo — e grava `meta_semanal_kg` + `calculo`. Roda sozinho à meia-noite. **Grok roda `meta.py` depois de gravar um peso novo** (junto no mesmo commit).
+- Lucas diz quantos treinos faz / nível de atividade → ajustar `atividade` em `dados/perfil.json` (1.2 sedentário · 1.375 leve · 1.55 moderado · 1.725 intenso), rodar `meta.py`, commit `dados: perfil`.
+- Lucas quer uma meta fixa ("quero 0,5 kg por semana") → `meta_modo: "manual"` + `meta_semanal_kg`. Voltar pro cálculo: `meta_modo: "auto"` + `meta.py`.
 - Meta acima de 1,2 kg/semana gera aviso na checagem: comentar com o Lucas antes de salvar.
 
 **Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
@@ -161,6 +164,7 @@ Padronizar mensagens assim:
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `dados/refeicoes.json` — refeições favoritas + plano padrão (sugestão automática).
 - `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
+- `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.
 - `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).

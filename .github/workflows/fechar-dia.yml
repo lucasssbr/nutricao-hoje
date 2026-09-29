@@ -24,9 +24,11 @@ jobs:
           python-version: "3.12"
       - name: Fechar dia e abrir o novo
         run: python scripts/fechar_dia.py
+      - name: Recalcular meta semanal pelo déficit
+        run: python scripts/meta.py
       - name: Commit
         run: |
-          if git diff --quiet; then
+          if [ -z "$(git status --porcelain)" ]; then
             echo "Nada a fazer."
             exit 0
           fi
