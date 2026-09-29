@@ -72,6 +72,7 @@ Restante:  548 kcal | P 103 | C -5 | G 13
    - arquivar a página como `dia-YYYY-MM-DD.html`;
    - atualizar `historico.html` com o novo dia;
    - resetar `index.html` para o próximo dia, sem carregar refeições ou consumo do dia anterior;
+   - **atualizar `data-dia` e o carimbo** no novo `index.html`;
    - **atualizar a seção Estado atual** neste arquivo.
 
 O chat orienta as mudanças e o HTML é o registro visível. Manter datas, valores de consumo e valores sugeridos claramente separados.

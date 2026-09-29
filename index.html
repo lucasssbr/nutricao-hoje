@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
-<meta name="dash-version" content="hoje-29-v3" />
+<meta name="dash-version" content="hoje-29-v4" />
 <title>Hoje · Nutrição</title>
 <style>
 
@@ -191,11 +191,36 @@
   .hist-list .r { text-align:right; color:var(--kcal); font-weight:800; font-size:14px; }
 
 
+
+  .stamp {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+    opacity: 0.85;
+  }
+  .stale-banner {
+    display: none;
+    background: rgba(255, 214, 10, 0.16);
+    border: 1px solid rgba(255, 214, 10, 0.45);
+    color: #FFD60A;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0 0 12px;
+    text-align: center;
+  }
+  .stale-banner.show { display: block; }
 </style>
 </head>
-<body>
+<body data-dia="2026-09-29">
   <div class="phone">
     <div class="island"></div>
+    <div id="staleBanner" class="stale-banner" role="status">Página de 29/09 — dia ainda não fechado (ou cache antigo)</div>
+    <div class="stamp" id="updateStamp">Atualizado 29/09 · 09:53</div>
     <div class="nav">
       <a class="active" href="./">Hoje</a>
       <a href="./historico.html">Histórico</a>
@@ -257,5 +282,22 @@
     </section>
     <div class="footer">Sugestão do dia preservada · não conta no consumo de 29 set</div>
   </div>
+
+<script>
+(function () {
+  var body = document.body;
+  var pageDia = body.getAttribute('data-dia');
+  if (!pageDia) return;
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+  var local = y + '-' + m + '-' + d;
+  if (local !== pageDia) {
+    var el = document.getElementById('staleBanner');
+    if (el) el.classList.add('show');
+  }
+})();
+</script>
 </body>
 </html>
