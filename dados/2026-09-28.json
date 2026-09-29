@@ -1,0 +1,99 @@
+{
+  "data": "2026-09-28",
+  "atualizado": "2026-09-29T11:00:00-07:00",
+  "fechado": true,
+  "meta": {
+    "kcal": 1570,
+    "p": 180,
+    "c": 100,
+    "g": 50
+  },
+  "peso_kg": null,
+  "lancado": [
+    {
+      "refeicao": "Refeição 1",
+      "itens": [
+        {
+          "nome": "Banana média",
+          "qtd": "1 unidade",
+          "kcal": 105,
+          "p": 1,
+          "c": 27,
+          "g": 0
+        },
+        {
+          "nome": "Batata inglesa crua",
+          "qtd": "300 g",
+          "kcal": 231,
+          "p": 6,
+          "c": 52,
+          "g": 0
+        },
+        {
+          "nome": "Chuck steak Costco",
+          "qtd": "200 g crua",
+          "kcal": 446,
+          "p": 40,
+          "c": 0,
+          "g": 34
+        },
+        {
+          "nome": "Melancia",
+          "qtd": "300 g",
+          "kcal": 90,
+          "p": 1,
+          "c": 23,
+          "g": 0
+        }
+      ]
+    },
+    {
+      "refeicao": "Refeição 2",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "1 lata · 325 ml",
+          "kcal": 150,
+          "p": 30,
+          "c": 3,
+          "g": 3
+        }
+      ]
+    },
+    {
+      "refeicao": "Refeição 3 · Lanche",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "1 lata · 325 ml",
+          "kcal": 150,
+          "p": 30,
+          "c": 3,
+          "g": 3
+        }
+      ]
+    },
+    {
+      "refeicao": "Refeição 4 · Fechou o dia",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "1 lata · 325 ml",
+          "kcal": 150,
+          "p": 30,
+          "c": 3,
+          "g": 3
+        },
+        {
+          "nome": "Iogurte grego desnatado",
+          "qtd": "430 g",
+          "kcal": 254,
+          "p": 43,
+          "c": 15,
+          "g": 0
+        }
+      ]
+    }
+  ],
+  "sugestao": []
+}
