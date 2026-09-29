@@ -44,13 +44,13 @@ def calcular(hoje=None):
     atual = obj["atual"]
     dias = ler("dias.json")
 
-    pesos, ingestao, meta_kcal = [], [], 1570
+    pesos, ingestao = [], []
+    meta_kcal = atual.get("metas", {}).get("kcal", 1570)
     for d in sorted(dias):
         p = DADOS / f"{d}.json"
         if not p.exists():
             continue
         dia = json.loads(p.read_text(encoding="utf-8"))
-        meta_kcal = dia.get("meta", {}).get("kcal", meta_kcal)
         if dia.get("peso_kg") is not None:
             pesos.append((d, float(dia["peso_kg"])))
         if dia.get("fechado") and d >= atual["inicio"]:

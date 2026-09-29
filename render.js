@@ -309,8 +309,10 @@
     function get(u) {
       return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); });
     }
-    Promise.all([get('dados/alimentos.json'), get('dados/refeicoes.json')]).then(function (res) {
+    var objetivo = get('dados/objetivo.json').catch(function () { return null; });
+    Promise.all([get('dados/alimentos.json'), get('dados/refeicoes.json'), objetivo]).then(function (res) {
       var ali = res[0], refs = res[1];
+      var metas = res[2] && res[2].atual && res[2].atual.metas;
       function item(id, q) {
         var a = ali[id];
         var m = /^\s*([\d.,]+)\s*(g|un|lata)\b/.exec(a.base);
@@ -325,7 +327,7 @@
       });
       render({
         data: pageDia, fechado: false, previa: true, lancado: [], sugestao: sugestao,
-        meta: { kcal: 1570, p: 180, c: 100, g: 50 },
+        meta: metas || { kcal: 1570, p: 180, c: 100, g: 50 },
         sugestao_nota: 'Prévia do plano padrão · vira o plano oficial à meia-noite (pra mudar, peça ao Grok)'
       });
       var stamp = document.getElementById('updateStamp');

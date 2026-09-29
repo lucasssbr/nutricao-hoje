@@ -148,6 +148,14 @@ def checar_objetivo():
         for campo in ("peso_inicial_kg", "meta_semanal_kg"):
             if not num(obj.get(campo)):
                 erros.append(f"objetivo.json/{nome}: '{campo}' deve ser número")
+        metas = obj.get("metas")
+        if metas is not None:
+            if not (isinstance(metas, dict) and all(num(metas.get(m)) for m in MACROS)):
+                erros.append(f"objetivo.json/{nome}: 'metas' precisa de kcal, p, c, g numéricos")
+            else:
+                soma = 4 * metas["p"] + 4 * metas["c"] + 9 * metas["g"]
+                if abs(soma - metas["kcal"]) > 0.05 * metas["kcal"]:
+                    avisos.append(f"objetivo.json/{nome}: metas somam {soma:g} kcal pelos macros (4/4/9), mas kcal = {metas['kcal']:g}")
         g = obj.get("gasto_kcal")
         if g is not None and not (num(g) and 1200 <= g <= 5000):
             erros.append(f"objetivo.json/{nome}: 'gasto_kcal' deve ser número entre 1200 e 5000 (ou não existir)")
@@ -172,10 +180,17 @@ def main():
                 erros.append(f"dados/{d}.json existe, mas não está em dias.json")
     elif dias is not None:
         erros.append("dias.json deve ser uma lista")
+    metas_obj = None
+    o = ler(DADOS / "objetivo.json") if (DADOS / "objetivo.json").exists() else None
+    if isinstance(o, dict) and isinstance((o.get("atual") or {}).get("metas"), dict):
+        metas_obj = {m: o["atual"]["metas"].get(m) for m in MACROS}
     for d in arquivos:
         dia = ler(DADOS / f"{d}.json")
         if isinstance(dia, dict):
             checar_dia(f"{d}.json", dia, alimentos)
+            if metas_obj and not dia.get("fechado") and isinstance(dia.get("meta"), dict) \
+                    and {m: dia["meta"].get(m) for m in MACROS} != metas_obj:
+                avisos.append(f"{d}.json: meta do dia diferente das metas do objetivo — atualizar 'meta' do dia aberto")
     m = re.search(r'data-dia="([^"]+)"', (ROOT / "index.html").read_text(encoding="utf-8"))
     if not m or m.group(1) not in arquivos:
         erros.append(f"index.html: data-dia {m.group(1) if m else '?'} sem arquivo em dados/")

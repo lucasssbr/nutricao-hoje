@@ -6,10 +6,16 @@
 
 ## Metas diárias
 
+Ficam em **`dados/objetivo.json` → `atual.metas`** (único lugar; valem para o objetivo em andamento). Atual (corte até 17/10/2026):
+
 - **1570 kcal**
 - **P 180 g** (proteína)
 - **C 100 g** (carboidratos)
 - **G 50 g** (gorduras)
+
+Cada dia guarda uma cópia em `meta` (o fechamento da meia-noite copia de `atual.metas` ao criar o dia), para o histórico continuar certo quando as metas mudarem.
+
+**Lucas muda as metas** ("proteína 170", "kcal 1800") → editar `atual.metas` **e** o `meta` do dia aberto (e de dias futuros já criados); dias fechados não mudam. Conferir que 4×P + 4×C + 9×G ≈ kcal (o `validar.py` avisa se passar de 5%). `validar.py`, commit `dados: metas`.
 
 ## Biblioteca de alimentos (`dados/alimentos.json`)
 
@@ -58,9 +64,9 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 
 ### Objetivo com data alvo (`dados/objetivo.json`)
 
-- `atual` = objetivo em andamento: `nome`, `inicio`, `data_alvo`, `peso_inicial_kg`, `meta_semanal_kg` (kg a perder por semana). O site mostra no Hoje: dias que faltam, meta da semana, peso de hoje vs esperado; no Histórico: linha tracejada da meta no gráfico e projeção pelo ritmo.
+- `atual` = objetivo em andamento: `nome`, `inicio`, `data_alvo`, `metas` (kcal/p/c/g do dia), `gasto_kcal` (opcional, informado pelo Lucas), `peso_inicial_kg`, `meta_semanal_kg` (kg a perder por semana). O site mostra no Hoje: dias que faltam, meta da semana, peso de hoje vs esperado; no Histórico: linha tracejada da meta no gráfico e projeção pelo ritmo.
 - Lucas muda algo ("meta de 0,5 kg por semana", "adia a data pra 24/10", "muda o nome") → editar `atual`, `validar.py`, commit `dados: objetivo`.
-- **Novo objetivo** ("novo objetivo: 15/11, perder 0,5 kg por semana") → mover o `atual` para o fim de `anteriores` acrescentando `"peso_final_kg"` (último peso registrado) e `"encerrado_em"` (hoje); criar novo `atual` com `inicio` = hoje e `peso_inicial_kg` = peso mais recente. Confirmar no chat: data alvo, meta semanal, peso esperado na data alvo.
+- **Novo objetivo** ("novo objetivo: 15/11, perder 0,5 kg por semana") → mover o `atual` para o fim de `anteriores` acrescentando `"peso_final_kg"` (último peso registrado) e `"encerrado_em"` (hoje); criar novo `atual` com `inicio` = hoje, `peso_inicial_kg` = peso mais recente e as **novas `metas`** (perguntar ao Lucas as metas e o gasto calórico dele; sem resposta, manter as metas anteriores). Atualizar o `meta` do dia aberto. Confirmar no chat: data alvo, metas, meta semanal, peso esperado na data alvo.
 - **Meta semanal automática (`meta_modo: "auto"`)**: `python3 scripts/meta.py` calcula pelo déficit — gasto − média de kcal lançadas nos dias fechados do objetivo — e grava `meta_semanal_kg` + `calculo`. Roda sozinho à meia-noite. **Grok roda `meta.py` depois de gravar um peso novo** (junto no mesmo commit).
 - **Gasto calórico do objetivo (`gasto_kcal`)**: é o Lucas quem define. Ele diz "meu gasto é 2500" → gravar `"gasto_kcal": 2500` em `objetivo.atual`, rodar `meta.py`, `validar.py`, commit `dados: objetivo`. Com `gasto_kcal`, o `meta.py` usa esse número; sem ele, usa a estimativa (Mifflin-St Jeor com `dados/perfil.json` × fator de atividade), que é só uma noção. **Não** criar gasto adaptativo/calculado pelo peso: o Lucas faz essa análise. Em objetivo novo, perguntar o gasto dele.
 - Lucas diz quantos treinos faz / nível de atividade → ajustar `atividade` em `dados/perfil.json` (1.2 sedentário · 1.375 leve · 1.55 moderado · 1.725 intenso), rodar `meta.py`, commit `dados: perfil`.

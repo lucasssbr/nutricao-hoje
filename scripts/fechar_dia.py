@@ -3,7 +3,8 @@
 
 Idempotente: pode rodar várias vezes sem estragar nada.
 1. Todo dia em dados/dias.json anterior a hoje e ainda aberto -> "fechado": true.
-2. Se não existe dados/<hoje>.json, cria o dia com o PLANO PADRÃO (dados/refeicoes.json) como sugestão.
+2. Se não existe dados/<hoje>.json, cria o dia com o PLANO PADRÃO (dados/refeicoes.json) como sugestão
+   e a meta do objetivo atual (dados/objetivo.json → atual.metas).
 3. index.html: data-dia -> hoje.
 4. Botão "Plano" (index, dia, historico) -> dia.html?d=<amanhã>.
 """
@@ -26,6 +27,15 @@ def carregar(p):
 
 def salvar(p, obj):
     p.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def metas_do_objetivo():
+    """Metas diárias do objetivo atual, ou None se não houver."""
+    try:
+        m = carregar(DADOS / "objetivo.json")["atual"]["metas"]
+        return {k: m[k] for k in ("kcal", "p", "c", "g")}
+    except Exception:  # noqa: BLE001 — sem objetivo/metas: usa a meta do último dia
+        return None
 
 
 def main():
@@ -56,6 +66,7 @@ def main():
     hoje_iso = hoje.isoformat()
     p_hoje = DADOS / f"{hoje_iso}.json"
     if not p_hoje.exists():
+        meta = metas_do_objetivo() or meta
         sugestao, nota = [], "Sugestão do dia ainda não feita — peça ao Grok"
         try:
             import sys

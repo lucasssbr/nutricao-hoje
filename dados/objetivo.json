@@ -1,9 +1,15 @@
 {
-  "_sobre": "Objetivo atual do Lucas (data alvo + meta de peso por semana) e histórico de objetivos. O Grok atualiza quando o Lucas pedir. Peso em kg.",
+  "_sobre": "Objetivo atual do Lucas (data alvo, metas diárias de kcal/macros, meta de peso por semana) e histórico de objetivos. O Grok atualiza quando o Lucas pedir. Peso em kg.",
   "atual": {
     "nome": "Estar melhor fisicamente",
     "inicio": "2026-09-29",
     "data_alvo": "2026-10-17",
+    "metas": {
+      "kcal": 1570,
+      "p": 180,
+      "c": 100,
+      "g": 50
+    },
     "peso_inicial_kg": 88.9,
     "meta_semanal_kg": 1.05,
     "meta_modo": "auto",
