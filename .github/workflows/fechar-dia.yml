@@ -1,0 +1,42 @@
+name: Fechar o dia
+
+on:
+  schedule:
+    # 07:05 e 08:05 UTC = 00:05 em Los Angeles (verão / inverno). A outra execução não faz nada.
+    - cron: "5 7 * * *"
+    - cron: "5 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fechar-dia
+  cancel-in-progress: false
+
+jobs:
+  fechar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fechar dia e abrir o novo
+        run: python scripts/fechar_dia.py
+      - name: Commit
+        run: |
+          if git diff --quiet; then
+            echo "Nada a fazer."
+            exit 0
+          fi
+          git config user.name "fechamento-automatico"
+          git config user.email "fechamento-automatico@users.noreply.github.com"
+          ONTEM=$(TZ=America/Los_Angeles date -d yesterday +%d/%m)
+          git add -A
+          git commit -m "fechar $ONTEM (automático)"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1

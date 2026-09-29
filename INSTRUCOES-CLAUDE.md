@@ -88,13 +88,13 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
 5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
-6. **Fechar o dia** (simplificado — **não** copiar mais `index` → `dia-*.html`):
-   1. No JSON do dia: `fechado: true` e `atualizado` atual.
-   2. Histórico atualiza **sozinho** (`historico.html` + `historico.js` lê `dados/dias.json` e só lista `fechado: true`) — **não** editar o HTML do histórico.
-   3. Mudar `index.html` `data-dia` para o **próximo** dia; se o JSON desse dia já existir, ele vira o Hoje.
-   4. Criar o JSON do próximo dia (plano/sugestão) se ainda não existir, **incluir a data em `dados/dias.json`**, e apontar o botão **Plano** do menu para `dia.html?d=YYYY-MM-DD` desse plano.
-   5. Atualizar "Estado atual" neste arquivo.
-   6. Commit `fechar DD/MM` + push.
+6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/fechar-dia.yml` → `scripts/fechar_dia.py`) faz sozinho:
+   1. `fechado: true` em todo dia passado ainda aberto;
+   2. cria o JSON do novo dia se não existir (vazio, com nota "peça ao Grok") e inclui em `dados/dias.json`;
+   3. muda `data-dia` do `index.html` para o novo dia;
+   4. aponta o botão **Plano** para o dia seguinte.
+   Commit `fechar DD/MM (automático)`. **Ninguém precisa fechar o dia na mão.** Se o Lucas pedir "fecha o dia" antes da meia-noite, basta `fechado: true` no JSON; o resto o script faz.
+   **Grok, de manhã:** `git pull`, e se o dia estiver sem sugestão, fazer a sugestão completa no JSON de hoje. Plano de amanhã pode ser criado antes (`dados/<amanhã>.json` + `dias.json`); o script usa o que existir.
 
 Arquivos `dia-YYYY-MM-DD.html` antigos (ex.: `dia-2026-09-28.html`) ficam no repo como arquivo estático legado — **não** tocá-los e **não** criar cópias novas do index. Dias a partir da generic `dia.html` abrem via query string.
 
@@ -166,15 +166,6 @@ Dois assistentes trabalham neste repo:
 
 ## Estado atual
 
-Atualizar **esta seção a cada fechamento de dia**.
-
-- Data de referência: **2026-09-29**
-- Índice: `dados/dias.json` → 28, 29 e 30 set 2026.
-- Dia **28 set 2026**: `dados/2026-09-28.json` (`fechado: true`, ~1576 | P181 | C126 | G43) + HTML legado `dia-2026-09-28.html` (**não tocar**).
-- Dia **29 set 2026** = **Hoje**: `index.html` (`data-dia="2026-09-29"`) + `dados/2026-09-29.json` — `lancado: []`, sugestão **não lançada** (~1549 | P180 | C100 | G50) + `sugestao_nota`, `fechado: false`, `peso_kg: null`.
-- Plano **30 set 2026**: `dados/2026-09-30.json` (`fechado: false`, `lancado: []`, sugestão ~1568 | P185 | C104 | G50). Menu **Plano** → `dia.html?d=2026-09-30`.
-- `sugestao-2026-09-30.html` permanece no repo (rascunho antigo); **fora** dos menus.
-- Shells: `estilo.css` + `render.js`; `dia.html?d=` para qualquer dia; peso sob a data quando `peso_kg` está no JSON.
-- Histórico automático (#07): `historico.html` + `historico.js` (só `fechado: true`).
+Não é mais mantido à mão: o estado está nos arquivos. Hoje = `data-dia` do `index.html`; dias = `dados/dias.json`; cada dia em `dados/AAAA-MM-DD.json` (`fechado`). Dia 28 set também tem o HTML legado `dia-2026-09-28.html` (**não tocar**).
 
 Conferir os arquivos no repo antes de assumir que o estado continua igual.

@@ -227,6 +227,11 @@
       html += '</section>';
     });
 
+    var notaSolta = (data.sugestao_nota && String(data.sugestao_nota).trim()) || '';
+    if (!sugestao.length && notaSolta && !data.fechado) {
+      html += '<section class="meal suggest"><div class="badge">NÃO LANÇADO</div><div class="hint" style="margin:0">' + esc(notaSolta) + '</div></section>';
+    }
+
     if (sugestao.length) {
       var nota = (data.sugestao_nota && String(data.sugestao_nota).trim()) || '';
       var sugTitle = hasCons ? 'Pra fechar o dia' : 'Sugestão do dia';
@@ -276,6 +281,10 @@
       render(data);
     })
     .catch(function () {
-      showError('Não consegui carregar os dados de ' + ddmm(pageDia));
+      if (!isHoje && pageDia > localISODate()) {
+        showError('Plano de ' + ddmm(pageDia) + ' ainda não foi feito — peça ao Grok');
+      } else {
+        showError('Não consegui carregar os dados de ' + ddmm(pageDia));
+      }
     });
 })();
