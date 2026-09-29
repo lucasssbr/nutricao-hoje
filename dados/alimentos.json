@@ -1,0 +1,96 @@
+{
+  "_sobre": "Biblioteca de alimentos do Lucas. Fonte única dos valores nutricionais. Pesos sempre crus. Valores = por 'base'. fonte: rotulo | usda | openfoodfacts | lucas | estimado.",
+  "nurri-vanilla": {
+    "nome": "Nurri Vanilla Milk Shake",
+    "apelidos": ["nurri", "shake", "nurri vanilla"],
+    "base": "1 lata (325 ml)",
+    "kcal": 150, "p": 30, "c": 3, "g": 3,
+    "fonte": "lucas",
+    "salvo_em": "2026-09-28",
+    "obs": "valores informados pelo Lucas; conferir no rótulo da lata"
+  },
+  "chuck-costco": {
+    "nome": "Chuck steak Costco (cru)",
+    "apelidos": ["chuck", "carne", "chuck costco", "acém"],
+    "base": "100 g",
+    "kcal": 223, "p": 20, "c": 0, "g": 17,
+    "fonte": "estimado",
+    "salvo_em": "2026-09-28",
+    "obs": "peso sempre cru; máx. 200 g/dia; conferir no rótulo da embalagem Costco"
+  },
+  "ovo-inteiro": {
+    "nome": "Ovo inteiro grande",
+    "apelidos": ["ovo", "ovos", "ovo inteiro"],
+    "base": "1 un",
+    "kcal": 72, "p": 7, "c": 1, "g": 5,
+    "fonte": "usda",
+    "salvo_em": "2026-09-29"
+  },
+  "clara-un": {
+    "nome": "Clara de ovo",
+    "apelidos": ["clara", "claras"],
+    "base": "1 un (~34 g)",
+    "kcal": 18, "p": 4, "c": 0, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-29",
+    "obs": "só à noite, se precisar fechar proteína"
+  },
+  "clara-100g": {
+    "nome": "Clara de ovo (por peso)",
+    "apelidos": ["clara", "claras", "clara líquida"],
+    "base": "100 g",
+    "kcal": 52, "p": 11, "c": 1, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-29"
+  },
+  "iogurte-grego-430g": {
+    "nome": "Iogurte grego desnatado (porção do Lucas)",
+    "apelidos": ["iogurte", "iogurte grego", "greek yogurt"],
+    "base": "430 g",
+    "kcal": 254, "p": 43, "c": 15, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-28",
+    "obs": "conferir no rótulo da marca usada"
+  },
+  "iogurte-grego-100g": {
+    "nome": "Iogurte grego desnatado (por peso)",
+    "apelidos": ["iogurte", "iogurte grego"],
+    "base": "100 g",
+    "kcal": 59, "p": 10, "c": 3, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-28"
+  },
+  "batata-inglesa": {
+    "nome": "Batata inglesa (crua)",
+    "apelidos": ["batata", "batata inglesa"],
+    "base": "100 g",
+    "kcal": 77, "p": 2, "c": 17, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-28",
+    "obs": "peso sempre cru"
+  },
+  "banana": {
+    "nome": "Banana média",
+    "apelidos": ["banana"],
+    "base": "1 un",
+    "kcal": 105, "p": 1, "c": 27, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-28"
+  },
+  "melancia": {
+    "nome": "Melancia",
+    "apelidos": ["melancia"],
+    "base": "100 g",
+    "kcal": 30, "p": 1, "c": 8, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-29"
+  },
+  "tomate": {
+    "nome": "Tomate",
+    "apelidos": ["tomate"],
+    "base": "100 g",
+    "kcal": 18, "p": 1, "c": 4, "g": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-09-29"
+  }
+}

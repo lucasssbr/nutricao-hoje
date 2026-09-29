@@ -11,34 +11,27 @@
 - **C 100 g** (carboidratos)
 - **G 50 g** (gorduras)
 
-## Tabela de alimentos (valores fixos)
+## Biblioteca de alimentos (`dados/alimentos.json`)
 
-Pesos **sempre crus** (carne, batata). Assistentes usam **somente** esta tabela e **não reestimam**. Alimento novo entra nesta tabela **antes** de ir para o log.
+Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a única fonte. Pesos **sempre crus** (carne, batata). Cada entrada tem `nome`, `apelidos`, `base` (100 g, 1 un, 1 lata…), `kcal`/`p`/`c`/`g`, `fonte` e `salvo_em`.
 
-| Alimento | Porção | kcal | P | C | G |
-|---|---|---:|---:|---:|---:|
-| Nurri Vanilla Milk Shake | 1 lata (325 ml) | 150 | 30 | 3 | 3 |
-| Chuck steak Costco CRU | 100 g | 223 | 20 | 0 | 17 |
-| Ovo inteiro grande | 1 un | 72 | 7 | 1 | 5 |
-| Clara de ovo | 1 un (~34 g) | 18 | 4 | 0 | 0 |
-| Clara de ovo | 100 g | 52 | 11 | 1 | 0 |
-| Iogurte grego desnatado | 430 g (porção típica do Lucas) | 254 | 43 | 15 | 0 |
-| Iogurte grego desnatado | 100 g | 59 | 10 | 3 | 0 |
-| Batata inglesa crua | 100 g | 77 | 2 | 17 | 0 |
-| Banana média | 1 un | 105 | 1 | 27 | 0 |
-| Melancia | 100 g | 30 | 1 | 8 | 0 |
-| Tomate | 100 g | 18 | 1 | 4 | 0 |
+`fonte` pode ser: `rotulo` · `usda` · `openfoodfacts` · `lucas` (valor informado pelo Lucas) · `estimado`.
 
-Notas da tabela:
+### Regra de busca (alimento citado no chat)
 
-- Chuck, Nurri, banana, batata e iogurte (430 g) batem com o log do **dia 28** / sugestão do **dia 29**.
-- Melancia usa o padrão do **dia 29** (USDA): 100 g = 30 | P1 | C8 | G0. O `dia-2026-09-28.html` permanece com o valor antigo (arquivo fechado).
-- Ovo inteiro, clara (por unidade) e tomate (100 g) são referência genérica arredondada a partir dos valores já usados no HTML → marcados **(ref)**: ovo, clara/un, tomate.
-- Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C52 | G0; melancia 300 g = 90 | P3 | C24 | G0.
+1. Procurar primeiro em `alimentos.json` (pelo nome ou apelido). Achou → **usar, sem pesquisar**.
+2. Não achou → buscar nesta ordem: **rótulo** (se o Lucas mandou foto) → **USDA FoodData Central** (alimento in natura) → **Open Food Facts** (industrializado / código de barras) → **estimativa** (último caso).
+3. **Antes de logar**, salvar o alimento novo em `alimentos.json` com `fonte` e `salvo_em`, e avisar no chat: "novo na biblioteca: X (fonte)". Commit `dados: alimento <nome>`.
+4. Alimento com `fonte: estimado` → perguntar ao Lucas se ele tem o rótulo; com o rótulo, atualizar a entrada e a fonte.
+5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados.
 
-**kcal de cada item** = valor da tabela × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
+Pendentes de rótulo: **chuck Costco** (`estimado`), **Nurri** (`lucas`), **iogurte grego** (marca usada).
 
-- Sugestão: calcular com valores da tabela sem arredondar por item; arredondar só os totais exibidos
+Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
+
+**kcal de cada item** = valor de `alimentos.json` × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
+
+- Sugestão: calcular com valores de `alimentos.json` sem arredondar por item; arredondar só os totais exibidos
 
 
 ## Formato do log no chat
@@ -90,7 +83,7 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
-1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só pela tabela). **Acrescentar a data em `dados/dias.json`**. Ajustar `index.html` `data-dia` para essa data (uma vez).
+1. **Início do dia** — criar `dados/YYYY-MM-DD.json` com `lancado: []`, `fechado: false` e `sugestao` completa (macros só por `alimentos.json`). **Acrescentar a data em `dados/dias.json`**. Ajustar `index.html` `data-dia` para essa data (uma vez).
 2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos são só referência.
@@ -129,7 +122,7 @@ Padronizar mensagens assim:
 - `historico.html` + `historico.js` — lista automática dos dias com `fechado: true` (via `dias.json`); card “Últimos 7 dias”; links para `dia.html?d=…`.
 - `dia-*.html` — **legado** (ex.: `dia-2026-09-28.html`); não tocar; novos dias usam só `dia.html?d=`.
 - `sugestao-*.html` — rascunhos antigos de referência (não são log; menu Plano aponta para `dia.html?d=`).
-- `INSTRUCOES-CLAUDE.md` — estas regras (tabela, fluxo, commits).
+- `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
 O repositório é a única fonte do site; não manter espelho local separado. Para gerar PNG para o chat, fazer screenshot do site publicado ou de um servidor local servindo esta pasta do repo e esperar o render terminar. Mac/iCloud é opcional: se necessário, copiar a pasta inteira, incluindo HTML, CSS, JS e `dados/`.
@@ -142,7 +135,7 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Claras de ovo: **só à noite** e somente se forem necessárias para fechar a proteína/macros.
 - Frango é opcional e pode estar indisponível; não presumir que há frango.
 - **Plano B sem frango** (ordem de prioridade para fechar proteína): ovo inteiro → iogurte grego desnatado → Nurri → claras (só à noite).
-- Ao sugerir refeições, respeitar as metas e essas restrições sem inventar ingredientes ou disponibilidade; macros só pela tabela acima.
+- Ao sugerir refeições, respeitar as metas e essas restrições sem inventar ingredientes ou disponibilidade; macros só por `dados/alimentos.json`.
 
 ## Regras de UX e conteúdo
 
