@@ -6,9 +6,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#0B1220" />
-<meta name="dash-version" content="hist-v1" />
+<meta name="dash-version" content="sug-30set-v1" />
 <title>Hoje · Nutrição</title>
 <style>
+
 
   :root {
     --bg: #0B1220;
@@ -185,12 +186,13 @@
   .hist-list .d { font-weight:700; font-size:16px; }
   .hist-list .m { color:var(--muted); font-size:12px; margin-top:4px; }
   .hist-list .r { text-align:right; color:var(--kcal); font-weight:800; font-size:14px; }
+
 </style>
 </head>
 <body>
   <div class="phone">
     <div class="island" aria-hidden="true"></div>
-        <div class="nav">
+    <div class="nav">
       <a class="active" href="./">Hoje</a>
       <a href="./historico.html">Histórico</a>
       <a href="./dia-2026-09-29.html">29 set</a>
@@ -198,7 +200,7 @@
     <div class="top">
       <div>
         <h1>Hoje</h1>
-        <div class="date">30 set 2026 · Corte fotos · Corte fotos</div>
+        <div class="date">30 set 2026 · Corte fotos</div>
       </div>
       <div class="pill">Safari</div>
     </div>
@@ -208,7 +210,7 @@
           <svg viewBox="0 0 148 148" aria-hidden="true">
             <circle cx="74" cy="74" r="58" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" />
             <circle cx="74" cy="74" r="58" fill="none" stroke="#FF453A" stroke-width="12"
-              stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="364"
+              stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="364.4"
               style="filter: drop-shadow(0 0 8px rgba(255,69,58,0.45));" />
           </svg>
           <div class="center">
@@ -216,30 +218,121 @@
             <div class="lbl">de 1570 kcal</div>
           </div>
         </div>
-        <div class="remain-box"><div class="k">Meta do dia</div><div class="v">1570</div><div class="sub">kcal · comece a logar</div></div>
+        <div class="remain-box">
+          <div class="k">Meta do dia</div>
+          <div class="v">1570</div>
+          <div class="sub">kcal · ainda sem refeições lançadas</div>
+        </div>
       </div>
       <div class="macros">
         <div class="macro">
           <div class="name p">Proteína</div>
-          <div class="track"><div class="fill p" style="width:0.0%;background:var(--protein)"></div></div>
+          <div class="track"><div class="fill p" style="width:0%;background:var(--protein)"></div></div>
           <div class="nums">0 <span>/ 180 g</span></div>
         </div>
         <div class="macro">
           <div class="name c">Carbo</div>
-          <div class="track"><div class="fill c" style="width:0.0%;background:var(--carbs)"></div></div>
+          <div class="track"><div class="fill c" style="width:0%;background:var(--carbs)"></div></div>
           <div class="nums">0 <span>/ 100 g</span></div>
         </div>
         <div class="macro">
           <div class="name f">Gordura</div>
-          <div class="track"><div class="fill f" style="width:0.0%;background:var(--fat)"></div></div>
+          <div class="track"><div class="fill f" style="width:0%;background:var(--fat)"></div></div>
           <div class="nums">0 <span>/ 50 g</span></div>
         </div>
       </div>
-      <div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">Novo dia — ainda sem refeições</div>
+      <div class="alert" style="background:rgba(10,132,255,0.12);border-color:rgba(10,132,255,0.28);color:#64D2FF">Consumido: 0 — plano abaixo é só sugestão</div>
     </section>
-    <div class="section-title">Refeições</div>
-<p style="color:var(--muted);font-size:14px;padding:8px 4px">Nenhuma refeição ainda. Manda no chat pra eu lançar.</p>
-    <div class="footer">Meta 1570 · 180P · 100C · 50G</div>
+    <div class="section-title">Refeições lançadas</div>
+    <p style="color:var(--muted);font-size:14px;padding:8px 4px">Nenhuma ainda.</p>
+    <div class="section-title">Pra fechar o dia · plano sugerido</div>
+    <p class="hint" style="color:var(--muted);font-size:12px;margin:0 4px 10px">Não entra na conta até você confirmar no chat ou na voz.</p>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head">
+        <h3>Ref 1 · Café</h3>
+        <div class="tot"><b>385 kcal</b> · P59 · C31 · G3</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Banana média</div><div class="qty">1 unidade</div></div>
+        <div class="right"><div class="cal">105</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C27</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Claras de ovo</div><div class="qty">250 g</div></div>
+        <div class="right"><div class="cal">130</div><div class="chips"><span class="chip p">P28</span><span class="chip c">C1</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div>
+        <div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div>
+      </div>
+    </section>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head">
+        <h3>Ref 2 · Almoço</h3>
+        <div class="tot"><b>389 kcal</b> · P25 · C37 · G17</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div>
+        <div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Batata inglesa crua</div><div class="qty">180 g</div></div>
+        <div class="right"><div class="cal">139</div><div class="chips"><span class="chip p">P4</span><span class="chip c">C31</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Tomate</div><div class="qty">150 g</div></div>
+        <div class="right"><div class="cal">27</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C6</span><span class="chip f">G0</span></div></div>
+      </div>
+    </section>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head">
+        <h3>Ref 3 · Lanche</h3>
+        <div class="tot"><b>201 kcal</b> · P31 · C16 · G3</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Nurri Vanilla</div><div class="qty">1 lata</div></div>
+        <div class="right"><div class="cal">150</div><div class="chips"><span class="chip p">P30</span><span class="chip c">C3</span><span class="chip f">G3</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Melancia</div><div class="qty">170 g</div></div>
+        <div class="right"><div class="cal">51</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C13</span><span class="chip f">G0</span></div></div>
+      </div>
+    </section>
+    <section class="meal suggest">
+      <div class="badge">NÃO LANÇADO</div>
+      <div class="meal-head">
+        <h3>Ref 4 · Jantar</h3>
+        <div class="tot"><b>520 kcal</b> · P69 · C18 · G18</div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Chuck Costco crua</div><div class="qty">100 g</div></div>
+        <div class="right"><div class="cal">223</div><div class="chips"><span class="chip p">P20</span><span class="chip c">C0</span><span class="chip f">G17</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Claras de ovo</div><div class="qty">330 g</div></div>
+        <div class="right"><div class="cal">172</div><div class="chips"><span class="chip p">P36</span><span class="chip c">C2</span><span class="chip f">G1</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Batata inglesa crua</div><div class="qty">70 g</div></div>
+        <div class="right"><div class="cal">54</div><div class="chips"><span class="chip p">P1</span><span class="chip c">C12</span><span class="chip f">G0</span></div></div>
+      </div>
+      <div class="food">
+        <div class="left"><div class="name">Iogurte grego desnatado</div><div class="qty">120 g</div></div>
+        <div class="right"><div class="cal">71</div><div class="chips"><span class="chip p">P12</span><span class="chip c">C4</span><span class="chip f">G0</span></div></div>
+      </div>
+    </section>
+
+    <section class="meal suggest">
+      <div class="badge">TOTAL SUGESTÃO</div>
+      <div class="meal-head">
+        <h3>Se seguir o plano</h3>
+        <div class="tot"><b>1495 kcal</b> · P184 · C102 · G41</div>
+      </div>
+      <div class="proj">Meta 1570 / 180 / 100 / 50 · chuck 200 g no dia · 2 Nurri · sem frango</div>
+    </section>
+    <div class="footer">Meta 1570 · 180P · 100C · 50G · sugestão 30 set</div>
   </div>
 </body>
 </html>
