@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta name="theme-color" content="#0B1220" />
-<meta name="dash-version" content="hoje-29-v5" />
+<meta name="dash-version" content="hoje-29-v6" />
 <title>Hoje · Nutrição</title>
 <style>
 
@@ -219,8 +219,8 @@
 <body data-dia="2026-09-29">
   <div class="phone">
     <div class="island"></div>
-    <div id="staleBanner" class="stale-banner" role="status">Página de 29/09 — dia ainda não fechado (ou cache antigo)</div>
-    <div class="stamp" id="updateStamp">Atualizado 29/09 · 09:55</div>
+    <div id="staleBanner" class="stale-banner" role="status"></div>
+    <div class="stamp" id="updateStamp">Atualizado 29/09 · 09:57</div>
     <div class="nav">
       <a class="active" href="./">Hoje</a>
       <a href="./historico.html">Histórico</a>
@@ -292,9 +292,12 @@
   var m = String(now.getMonth() + 1).padStart(2, '0');
   var d = String(now.getDate()).padStart(2, '0');
   var local = y + '-' + m + '-' + d;
-  if (local !== pageDia) {
-    var el = document.getElementById('staleBanner');
-    if (el) el.classList.add('show');
+  var parts = pageDia.split('-');
+  if (parts.length !== 3) return;
+  var el = document.getElementById('staleBanner');
+  if (local !== pageDia && el) {
+    el.textContent = 'Página de ' + parts[2] + '/' + parts[1] + ' — dia ainda não fechado (ou cache antigo)';
+    el.classList.add('show');
   }
 })();
 </script>
