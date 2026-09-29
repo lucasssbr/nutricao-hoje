@@ -38,6 +38,8 @@ Notas da tabela:
 
 **kcal de cada item** = valor da tabela × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
 
+- Sugestão: calcular com valores da tabela sem arredondar por item; arredondar só os totais exibidos
+
 
 ## Formato do log no chat
 
