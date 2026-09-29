@@ -20,7 +20,19 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
 ### Regra de busca (alimento citado no chat)
 
 1. Procurar primeiro em `alimentos.json` (pelo nome ou apelido). Achou → **usar, sem pesquisar**.
-2. Não achou → buscar nesta ordem: **rótulo** (se o Lucas mandou foto) → **USDA FoodData Central** (alimento in natura) → **Open Food Facts** (industrializado / código de barras) → **estimativa** (último caso).
+2. Não achou → se o Lucas mandou foto da **tabela nutricional**, usar o rótulo. **Sem tabela** (só o nome, ou etiqueta sem tabela, como carne de açougue) → **pesquisar na internet e fazer revisão cruzada**:
+   - Buscar em **pelo menos 2 fontes**: USDA FoodData Central (in natura) e/ou Open Food Facts / site da marca (industrializado). Usar o nome exato do produto/corte.
+   - **Comparar** kcal, P, C, G por 100 g (ou por unidade):
+     - fontes batem (diferença ≤ 10% em kcal e ≤ 3 g em cada macro) → usar a mais oficial (USDA > marca > Open Food Facts), `fonte` dessa base;
+     - fontes **não** batem → usar o valor **mais alto de kcal/gordura** (conservador) e `fonte: "estimado"`.
+   - Registrar em `obs` quais fontes foram consultadas e os valores de cada uma.
+   - Avisar no chat, antes de logar, neste formato:
+     ```
+     🔎 Novo na biblioteca: <nome> (por 100 g)
+     • USDA: 227 kcal | P19 | C0 | G17
+     • <fonte 2>: 230 kcal | P20 | C0 | G17
+     ✅ Batem → usando USDA   (ou ⚠️ Não batem → usando o mais alto; mande a tabela se tiver)
+     ```
 3. **Antes de logar**, salvar o alimento novo em `alimentos.json` com `fonte` e `salvo_em`, e avisar no chat: "novo na biblioteca: X (fonte)". Commit `dados: alimento <nome>`.
 4. Alimento com `fonte: estimado` → perguntar ao Lucas se ele tem o rótulo; com o rótulo, atualizar a entrada e a fonte.
 5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados.
