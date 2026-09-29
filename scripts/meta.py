@@ -5,8 +5,10 @@
   python3 scripts/meta.py --ver      # só mostra a conta
 
 Conta:
-  gasto (TDEE) = objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
-                 senão estimativa: Mifflin-St Jeor (peso mais recente, altura, idade, sexo) × fator de atividade
+  gasto (TDEE) = 1) objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
+                 2) GASTO REAL, quando houver dados suficientes: média de kcal lançadas − tendência do
+                    peso × 7700 (se comeu 1570 e perdeu 1 kg/semana, gastou ~1570 + 1100);
+                 3) senão estimativa: Mifflin-St Jeor (peso, altura, idade, sexo) × fator de atividade
   ingestão     = média de kcal lançadas nos dias fechados do objetivo (dias com < 800 kcal
                  lançadas são ignorados por parecerem incompletos); com menos de 3 dias → meta de kcal
                  (um dia só distorce muito a média)
@@ -26,6 +28,39 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DADOS = ROOT / "dados"
 KCAL_POR_KG = 7700
 MIN_DIAS = 3  # dias fechados mínimos para usar a média real de ingestão
+# gasto real: janela de até 21 dias, pulando os 4 primeiros dias do objetivo (água/glicogênio)
+REAL_JANELA, REAL_PULA, REAL_MIN_SPAN, REAL_MIN_PESOS, REAL_MIN_DIAS = 21, 4, 10, 6, 7
+
+
+def gasto_real(pesos, ingestao_por_dia, inicio):
+    """Gasto calórico real (kcal/dia) pelos dados, ou (None, motivo)."""
+    if not pesos:
+        return None, "sem pesos"
+    fim = datetime.date.fromisoformat(pesos[-1][0])
+    ini = max(fim - datetime.timedelta(days=REAL_JANELA - 1),
+              datetime.date.fromisoformat(inicio) + datetime.timedelta(days=REAL_PULA))
+    pts = [(datetime.date.fromisoformat(d), kg) for d, kg in pesos if datetime.date.fromisoformat(d) >= ini]
+    kcal = [k for d, k in ingestao_por_dia.items() if ini <= datetime.date.fromisoformat(d) <= fim]
+    span = (pts[-1][0] - pts[0][0]).days if len(pts) > 1 else 0
+    if len(pts) < REAL_MIN_PESOS or span < REAL_MIN_SPAN or len(kcal) < REAL_MIN_DIAS:
+        falta = []
+        if len(pts) < REAL_MIN_PESOS:
+            falta.append(f"{REAL_MIN_PESOS - len(pts)} peso(s)")
+        if span < REAL_MIN_SPAN:
+            falta.append(f"{REAL_MIN_SPAN - span} dia(s) de intervalo")
+        if len(kcal) < REAL_MIN_DIAS:
+            falta.append(f"{REAL_MIN_DIAS - len(kcal)} dia(s) lançados")
+        return None, "faltam " + ", ".join(falta)
+    xs = [(d - pts[0][0]).days for d, _ in pts]
+    ys = [kg for _, kg in pts]
+    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+    den = sum((x - mx) ** 2 for x in xs)
+    inclinacao = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / den  # kg/dia
+    real = sum(kcal) / len(kcal) - inclinacao * KCAL_POR_KG
+    if not 1200 <= real <= 5000:
+        return None, f"resultado fora do razoável ({round(real)} kcal) — dados inconsistentes"
+    return {"kcal": round(real), "dias": len(kcal), "pesos": len(pts),
+            "de": ini.isoformat(), "ate": fim.isoformat(), "kg_semana": round(inclinacao * 7, 2)}, None
 
 
 def ler(nome):
@@ -46,7 +81,7 @@ def calcular(hoje=None):
     atual = obj["atual"]
     dias = ler("dias.json")
 
-    pesos, ingestao = [], []
+    pesos, ingestao, por_dia = [], [], {}
     meta_kcal = atual.get("metas", {}).get("kcal", 1570)
     for d in sorted(dias):
         p = DADOS / f"{d}.json"
@@ -55,19 +90,25 @@ def calcular(hoje=None):
         dia = json.loads(p.read_text(encoding="utf-8"))
         if dia.get("peso_kg") is not None:
             pesos.append((d, float(dia["peso_kg"])))
-        if dia.get("fechado") and d >= atual["inicio"]:
+        if dia.get("fechado"):
             kcal = sum(i["kcal"] for r in dia.get("lancado", []) for i in r["itens"])
             if kcal >= 800:
-                ingestao.append(kcal)
+                por_dia[d] = kcal
+                if d >= atual["inicio"]:
+                    ingestao.append(kcal)
 
     peso = pesos[-1][1] if pesos else float(atual["peso_inicial_kg"])
     anos = idade(perfil["nascimento"], hoje)
     bmr = 10 * peso + 6.25 * perfil["altura_cm"] - 5 * anos + (5 if perfil.get("sexo", "M") == "M" else -161)
     informado = atual.get("gasto_kcal")
+    real, sem_real = gasto_real(pesos, por_dia, atual["inicio"])
+    formula = bmr * perfil["atividade"]
     if isinstance(informado, (int, float)) and not isinstance(informado, bool):
         tdee, gasto_fonte = float(informado), "informado"
+    elif real:
+        tdee, gasto_fonte = float(real["kcal"]), "real"
     else:
-        tdee, gasto_fonte = bmr * perfil["atividade"], "estimado"
+        tdee, gasto_fonte = formula, "estimado"
     if len(ingestao) >= MIN_DIAS:
         comendo, fonte = sum(ingestao) / len(ingestao), f"média de {len(ingestao)} dias lançados"
     else:
@@ -83,6 +124,9 @@ def calcular(hoje=None):
             "atividade": perfil["atividade"],
             "gasto_estimado": round(tdee),
             "gasto_fonte": gasto_fonte,
+            "gasto_formula": round(formula),
+            "gasto_real": real,
+            "gasto_real_falta": sem_real,
             "ingestao_media": round(comendo),
             "ingestao_fonte": fonte,
             "deficit_dia": round(deficit),
@@ -94,8 +138,15 @@ def calcular(hoje=None):
 def main():
     obj, novo = calcular()
     c = novo["calculo"]
+    if c["gasto_real"]:
+        r = c["gasto_real"]
+        print(f"Gasto real pelos dados: {r['kcal']} kcal ({r['dias']} dias lançados, {r['pesos']} pesos, {r['de']}→{r['ate']}, peso {r['kg_semana']:+} kg/sem)")
+    else:
+        print(f"Gasto real: ainda não ({c['gasto_real_falta']})")
     if c["gasto_fonte"] == "informado":
         print(f"Gasto informado pelo Lucas: {c['gasto_estimado']} kcal")
+    elif c["gasto_fonte"] == "real":
+        print(f"Usando o gasto real ({c['gasto_estimado']} kcal); fórmula daria {c['gasto_formula']}")
     else:
         print(f"Gasto estimado {c['gasto_estimado']} kcal (BMR {c['bmr']} × {c['atividade']}, {c['idade']} anos, {c['peso_ref_kg']} kg)")
     print(f"Comendo {c['ingestao_media']} kcal ({c['ingestao_fonte']}) → déficit {c['deficit_dia']} kcal/dia")

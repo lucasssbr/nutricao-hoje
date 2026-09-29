@@ -66,9 +66,20 @@
     function mil(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     h += '<div class="obj-line"><b>Meta da semana:</b> −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' até ' + curta(c.fimSemana) + '</div>';
     if (o.calculo) {
-      var gastoTxt = o.calculo.gasto_fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado) : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
+      var fonte = o.calculo.gasto_fonte;
+      var gastoTxt = fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado)
+        : fonte === 'real' ? 'gasto real ~' + mil(o.calculo.gasto_estimado)
+        : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
       h += '<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
         ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
+      var gr = o.calculo.gasto_real;
+      if (gr && fonte === 'real') {
+        h += '<div class="obj-line obj-muted">Gasto real calculado pelos seus dados (' + gr.dias + ' dias, ' + gr.pesos + ' pesos); a fórmula dava ~' + mil(o.calculo.gasto_formula) + '.</div>';
+      } else if (gr) {
+        h += '<div class="obj-line obj-muted">Pelos seus dados, o gasto real está em ~' + mil(gr.kcal) + ' kcal/dia.</div>';
+      } else if (o.calculo.gasto_real_falta) {
+        h += '<div class="obj-line obj-muted">Gasto real (pelos seus dados) ainda não: ' + esc(o.calculo.gasto_real_falta) + '.</div>';
+      }
     }
     if (c.passados < 7) {
       h += '<div class="obj-line obj-muted">1ª semana: a balança costuma cair mais (água e glicogênio), não é tudo gordura.</div>';

@@ -263,6 +263,51 @@
     });
   }
 
+  // Check-in semanal do objetivo: uma linha por semana (esperado × real, média kcal/P, dias na meta)
+  function renderCheckin(closed, reais, obj) {
+    var box = document.getElementById('checkinCard');
+    if (!box) return;
+    var N = window.NutriObjetivo;
+    if (!obj || !N) { box.hidden = true; return; }
+    var hoje = N.hojeISO();
+    var c = N.calc(obj, hoje);
+    var serie = N.serieDiaria(reais, hoje);
+    function mediaPeso(ate) {  // média 7 dias da série (real + estimado) terminando em 'ate'
+      var win = serie.filter(function (p) { var d = diasEntre(p.data, ate); return d >= 0 && d < 7; });
+      return win.length ? avg(win.map(function (p) { return p.kg; })) : null;
+    }
+    var semanas = Math.max(1, Math.ceil(c.tot / 7));
+    var linhas = '';
+    for (var w = 1; w <= semanas; w++) {
+      var ini = somaDias(obj.inicio, 7 * (w - 1));
+      if (ini > hoje) break;
+      var fim = somaDias(obj.inicio, Math.min(7 * w - 1, c.tot));
+      var andamento = hoje < fim;
+      var ate = andamento ? hoje : fim;
+      var ds = closed.filter(function (d) { return d.data >= ini && d.data <= fim; });
+      var ok = ds.filter(function (d) { return naMeta(d.cons, d.meta); }).length;
+      var h = '<div class="ck-sem"><div class="ck-head"><b>Semana ' + w + '</b> <span>' + esc(N.curta(ini)) + ' → ' + esc(N.curta(fim)) +
+        (andamento ? ' · em andamento (dia ' + (diasEntre(ini, hoje) + 1) + '/' + (diasEntre(ini, fim) + 1) + ')' : '') + '</span></div>';
+      var pReal = mediaPeso(ate), pEsp = c.esperado(ate);
+      if (pReal != null) {
+        var st = N.status(pReal, pEsp);
+        h += '<div class="ck-l">Peso (média 7d) ' + kgStr(pReal) + ' kg · esperado ' + kgStr(pEsp) + ' kg · <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
+      } else {
+        h += '<div class="ck-l ck-m">Sem peso nesta semana ainda.</div>';
+      }
+      if (ds.length) {
+        h += '<div class="ck-l">Média ' + ri(avg(ds.map(function (d) { return d.cons.kcal; }))) + ' kcal · P' +
+          ri(avg(ds.map(function (d) { return d.cons.p; }))) + ' · ' + ok + ' de ' + ds.length + ' dia' + (ds.length > 1 ? 's' : '') + ' na meta</div>';
+      } else {
+        h += '<div class="ck-l ck-m">Nenhum dia fechado ainda nesta semana.</div>';
+      }
+      if (w === 1) h += '<div class="ck-l ck-m">1ª semana: parte da queda é água e glicogênio.</div>';
+      linhas = h + '</div>' + linhas;  // semana mais recente em cima
+    }
+    box.hidden = false;
+    box.innerHTML = '<div class="hist-summary-title">Check-in semanal · ' + esc(obj.nome || 'objetivo') + '</div>' + linhas;
+  }
+
   function renderList(days) {
     var list = document.getElementById('histList');
     if (!list) return;
@@ -347,7 +392,8 @@
       });
       pesos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
       var carregaObj = window.NutriObjetivo ? window.NutriObjetivo.carregar() : Promise.resolve(null);
-      carregaObj.then(function (obj) { renderPeso(pesos, obj); });
+      carregaObj.then(function (obj) { renderPeso(pesos, obj); renderCheckin(closedAsc(), pesos, obj); });
+      function closedAsc() { return closed.slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; }); }
       results.forEach(function (r) {
         if (!r.ok) {
           showWarn('Não deu pra carregar ' + r.iso);

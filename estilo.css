@@ -365,3 +365,10 @@
   .btn-csv[hidden] { display: none; }
   .pc-dot.pc-est { fill: var(--surface); stroke: var(--text); stroke-width: 1.5; }
   .pc-k-est { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text); display: inline-block; box-sizing: border-box; }
+  /* check-in semanal */
+  .ck-sem { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .hist-summary-title + .ck-sem { border-top: none; padding-top: 0; }
+  .ck-head { font-size: 14px; }
+  .ck-head span { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .ck-l { font-size: 13px; line-height: 1.45; margin-top: 3px; }
+  .ck-m { color: var(--muted); font-size: 12px; }
