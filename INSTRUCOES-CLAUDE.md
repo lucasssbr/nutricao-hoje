@@ -157,6 +157,7 @@ O assistente também mantém o espelho local `/workspace/nutricao-hoje.html` e o
 4. Revisar o diff e confirmar que nenhum `dia-*.html` legado foi alterado acidentalmente.
 5. Fazer commit na branch `main` e publicar com `git push origin main`.
 6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário.
+7. Toda alteração em `render.js` ou `estilo.css` deve incrementar o `?v=` nos dois HTML (`index.html` e `dia.html`).
 
 ## Estado atual
 

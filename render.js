@@ -4,9 +4,11 @@
   var body = document.body;
   var isHoje = body.hasAttribute('data-dia');
   var pageDia = body.getAttribute('data-dia');
+  var invalidQueryDate = false;
   if (!pageDia) {
     var params = new URLSearchParams(window.location.search);
     pageDia = params.get('d') || '';
+    invalidQueryDate = !/^\d{4}-\d{2}-\d{2}$/.test(pageDia);
   }
 
   function pad2(n) { return String(n).padStart(2, '0'); }
@@ -92,6 +94,7 @@
     if (!el) return;
     el.classList.remove('show');
     el.textContent = '';
+    if (!isHoje) return;
     var dia = data.data || pageDia;
     var parts = dia.split('-');
     if (data.fechado) {
@@ -242,8 +245,8 @@
     }
   }
 
-  if (!pageDia) {
-    showError('Não consegui carregar os dados de —');
+  if (!pageDia || invalidQueryDate) {
+    showError('Não consegui carregar os dados de ' + ddmm(pageDia || '—'));
     return;
   }
 
