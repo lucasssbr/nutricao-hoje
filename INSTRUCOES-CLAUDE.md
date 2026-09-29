@@ -26,14 +26,18 @@ Pesos **sempre crus** (carne, batata). Assistentes usam **somente** esta tabela 
 | Iogurte grego desnatado | 100 g | 59 | 10 | 3 | 0 |
 | Batata inglesa crua | 100 g | 77 | 2 | 17 | 0 |
 | Banana média | 1 un | 105 | 1 | 27 | 0 |
-| Melancia | 100 g | 24 | 0 | 6 | 0 |
+| Melancia | 100 g | 30 | 1 | 8 | 0 |
 | Tomate | 100 g | 18 | 1 | 4 | 0 |
 
 Notas da tabela:
 
-- Chuck, Nurri, banana, batata, melancia e iogurte (430 g) batem com o log do **dia 28** / sugestão do **dia 29**.
-- Ovo inteiro, clara (por unidade) e tomate (100 g) são referência genérica arredondada a partir dos valores já usados no HTML → marcados **(ref)** no sentido de Claude: ovo, clara/un, tomate.
-- Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C52 | G0; melancia 300 g = 72 | P1 | C18 | G0.
+- Chuck, Nurri, banana, batata e iogurte (430 g) batem com o log do **dia 28** / sugestão do **dia 29**.
+- Melancia usa o padrão do **dia 29** (USDA): 100 g = 30 | P1 | C8 | G0. O `dia-2026-09-28.html` permanece com o valor antigo (arquivo fechado).
+- Ovo inteiro, clara (por unidade) e tomate (100 g) são referência genérica arredondada a partir dos valores já usados no HTML → marcados **(ref)**: ovo, clara/un, tomate.
+- Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C52 | G0; melancia 300 g = 90 | P2 | C23 | G1.
+
+**kcal de cada item** = valor da tabela × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
+
 
 ## Formato do log no chat
 
