@@ -53,10 +53,13 @@
       if (pesoHoje != null) {
         h += '<div class="obj-line">Resultado: ' + peso(o.peso_inicial_kg) + ' → ' + peso(pesoHoje) + ' · ' + sinal(pesoHoje - o.peso_inicial_kg) + ' kg · meta era ' + peso(c.esperadoAlvo) + '</div>';
       }
-      h += '<div class="obj-line obj-muted">Pra começar outro, fale pro Grok: "novo objetivo: 15/11, perder 0,5 kg por semana".</div>';
+      h += '<div class="obj-line obj-muted">Pra começar outro, fale pro Grok: "novo objetivo: 15/11, perder 0,5 kg por semana" — e diga as metas (kcal/P/C/G) e o seu gasto.</div>';
       return h + '</section>';
     }
     h += '<div class="obj-big">' + (c.faltam === 0 ? 'É hoje!' : 'Faltam ' + c.faltam + ' dia' + (c.faltam > 1 ? 's' : '')) + '</div>';
+    if (c.faltam <= 3) {
+      h += '<div class="obj-line obj-warn">Reta final: combine o próximo objetivo com o Grok — data alvo, metas (kcal/P/C/G) e gasto calórico.</div>';
+    }
     var pct = c.tot ? Math.round(100 * c.passados / c.tot) : 100;
     h += '<div class="obj-bar"><div style="width:' + pct + '%"></div></div>';
     h += '<div class="obj-line obj-muted">Dia ' + (c.passados + 1) + ' de ' + (c.tot + 1) + ' · semana ' + c.semana + '</div>';
