@@ -40,7 +40,12 @@ jobs:
           git config user.email "fechamento-automatico@users.noreply.github.com"
           ONTEM=$(TZ=America/Los_Angeles date -d yesterday +%d/%m)
           git add -A
-          git commit -m "fechar $ONTEM (automático)"
+          # só chama de "fechar" se algum dia mudou; senão foi só a meta recalculada
+          if git diff --cached --name-only | grep -qE '^dados/[0-9]{4}-[0-9]{2}-[0-9]{2}\.json$'; then
+            git commit -m "fechar $ONTEM (automático)"
+          else
+            git commit -m "meta: recalculada (automático)"
+          fi
           for i in 1 2 3; do
             if git pull --rebase origin main && git push origin HEAD:main; then
               echo "publicado=sim" >> "$GITHUB_OUTPUT"
