@@ -177,7 +177,7 @@ Padronizar mensagens assim:
 - `alimentos.html` + `alimentos.js` — página **Alimentos** (só leitura): favoritas com total, plano padrão do dia e a biblioteca com a fonte de cada alimento.
 - `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
 - `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
-- `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial.
+- `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial. `manifest.webmanifest` + metas `apple-mobile-web-app-capable` — abre em tela cheia pelo ícone (sem service worker/offline: continua site estático).
 - `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
