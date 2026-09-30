@@ -20,11 +20,6 @@ on:
     - cron: "5 8 * * *"
     - cron: "35 8 * * *"
   workflow_dispatch:
-    inputs:
-      fechar:
-        description: "Rodar também o fechamento do dia"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -32,9 +27,11 @@ permissions:
   id-token: write
 
 concurrency:
-  # tudo que publica na main passa em fila (nunca dois ao mesmo tempo); PRs têm fila própria
+  # tudo que publica na main passa em fila (nunca dois ao mesmo tempo); PRs têm fila própria.
+  # queue: max = guarda TODOS os pendentes (até 100), em vez de o novo substituir o pendente — assim um push
+  # não descarta o fechamento agendado da meia-noite. (Não combina com cancel-in-progress: true.)
   group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'publicar-main' }}
-  cancel-in-progress: false
+  queue: max
 
 jobs:
   conferir:
@@ -75,7 +72,9 @@ jobs:
       - name: Sincronizar, gerar, conferir e enviar
         id: pub
         env:
-          PREPARO: ${{ (github.event_name == 'schedule' || inputs.fechar) && 'python3 scripts/fechar_dia.py' || '' }}
+          # fechamento em TODA execução na main (idempotente: fora da virada não muda nada) — se um push
+          # rodar no lugar do agendamento, ele mesmo fecha o dia
+          PREPARO: python3 scripts/fechar_dia.py
           EXIGIR_WEBKIT: "1"
         run: bash scripts/publicar.sh
       - name: Modo do Pages

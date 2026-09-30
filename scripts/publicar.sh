@@ -41,7 +41,11 @@ for tentativa in $(seq 1 "$TENTATIVAS"); do
   fi
   git add -A
   if [ -n "${PREPARO:-}" ] && git diff --cached --name-only | grep -qE '^dados/[0-9]{4}-[0-9]{2}-[0-9]{2}\.json$'; then
-    ontem=$(TZ=America/Los_Angeles date -d yesterday +%d/%m)
+    # "ontem" no fuso de LA (HOJE simula a data nos testes) — Python/ZoneInfo: funciona em Linux e macOS
+    ontem=$(python3 -c 'import os, datetime, zoneinfo
+h = os.environ.get("HOJE")
+d = datetime.date.fromisoformat(h) if h else datetime.datetime.now(zoneinfo.ZoneInfo("America/Los_Angeles")).date()
+print((d - datetime.timedelta(days=1)).strftime("%d/%m"))')
     msg="fechar $ontem (automático)"
   else
     msg="auto: derivados atualizados (resumo/objetivo)"

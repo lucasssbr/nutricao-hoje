@@ -65,6 +65,13 @@
   function simular(mf, refKg, desde, medida, reais) {
     var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8], faixas = r.faixas_gordura || [15, 12];
     var fr = r.fracao_forbes != null ? r.fracao_forbes : 0.5, pausa = r.pausa_semanas || null, C = 10.4;
+    // parâmetros inválidos (o validar.py já recusa; aqui só não quebra a tela)
+    function num(x, lo, hi) { return typeof x === 'number' && isFinite(x) && x >= lo && x <= hi; }
+    if (!Array.isArray(pct) || pct.length !== 3 || !pct.every(function (x) { return num(x, 0.01, 5); }) ||
+        !Array.isArray(faixas) || faixas.length !== 2 || !faixas.every(function (x) { return num(x, 1, 80); }) ||
+        !num(fr, 0, 1) || (pausa && !(Array.isArray(pausa) && pausa.length === 2 && num(pausa[0], 1, 52) && num(pausa[1], 0, 12)))) {
+      return { erro: 'parâmetros do cenário inválidos (meta_final.ritmo)' };
+    }
     var W0 = mf.peso_inicial_kg, bf0 = (mf.gordura_inicial_pct || 19) / 100, alvo = (mf.gordura_pct || 10) / 100;
     var base = { pct: bf0 * 100, txt: 'estimativa inicial ' + Math.round(bf0 * 100) + '%' };
     if (medida) {  // medida mais recente (foto/fita/DEXA): composição a partir do peso daquele dia
@@ -72,7 +79,8 @@
       var jm = janela7(reais || [], medida.data);
       W0 = jm ? jm.kg : refKg;
       bf0 = medida.pct / 100;
-      base = { pct: medida.pct, txt: kg(medida.pct).replace(',0', '') + '% por ' + (medida.fonte || 'medida') + ' em ' + curta(medida.data) };
+      base = { pct: medida.pct, txt: kg(medida.pct).replace(',0', '') + '% por ' + (medida.fonte || 'medida') + ' em ' + curta(medida.data) +
+               (medida.antiga ? ' — medida antiga, sem nenhuma nos últimos 30 dias' : '') };
     }
     if (!(W0 > 0)) return null;
     var FM = W0 * bf0, FFM = W0 - FM;
@@ -81,8 +89,8 @@
       var passo = Math.min(0.1, perda), l = fr * C / (C + FM);
       FM -= passo * (1 - l); FFM -= passo * l;
     }
-    var bfHoje = FM / (FM + FFM), magraHoje = FFM, sem = 0, ds = 0, cruza = {};
-    while (FM / (FM + FFM) > alvo && sem < 260) {
+    var bfHoje = FM / (FM + FFM), magraHoje = FFM, sem = 0, ds = 0, cruza = {}, HORIZONTE = 260;
+    while (FM / (FM + FFM) > alvo && sem < HORIZONTE) {
       if (pausa && ds && ds % pausa[0] === 0) sem += pausa[1];
       var W = FM + FFM, bf = W ? FM / W : 0;
       var t = bf * 100 > faixas[0] ? pct[0] : bf * 100 > faixas[1] ? pct[1] : pct[2];
@@ -90,10 +98,14 @@
       for (var m = Math.floor(W - 1e-9); m >= W - dW; m--) {
         if (cruza[m] == null) cruza[m] = somaDias(desde, Math.round((sem + (W - m) / dW) * 7));
       }
+      var mk = mf.peso_kg;   // meta final decimal (ex.: 80,5) também ganha data
+      if (cruza[mk] == null && W > mk && mk >= W - dW) cruza[mk] = somaDias(desde, Math.round((sem + (W - mk) / dW) * 7));
       FM -= dW * (1 - lean); FFM -= dW * lean; sem++; ds++;
     }
-    return { bfHoje: bfHoje, fim: somaDias(desde, sem * 7), semanas: sem, pesoFim: FM + FFM,
-             magraPerdida: magraHoje - FFM, cruza: cruza, cenario: r.cenario || 'cenário', base: base };
+    var atingido = FM / (FM + FFM) <= alvo;   // senão: horizonte de 5 anos esgotado sem chegar ao alvo
+    return { atingido: atingido, bfHoje: bfHoje, bfFim: FM / (FM + FFM), fim: atingido ? somaDias(desde, sem * 7) : null,
+             semanas: sem, pesoFim: FM + FFM, magraPerdida: magraHoje - FFM, cruza: cruza,
+             cenario: r.cenario || 'cenário', base: base };
   }
 
   // Qual medida de gordura manda na previsão (decisão do Lucas, 30/09: a mais CONFIÁVEL, não a mais recente).
@@ -102,17 +114,24 @@
   var PRIORIDADE = { dexa: 4, fita: 3, foto: 2, lucas: 2, bioimpedancia: 1 };
   var NOME_FONTE = { dexa: 'DEXA', fita: 'fita', foto: 'foto', lucas: 'informado', bioimpedancia: 'bioimpedância' };
   function escolherMedida(medidas, hoje) {
-    if (!medidas || !medidas.length) return null;
-    var recentes = medidas.filter(function (m) { return dias(m.data, hoje) <= 30; });
-    var pool = recentes.length ? recentes : [medidas[medidas.length - 1]];
+    var validas = (medidas || []).filter(function (m) {
+      return m && m.data <= hoje && typeof m.pct === 'number' && isFinite(m.pct);   // nada do futuro
+    }).sort(function (a, b) { return a.data < b.data ? -1 : a.data > b.data ? 1 : 0; });
+    if (!validas.length) return null;
+    var recentes = validas.filter(function (m) { return dias(m.data, hoje) <= 30; });   // recência contada de HOJE
+    var antiga = !recentes.length;
+    var pool = antiga ? [validas[validas.length - 1]] : recentes;
     var melhor = pool.reduce(function (a, m) {
       var pa = PRIORIDADE[a.fonte] || 0, pm = PRIORIDADE[m.fonte] || 0;
       return pm > pa || (pm === pa && m.data > a.data) ? m : a;
     });
-    var mesmas = pool.filter(function (m) { return (PRIORIDADE[m.fonte] || 0) === (PRIORIDADE[melhor.fonte] || 0) && dias(m.data, melhor.data) < 14; });
+    // média só das leituras DA MESMA FONTE (identidade, não prioridade) nas 2 semanas até a última dela
+    var mesmas = pool.filter(function (m) { var k = dias(m.data, melhor.data); return m.fonte === melhor.fonte && k >= 0 && k < 14; });
     var media = mesmas.reduce(function (s, m) { return s + m.pct; }, 0) / mesmas.length;
-    return { data: melhor.data, pct: media, fonte: (NOME_FONTE[melhor.fonte] || melhor.fonte || 'medida') + (mesmas.length > 1 ? ', média de ' + mesmas.length : '') };
+    return { data: melhor.data, pct: media, n: mesmas.length, antiga: antiga, idadeDias: dias(melhor.data, hoje), fonteId: melhor.fonte,
+             fonte: (NOME_FONTE[melhor.fonte] || melhor.fonte || 'medida') + (mesmas.length > 1 ? ', média de ' + mesmas.length : '') };
   }
+
 
   // Estado dos marcos (função pura, testada em tests/test_marcos.py):
   // - média = pesagens REAIS dos 7 dias até a última pesagem (informa quantas); nada de "último peso" como média;
@@ -133,7 +152,9 @@
     var ref = jan.kg, confirma = jan.n >= MIN_CONFIRMAR;
     var inicio = mf.peso_inicial_kg || o.peso_inicial_kg || reais[0].kg;
     var marcos = [];
-    for (var m = Math.ceil(inicio) - 1; m >= mf.peso_kg; m--) marcos.push(m);
+    // marcos inteiros acima da meta + a própria meta (mesmo decimal, ex.: 80,5) como último marco
+    for (var m = Math.ceil(inicio) - 1; m > mf.peso_kg; m--) marcos.push(m);
+    marcos.push(mf.peso_kg);
     function quando(m) {  // 1º dia em que a média de 7 dias (com amostras suficientes) ficou ≤ marco
       for (var i = 0; i < reais.length; i++) {
         var w = janela7(reais, reais[i].data);
@@ -152,10 +173,11 @@
     var rit = ritmoKgDia(reais, o);
     function previsao(alvo) {
       if (ref <= alvo) return null;
-      if (sim && sim.cruza[alvo]) return sim.cruza[alvo];
+      if (sim && sim.cruza && sim.cruza[alvo]) return sim.cruza[alvo];
       return rit ? somaDias(desde, Math.ceil((ref - alvo) / rit.kgDia)) : null;
     }
-    return { mf: mf, ref: ref, n: jan.n, ultData: ultData, desde: desde, semPesar: dias(ultData, hoje),
+    var semPesar = dias(ultData, hoje);
+    return { mf: mf, ref: ref, n: jan.n, ultData: ultData, desde: desde, semPesar: semPesar, desatualizada: semPesar > 7,
              confirma: confirma, inicio: inicio, marcos: lista, prox: prox, previsao: previsao,
              medida: med, sim: sim, rit: rit };
   }
@@ -164,16 +186,19 @@
     var e = estadoMarcos(o, reais, medidas, hoje);
     if (!e || !e.marcos.length) return '';
     var mf = e.mf, ref = e.ref, sim = e.sim, rit = e.rit;
-    function prev(alvo) { var d = e.previsao(alvo); return d ? ' · ~' + curta(d) : ''; }
+    function prev(alvo) {
+      var d = e.previsao(alvo);
+      return d ? ' · ~' + curta(d) + (e.desatualizada ? ' (previsão desatualizada)' : '') : '';
+    }
     var feitos = e.marcos.filter(function (x) { return x.ok; }).length;
     var h = '<div class="obj-marcos">';
     h += '<div class="obj-line"><b>🏔 Marcos</b> · ' + feitos + ' de ' + e.marcos.length +
-      (e.prox != null ? ' · próximo <b>' + e.prox + ' kg</b> (falta ' + kg(ref - e.prox) + ' kg' + prev(e.prox) + ')' : ' · todos!') + '</div>';
+      (e.prox != null ? ' · próximo <b>' + kg(e.prox).replace(',0', '') + ' kg</b> (falta ' + kg(ref - e.prox) + ' kg' + prev(e.prox) + ')' : ' · todos!') + '</div>';
     h += '<div class="marcos-chips">' + e.marcos.map(function (x) {
       var tag = x.kg === mf.peso_kg ? ' 🏁' : (x.kg === mf.satisfeito_kg ? ' ⭐' : '');
       return '<span class="marco' + (x.ok ? ' ok' : '') + (x.kg === e.prox ? ' prox' : '') + '"' +
         (x.data ? ' title="' + curta(x.data) + '"' : (x.pendente ? ' title="falta pesagem para confirmar"' : '')) + '>' +
-        (x.ok ? '✓ ' : (x.pendente ? '… ' : '')) + x.kg + tag + '</span>';
+        (x.ok ? '✓ ' : (x.pendente ? '… ' : '')) + kg(x.kg).replace(',0', '') + tag + '</span>';
     }).join('') + '</div>';
     var total = e.inicio - mf.peso_kg, feito = Math.max(0, Math.min(total, e.inicio - ref));
     h += '<div class="obj-bar marcos-bar"><div style="width:' + Math.round(100 * feito / total) + '%"></div></div>';
@@ -183,12 +208,18 @@
     h += '<div class="obj-line obj-muted">Meta final <b>' + mf.peso_kg + ' kg</b>' + (mf.gordura_pct ? ' (~' + mf.gordura_pct + '% de gordura' + (mf.gordura_inicial_pct ? ', saindo de ~' + mf.gordura_inicial_pct + '%' : '') + ')' : '') +
       (mf.satisfeito_kg ? ' · ⭐ ' + mf.satisfeito_kg + ' kg satisfeito' : '') + ' · faltam ' + kg(Math.max(0, ref - mf.peso_kg)) + ' kg' +
       prev(mf.peso_kg) + (mf.depois ? ' · depois: ' + esc(mf.depois) : '') + '</div>';
-    if (sim) {
+    if (sim && sim.erro) {
+      h += '<div class="obj-line obj-warn">📉 Previsão indisponível: ' + esc(sim.erro) + '.</div>';
+    } else if (sim && !sim.atingido) {
+      h += '<div class="obj-line obj-warn">📉 Com estes parâmetros o cenário não chega a ' + (mf.gordura_pct || 10) + '% em ' + Math.round(sim.semanas / 52) +
+        ' anos (pararia em ~' + Math.round(sim.bfFim * 100) + '%). Previsão dos 10% indisponível.</div>';
+    } else if (sim) {
       var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8];
       h += '<div class="obj-line obj-muted">📉 Cenário ' + esc(sim.cenario) + ' (' + pct.map(function (x) { return kg(x).replace(',0', ''); }).join(' → ') +
         '% do peso/sem, desacelerando' + (r.pausa_semanas ? '; 1 sem de manutenção a cada ' + r.pausa_semanas[0] : '') + '): gordura hoje ~' +
         Math.round(sim.bfHoje * 100) + '% (base: ' + esc(sim.base.txt) + ') · <b>' + (mf.gordura_pct || 10) + '% ≈ ' + curta(sim.fim) + ' ' + sim.fim.slice(0, 4) + '</b> com ~' + kg(sim.pesoFim) +
-        ' kg (~' + kg(sim.magraPerdida) + ' kg de massa magra perdida até lá). Estimativa: fica mais certa a cada medida de gordura (foto, fita ou DEXA).</div>';
+        ' kg (~' + kg(sim.magraPerdida) + ' kg de massa magra perdida até lá)' + (e.desatualizada ? ' — previsão desatualizada (última pesagem há ' + e.semPesar + ' dias)' : '') +
+        '. Estimativa: fica mais certa a cada medida de gordura (foto, fita ou DEXA).</div>';
     }
     if (rit && rit.fonte === 'ritmo atual') {
       h += '<div class="obj-line obj-muted">Ritmo real das últimas 2 semanas: −' + kg(rit.kgDia * 7) + ' kg/sem.</div>';

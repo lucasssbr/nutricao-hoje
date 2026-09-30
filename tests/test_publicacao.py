@@ -127,7 +127,7 @@ class Publicacao(unittest.TestCase):
         out1, _ = self.publicar(self.a, preparo="python3 scripts/fechar_dia.py", HOJE=amanha)
         self.assertEqual(out1["mudou"], "sim")
         msg = git(self.a, "log", "-1", "--format=%s", "origin/main")
-        self.assertTrue(msg.startswith("fechar "), msg)
+        self.assertEqual(msg, f"fechar {d[8:10]}/{d[5:7]} (automático)")   # data certa, sem GNU date
         out2, _ = self.publicar(self.a, preparo="python3 scripts/fechar_dia.py", HOJE=amanha)
         self.assertEqual(out2["mudou"], "nao")
         c = self.conferir_remoto()
@@ -135,6 +135,36 @@ class Publicacao(unittest.TestCase):
         self.assertIn(f'data-dia="{amanha}"', (c / "index.html").read_text())
         # fechar não marca o registro como completo
         self.assertNotIn("registro", json.loads((c / "dados" / f"{d}.json").read_text()))
+
+    def test_push_durante_o_dia_com_fechamento_nao_muda_nada(self):
+        """Item 9: toda execução na main roda o fechamento; num push comum (dia já aberto) ele não faz nada."""
+        self.publicar(self.a)                                  # derivados em dia
+        d = self.dia_aberto(self.a)
+        out, _ = self.publicar(self.a, preparo="python3 scripts/fechar_dia.py", HOJE=d)
+        self.assertEqual(out["mudou"], "nao")
+
+    def test_push_que_substitui_o_agendamento_fecha_o_dia(self):
+        """Se o agendamento da meia-noite se perder, o próximo push (mesmo fluxo, com fechamento) fecha o dia."""
+        d = self.dia_aberto(self.a)
+        import datetime
+        amanha = (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat()
+        self.editar_dia_cru(self.b, 105, "Lanche da manhã seguinte")   # push "normal" de outra pessoa
+        out, _ = self.publicar(self.a, preparo="python3 scripts/fechar_dia.py", HOJE=amanha)
+        self.assertEqual(out["mudou"], "sim")
+        c = self.conferir_remoto()
+        self.assertTrue(json.loads((c / "dados" / f"{d}.json").read_text())["fechado"])
+        self.assertIn(f'data-dia="{amanha}"', (c / "index.html").read_text())
+
+
+class Workflow(unittest.TestCase):
+    """Item 9: a fila preserva pendentes e todo run da main fecha o dia (checagem do arquivo, sem PyYAML)."""
+
+    def test_fila_e_fechamento(self):
+        wf = (RAIZ / ".github" / "workflows" / "publicar.yml").read_text(encoding="utf-8")
+        self.assertRegex(wf, r"(?m)^concurrency:\n(?:  .*\n)*?  queue: max$")
+        self.assertNotRegex(wf, r"(?m)^\s*cancel-in-progress:\s*true")   # (o comentário que cita pode ficar)
+        self.assertRegex(wf, r"(?m)^\s+PREPARO: python3 scripts/fechar_dia\.py$")
+        self.assertNotIn("date -d", (RAIZ / "scripts" / "publicar.sh").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

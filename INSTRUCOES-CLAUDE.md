@@ -52,16 +52,18 @@ Pendentes de rótulo: qualquer alimento com `fonte` `lucas` ou `estimado` (ver `
 Refeição, peso, correção e completude passam pelo CLI — ele calcula pela biblioteca, grava de forma atômica, regenera os derivados, valida e desfaz tudo se algo falhar:
 
 ```bash
-# refeição (unidade explícita em cada item: g, un, lata) — --evento = id estável da mensagem do Lucas
-python3 scripts/registrar.py refeicao --evento <id> --nome Almoço --consumido-em 2026-09-30T12:40 \
+# --evento = <id da mensagem do Lucas>:<tipo>:<n> — UM id por OPERAÇÃO (unidade explícita: g, un, lata)
+python3 scripts/registrar.py refeicao --evento msg-812:refeicao:1 --nome Almoço --consumido-em 2026-09-30T12:40 \
     --item chuck-costco=200g --item batata-inglesa=150g [--remover-sugestao Almoço] --enviar
-python3 scripts/registrar.py refeicao --evento <id> --favorita cafe-padrao --consumido-em 2026-09-30T08:10 --enviar
-python3 scripts/registrar.py peso     --evento <id> --data 2026-09-30 --kg 88.4 --enviar
-python3 scripts/registrar.py remover  --evento <id> --data 2026-09-30 --alvo <id da refeição> --justificativa "…" --enviar
-python3 scripts/registrar.py completo --evento <id> --data 2026-09-30 --status completo|parcial --enviar
+python3 scripts/registrar.py refeicao --evento msg-812:refeicao:2 --favorita cafe-padrao --consumido-em 2026-09-30T08:10 --enviar
+python3 scripts/registrar.py peso     --evento msg-812:peso:1 --data 2026-09-30 --kg 88.4 --enviar
+python3 scripts/registrar.py remover  --evento msg-813:remover:1 --data 2026-09-30 --alvo msg-812:refeicao:1 --justificativa "…" --enviar
+python3 scripts/registrar.py completo --evento msg-814:completo:1 --data 2026-09-30 --status completo|parcial --enviar
 ```
 
-- **`--evento` é obrigatório e estável** (ex.: id da mensagem). Repetir o mesmo evento (retry, mensagem reenviada) responde "já registrado" e **não duplica**.
+- **`--evento` é obrigatório, estável e POR OPERAÇÃO**: `<id da mensagem>:<tipo>:<n>` (tipo = refeicao/peso/remover/completo; n = 1, 2… na ordem em que aparecem na mensagem). Mensagem com almoço + lanche + peso = `msg:refeicao:1`, `msg:refeicao:2`, `msg:peso:1`.
+- **Retry idêntico** (mesmo id, mesmo conteúdo) responde "já registrado" e **não duplica**. **Mesmo id com outro tipo ou outro conteúdo é RECUSADO** — nunca é tratado como sucesso: se é outra operação, use outro `n`; se é correção, `remover` + novo lançamento. O sufixo do id tem que bater com o comando. Eventos antigos (sem assinatura) continuam idempotentes pelo tipo.
+- **Troca de horário:** horário sem fuso que cai na hora repetida (1º domingo de novembro, 01:00–01:59) ou inexistente (2º domingo de março, 02:00–02:59) é recusado — passe com fuso (`2026-11-01T01:30-07:00` = antes da troca, `-08:00` = depois). A comparação com "agora" é por instante (UTC).
 - **`--consumido-em`** = hora em que o Lucas comeu (fuso de LA); o script guarda também `registrado_em` (hora do lançamento). A data do consumo decide o dia (refeição das 23:50 mandada depois da meia-noite vai para o dia anterior).
 - **Dia fechado** exige `--justificativa` (fica em `correcoes` do dia). Confirmar completude (`completo`) não exige.
 - **`--dry-run`** mostra o diff e o recibo sem gravar. **`--enviar`** faz o ciclo git inteiro (sincroniza, aplica, valida, commit, push; se alguém enviou no meio, reaplica sobre o HEAD novo sem duplicar). Exige árvore limpa.
@@ -117,7 +119,7 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 
 **Antes de todo push** que mexa em `dados/` (se não usou `registrar.py --enviar`): `python3 scripts/derivados.py && python3 scripts/validar.py` → "Dados OK". Mensagens de erro dizem arquivo e campo.
 
-**Publicação (`.github/workflows/publicar.yml`, "Conferir e publicar"):** a cada push na main, PR, e à meia-noite, o GitHub roda `scripts/publicar.sh`: sincroniza com o HEAD mais novo → (fecha o dia, se for meia-noite) → regenera derivados → `scripts/verificar.sh` (validação + `tests/` + páginas no Chromium **e** WebKit) → commit/push só se tudo passar. Se alguém enviar no meio, **não faz rebase de derivado**: descarta, busca de novo, regenera e reconfere. Em PR, só confere. Falha = e-mail pro Lucas. Com o Pages em **Settings → Pages → Source: GitHub Actions**, só o commit verificado vai ao ar (senão o workflow avisa que o modo branch publica antes da conferência).
+**Publicação (`.github/workflows/publicar.yml`, "Conferir e publicar"):** a cada push na main, PR, e à meia-noite, o GitHub roda `scripts/publicar.sh`: sincroniza com o HEAD mais novo → fecha o dia (roda em **toda** execução na main; fora da virada não muda nada — se um push rodar no lugar do agendamento da meia-noite, ele mesmo fecha) → regenera derivados → `scripts/verificar.sh` (validação + `tests/` + páginas no Chromium **e** WebKit) → commit/push só se tudo passar. Se alguém enviar no meio, **não faz rebase de derivado**: descarta, busca de novo, regenera e reconfere. Em PR, só confere. Fila `concurrency` com `queue: max`: execuções pendentes esperam a vez (nenhuma substitui a outra; não usar `cancel-in-progress: true`). Falha = e-mail pro Lucas. Nos testes de página, `verificar.sh` sobe o próprio servidor (`scripts/servidor_teste.py`, porta livre + token de identidade); se ele não subir ou a porta for de outro servidor, falha com "páginas NÃO testadas" — nunca testa outro checkout. Com o Pages em **Settings → Pages → Source: GitHub Actions**, só o commit verificado vai ao ar (senão o workflow avisa que o modo branch publica antes da conferência).
 
 **Claude, antes de push:** `bash scripts/verificar.sh` (tudo) — ou `SEM_PAGINAS=1` para pular o navegador. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 

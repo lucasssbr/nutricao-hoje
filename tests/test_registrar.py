@@ -13,7 +13,7 @@ from base import RAIZ, CopiaRepo
 from comum import hoje_la
 
 
-class Registrar(CopiaRepo):
+class BaseRegistro(CopiaRepo):
     def reg(self, *args, check=None):
         r = self.rodar("registrar.py", *args)
         if check is True:
@@ -36,6 +36,8 @@ class Registrar(CopiaRepo):
     def total_lancado(self, d):
         return sum(i["kcal"] for r in self.ler(f"{d}.json")["lancado"] for i in r["itens"])
 
+
+class Registrar(BaseRegistro):
     def test_refeicao_e_evento_repetido(self):
         antes = self.total_lancado(self.d)
         args = ["refeicao", "--evento", "msg-1", "--nome", "Almoço", "--consumido-em", self.hora_no_dia(self.d),
@@ -114,6 +116,103 @@ class Registrar(CopiaRepo):
         self.assertIn("validação falhou", r.stdout)
         for n, b in antes.items():
             self.assertEqual((self.dados / n).read_bytes(), b, f"{n} não foi restaurado")
+
+
+class Eventos(BaseRegistro):
+    """Revisão Codex #5, item 6: um id por OPERAÇÃO; retry idêntico não duplica; reuso incompatível é recusado."""
+
+    def ref(self, ev, item="banana=1un", nome="Lanche"):
+        return ["refeicao", "--evento", ev, "--nome", nome, "--consumido-em", self.hora_no_dia(self.d), "--item", item]
+
+    def test_mensagem_com_refeicao_e_peso(self):
+        self.reg(*self.ref("m1:refeicao:1"), check=True)
+        r = self.reg("peso", "--evento", "m1:peso:1", "--data", self.d, "--kg", "88.1", check=True)
+        self.assertNotIn("já registrado", r.stdout)
+        dia = self.ler(f"{self.d}.json")
+        self.assertEqual(dia["peso_kg"], 88.1)
+        self.assertEqual(sum(1 for x in dia["lancado"] if x.get("id_evento") == "m1:refeicao:1"), 1)
+
+    def test_retry_identico_nao_duplica(self):
+        self.reg(*self.ref("m2:refeicao:1"), check=True)
+        antes = (self.dados / f"{self.d}.json").read_bytes()
+        r = self.reg(*self.ref("m2:refeicao:1"), check=True)
+        self.assertIn("já registrado", r.stdout)
+        self.assertEqual((self.dados / f"{self.d}.json").read_bytes(), antes)
+
+    def test_mesmo_id_outro_tipo_recusado(self):
+        peso_antes = self.ler(f"{self.d}.json")["peso_kg"]
+        self.reg(*self.ref("msg-3"), check=True)
+        r = self.reg("peso", "--evento", "msg-3", "--data", self.d, "--kg", "88.1", check=False)
+        self.assertIn("já foi usado para 'refeicao'", r.stdout)
+        self.assertNotIn("já registrado", r.stdout)
+        self.assertEqual(self.ler(f"{self.d}.json")["peso_kg"], peso_antes, "o peso não pode ter sido aplicado")
+
+    def test_mesmo_id_conteudo_diferente_recusado(self):
+        self.reg(*self.ref("m4:refeicao:1", item="banana=1un"), check=True)
+        antes = (self.dados / f"{self.d}.json").read_bytes()
+        r = self.reg(*self.ref("m4:refeicao:1", item="banana=2un"), check=False)
+        self.assertIn("conteúdo DIFERENTE", r.stdout)
+        self.assertEqual((self.dados / f"{self.d}.json").read_bytes(), antes)
+        # peso: mesmo id com outro valor também não vira sucesso silencioso
+        self.reg("peso", "--evento", "m4:peso:1", "--data", self.d, "--kg", "88.0", check=True)
+        r = self.reg("peso", "--evento", "m4:peso:1", "--data", self.d, "--kg", "87.0", check=False)
+        self.assertIn("conteúdo DIFERENTE", r.stdout)
+        self.assertEqual(self.ler(f"{self.d}.json")["peso_kg"], 88.0)
+
+    def test_sufixo_do_id_tem_que_bater_com_o_comando(self):
+        r = self.reg(*self.ref("m5:peso:1"), check=False)
+        self.assertIn("diz 'peso'", r.stdout)
+
+    def test_evento_antigo_sem_assinatura_continua_idempotente(self):
+        dia = self.ler(f"{self.d}.json")
+        dia.setdefault("eventos", []).append({"id_evento": "legado-1", "tipo": "peso", "em": dia["atualizado"],
+                                              "resumo": "peso antigo"})
+        self.gravar(f"{self.d}.json", dia)
+        self.derivados()
+        r = self.reg("peso", "--evento", "legado-1", "--data", self.d, "--kg", "88.3", check=True)
+        self.assertIn("já registrado", r.stdout)
+        self.assertIn("sem assinatura", r.stdout)
+        r = self.reg(*self.ref("legado-1"), check=False)   # outro tipo com id antigo: recusado
+        self.assertIn("já foi usado para 'peso'", r.stdout)
+
+
+class HorarioDeVerao(unittest.TestCase):
+    """Item 7: comparar INSTANTES (UTC), não texto, na hora repetida de 01/11/2026 em Los Angeles."""
+
+    def setUp(self):
+        import registrar
+        self.r = registrar
+
+    def test_consumo_45_min_antes_na_hora_repetida_e_aceito(self):
+        # consumo 01:45 PDT (08:45 UTC) · agora 01:30 PST (09:30 UTC): foi 45 min ANTES
+        self.assertFalse(self.r.no_futuro("2026-11-01T01:45:00-07:00", "2026-11-01T01:30:00-08:00"))
+
+    def test_consumo_45_min_no_futuro_na_hora_repetida_e_recusado(self):
+        # consumo 01:30 PST (09:30 UTC) · agora 01:45 PDT (08:45 UTC): está 45 min no FUTURO
+        self.assertTrue(self.r.no_futuro("2026-11-01T01:30:00-08:00", "2026-11-01T01:45:00-07:00"))
+
+    def test_comando_usa_a_comparacao_por_instante(self):
+        import argparse
+        a = argparse.Namespace(evento="t:refeicao:1", consumido_em="2026-11-01T01:45:00-07:00", favorita=None, item=["banana=1un"],
+                               nome="Lanche", remover_sugestao=None)
+        data, _, conteudo = self.r.cmd_refeicao(a, None, "2026-11-01T01:30:00-08:00")   # aceito
+        self.assertEqual(data, "2026-11-01")
+        self.assertEqual(conteudo["consumido_utc"], "2026-11-01T08:45:00+00:00")
+        a.consumido_em = "2026-11-01T01:30:00-08:00"
+        with self.assertRaises(self.r.Recusa):
+            self.r.cmd_refeicao(a, None, "2026-11-01T01:45:00-07:00")                     # recusado
+
+    def test_horario_sem_fuso_ambiguo_ou_inexistente_pede_fuso(self):
+        self.assertTrue(self.r.horario_ambiguo("2026-11-01T01:30"))    # hora repetida
+        self.assertTrue(self.r.horario_ambiguo("2026-03-08T02:30"))    # hora que não existe
+        self.assertFalse(self.r.horario_ambiguo("2026-11-01T03:30"))
+        self.assertFalse(self.r.horario_ambiguo("2026-11-01T01:30-08:00"))
+        import argparse
+        a = argparse.Namespace(evento="t:refeicao:1", consumido_em="2026-11-01T01:30", favorita=None, item=["banana=1un"],
+                               nome="Lanche", remover_sugestao=None)
+        with self.assertRaises(self.r.Recusa) as cm:
+            self.r.cmd_refeicao(a, None, "2026-11-01T05:00:00-08:00")
+        self.assertIn("troca de horário", str(cm.exception))
 
 
 class Meta(CopiaRepo):

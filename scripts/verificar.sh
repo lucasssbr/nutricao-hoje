@@ -20,9 +20,33 @@ if [ "${SEM_PAGINAS:-}" = "1" ]; then
   exit 0
 fi
 echo "== páginas (${NAVEGADORES:-chromium,webkit})"
-PORTA="${PORTA:-8765}"
-python3 -m http.server "$PORTA" >/dev/null 2>&1 &
+# Servidor EXCLUSIVO desta execução (scripts/servidor_teste.py): porta livre escolhida pelo sistema (ou $PORTA,
+# que falha se estiver ocupada), confirmação de que é o nosso servidor servindo ESTE checkout, e no fim encerra
+# só o processo criado aqui. Sem isso, um servidor antigo na porta poderia responder por outro checkout.
+RAIZ_ABS="$(pwd -P)"
+TOKEN="$(python3 -c 'import secrets; print(secrets.token_hex(12))')"
+PRONTO="$(mktemp)"
+: > "$PRONTO"
+python3 scripts/servidor_teste.py --raiz "$RAIZ_ABS" --token "$TOKEN" --pronto "$PRONTO" --porta "${PORTA:-0}" &
 SERV=$!
-trap 'kill $SERV 2>/dev/null || true' EXIT
-for _ in $(seq 1 20); do curl -s -o /dev/null "http://localhost:$PORTA/" && break; sleep 0.2; done
-NAVEGADORES="${NAVEGADORES:-chromium,webkit}" node scripts/testar_paginas.js "http://localhost:$PORTA"
+trap 'kill "$SERV" 2>/dev/null || true; rm -f "$PRONTO"' EXIT
+for _ in $(seq 1 100); do
+  [ -s "$PRONTO" ] && break
+  if ! kill -0 "$SERV" 2>/dev/null; then
+    echo "::error::servidor de teste não iniciou (porta ${PORTA:-livre} ocupada ou erro) — páginas NÃO testadas" >&2
+    exit 1
+  fi
+  sleep 0.1
+done
+if [ ! -s "$PRONTO" ]; then
+  echo "::error::servidor de teste não ficou pronto em 10 s — páginas NÃO testadas" >&2
+  exit 1
+fi
+PORTA_USADA="$(cat "$PRONTO")"
+IDENT="$(curl -fsS "http://127.0.0.1:$PORTA_USADA/__servidor_teste__" || true)"
+if [ "$IDENT" != "$TOKEN $RAIZ_ABS" ]; then
+  echo "::error::a porta $PORTA_USADA não é o servidor desta execução (respondeu: ${IDENT:-nada}) — páginas NÃO testadas" >&2
+  exit 1
+fi
+echo "servidor de teste: porta $PORTA_USADA servindo $RAIZ_ABS"
+NAVEGADORES="${NAVEGADORES:-chromium,webkit}" node scripts/testar_paginas.js "http://127.0.0.1:$PORTA_USADA"

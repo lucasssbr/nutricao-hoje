@@ -22,7 +22,7 @@ import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from comum import (DATA_RE, MACROS, ROOT, ErroJSON, carimbo_valido, data_valida, eh_numero,  # noqa: E402
+from comum import (DATA_RE, MACROS, ROOT, ErroJSON, carimbo_valido, data_valida, hoje_la, eh_numero,  # noqa: E402
                    ler_json)
 from item import base_de, esperado  # noqa: E402
 
@@ -195,6 +195,10 @@ class Checagem:
         nasc = p.get("nascimento")
         if not (isinstance(nasc, str) and re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", nasc)):
             self.erro("perfil.json.nascimento", f"use AAAA-MM (veio {nasc!r})")
+        elif nasc > hoje_la().isoformat()[:7]:
+            self.erro("perfil.json.nascimento", f"não pode ser no futuro (veio {nasc!r}; daria idade negativa)")
+        elif int(nasc[:4]) < 1900:
+            self.erro("perfil.json.nascimento", f"ano improvável (veio {nasc!r})")
         if p.get("sexo") not in ("M", "F"):
             self.erro("perfil.json.sexo", f"use 'M' ou 'F' (veio {p.get('sexo')!r})")
         self.numero("perfil.json.atividade", p.get("atividade"), minimo=1.0, maximo=2.5)
@@ -244,7 +248,39 @@ class Checagem:
                 self.numero(f"objetivo.json.meta_final.{k}", mf.get(k), minimo=3, maximo=60, obrigatorio=False)
             self.numero("objetivo.json.meta_final.peso_inicial_kg", mf.get("peso_inicial_kg"), minimo=20, maximo=400,
                         obrigatorio=False)
+            if mf.get("ritmo") is not None:
+                self.ritmo("objetivo.json.meta_final.ritmo", mf["ritmo"])
         return o
+
+    def ritmo(self, onde, r):
+        """Parâmetros da simulação dos 10% (objetivo.js: simular). Tipos, tamanhos e faixas — o valor escolhido
+        pelo Lucas (hoje o cenário agressivo) é livre dentro delas."""
+        if not self.objeto(onde, r):
+            return
+        self.texto(f"{onde}.cenario", r.get("cenario"), obrigatorio=False)
+        self.texto(f"{onde}.obs", r.get("obs"), obrigatorio=False)
+        pct = r.get("pct_semana")
+        if not (isinstance(pct, list) and len(pct) == 3):
+            self.erro(f"{onde}.pct_semana", f"precisa ser lista de 3 números (% do peso/semana: acima da 1ª faixa, "
+                                            f"entre as faixas, abaixo da 2ª) — veio {pct!r}")
+        else:
+            for i, x in enumerate(pct):
+                self.numero(f"{onde}.pct_semana[{i}]", x, maior_que=0, maximo=5)
+        fx = r.get("faixas_gordura")
+        if not (isinstance(fx, list) and len(fx) == 2):
+            self.erro(f"{onde}.faixas_gordura", f"precisa ser lista de 2 números (% de gordura) — veio {fx!r}")
+        elif all(self.numero(f"{onde}.faixas_gordura[{i}]", x, minimo=1, maximo=80) for i, x in enumerate(fx)) \
+                and not fx[0] > fx[1]:
+            self.erro(f"{onde}.faixas_gordura", f"a 1ª faixa precisa ser maior que a 2ª (veio {fx!r})")
+        self.numero(f"{onde}.fracao_forbes", r.get("fracao_forbes"), minimo=0, maximo=1)
+        pz = r.get("pausa_semanas")
+        if pz is not None:
+            if not (isinstance(pz, list) and len(pz) == 2):
+                self.erro(f"{onde}.pausa_semanas", f"precisa ser [semanas de déficit, semanas de pausa] ou null — veio {pz!r}")
+            else:
+                for i, (x, lo, hi) in enumerate(((pz[0], 1, 52), (pz[1], 0, 12))):
+                    if self.numero(f"{onde}.pausa_semanas[{i}]", x, minimo=lo, maximo=hi) and x != int(x):
+                        self.erro(f"{onde}.pausa_semanas[{i}]", f"precisa ser número inteiro de semanas (veio {x!r})")
 
     # ---- dias ----
     def item(self, onde, it, dia_aberto_novo, fechado, alimentos, gramas_plano, lista):

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Registro seguro para o Grok: refeição, peso, remoção/correção e completude do dia.
 
-Cada comando exige --evento (um id estável, ex.: o id da mensagem do Lucas). Repetir o MESMO evento
-(retry, mensagem reenviada) não lança nada duas vezes: o script responde "já registrado".
+Cada OPERAÇÃO exige --evento com id estável e próprio: <id da mensagem>:<tipo>:<n>, ex.:
+msg-123:refeicao:1, msg-123:peso:1 (uma mensagem com refeição e peso = dois eventos). Repetir o MESMO
+evento com o mesmo conteúdo (retry, mensagem reenviada) não lança nada duas vezes ("já registrado").
+Reusar o id com outro tipo ou outro conteúdo é RECUSADO (nunca vira sucesso silencioso).
 
   # refeição (unidade explícita em cada item: g, un ou lata)
   python3 scripts/registrar.py refeicao --evento msg-123 --nome Almoço --consumido-em 2026-09-30T12:40 \\
@@ -28,6 +30,8 @@ nunca vira consumo sozinha: só o que for passado aqui entra em "lancado".
 import argparse
 import datetime
 import difflib
+import hashlib
+import json
 import pathlib
 import subprocess
 import sys
@@ -52,16 +56,42 @@ def eventos_de(dia):
 
 
 def achar_evento(ev, dados):
-    """Procura o id em todos os dias (retry com data diferente também não duplica)."""
+    """Procura o id em todos os dias (retry com data diferente também não duplica). Devolve (data, registro)."""
     for d in ler_json(dados / "dias.json"):
         p = dados / f"{d}.json"
-        if p.exists() and ev in eventos_de(ler_json(p)):
-            return d
-    return None
+        if not p.exists():
+            continue
+        for e in ler_json(p).get("eventos", []):
+            if isinstance(e, dict) and e.get("id_evento") == ev:
+                return d, e
+    return None, None
 
 
-def anotar(dia, ev, tipo, agora, resumo, justificativa=None):
-    dia.setdefault("eventos", []).append({"id_evento": ev, "tipo": tipo, "em": agora, "resumo": resumo})
+def assinatura(conteudo):
+    """Impressão digital do conteúdo normalizado da operação (tipo + dados que definem o efeito)."""
+    return hashlib.sha256(json.dumps(conteudo, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
+
+
+SUFIXO = re.compile(r".+:(refeicao|peso|remover|completo):\d+")
+
+
+def conferir_reuso(ev, tipo, assin, achado):
+    """Mesmo id: retry idêntico → ok (repetido); outro tipo/conteúdo → Recusa. Eventos antigos sem assinatura
+    (anteriores a esta regra) valem pelo tipo, por compatibilidade."""
+    d, reg = achado
+    if reg.get("tipo") != tipo:
+        raise Recusa(f"o evento {ev!r} já foi usado para '{reg.get('tipo')}' em {d}; cada operação precisa de id "
+                     f"próprio (ex.: <mensagem>:{tipo}:1)")
+    if reg.get("assinatura") and reg["assinatura"] != assin:
+        raise Recusa(f"o evento {ev!r} já foi registrado em {d} com conteúdo DIFERENTE; se é outra operação, use "
+                     f"outro id (ex.: <mensagem>:{tipo}:2); se é correção, use 'remover' + novo lançamento")
+    return f"Evento {ev} já registrado em {d} — nada foi lançado de novo." + \
+        ("" if reg.get("assinatura") else " (evento antigo, sem assinatura: conteúdo não conferido)")
+
+
+def anotar(dia, ev, tipo, agora, resumo, justificativa=None, assin=None):
+    dia.setdefault("eventos", []).append({"id_evento": ev, "tipo": tipo, "em": agora, "resumo": resumo,
+                                          **({"assinatura": assin} if assin else {})})
     # confirmar completude não altera dados; os outros tipos em dia fechado são correções
     if dia.get("fechado") and tipo != "completo":
         if not (justificativa and justificativa.strip()):
@@ -72,6 +102,26 @@ def anotar(dia, ev, tipo, agora, resumo, justificativa=None):
 
 
 # ---------------- comandos ----------------
+
+def instante(carimbo_iso):
+    return datetime.datetime.fromisoformat(carimbo_iso.replace("Z", "+00:00")).astimezone(datetime.timezone.utc)
+
+
+def no_futuro(consumido, agora):
+    return instante(consumido) > instante(agora)
+
+
+def horario_ambiguo(texto):
+    """Horário SEM fuso que cai na hora repetida (fim do horário de verão) ou inexistente (início) em LA."""
+    try:
+        dt = datetime.datetime.fromisoformat(texto)
+    except (TypeError, ValueError):
+        return False
+    if dt.tzinfo is not None:
+        return False
+    from comum import TZ
+    return dt.replace(tzinfo=TZ, fold=0).utcoffset() != dt.replace(tzinfo=TZ, fold=1).utcoffset()
+
 
 def item_explicito(alimentos, texto):
     m = re.fullmatch(r"\s*([^=\s]+)\s*=\s*(\d+(?:[.,]\d+)?)\s*(g|un|lata)\s*", texto)
@@ -86,11 +136,14 @@ def item_explicito(alimentos, texto):
 def cmd_refeicao(a, dados, agora):
     if not a.consumido_em:
         raise Recusa("--consumido-em é obrigatório (hora em que o Lucas comeu, fuso de Los Angeles)")
+    if horario_ambiguo(a.consumido_em):
+        raise Recusa(f"--consumido-em {a.consumido_em!r} cai na troca de horário de Los Angeles (hora repetida ou "
+                     f"inexistente): passe com o fuso, ex.: {a.consumido_em}-07:00 (antes da troca) ou -08:00 (depois)")
     try:
         data, consumido = data_de_consumo(a.consumido_em)
     except ValueError:
         raise Recusa(f"--consumido-em inválido: {a.consumido_em!r} (use AAAA-MM-DDTHH:MM)")
-    if consumido > agora:
+    if no_futuro(consumido, agora):   # compara INSTANTES (UTC), não texto — hora repetida do fim do horário de verão
         raise Recusa(f"--consumido-em {consumido} está no futuro (agora é {agora})")
     alimentos = carregar_alimentos()
     if a.favorita:
@@ -121,7 +174,11 @@ def cmd_refeicao(a, dados, agora):
         t = somar([refeicao])
         return (f"{nome}: {arred(t['kcal'])} kcal | P {arred(t['p'])} | C {arred(t['c'])} | G {arred(t['g'])}"
                 f" ({len(itens)} item(ns))")
-    return data.isoformat(), aplicar
+    conteudo = {"tipo": "refeicao", "nome": nome.strip().lower(), "favorita": a.favorita,
+                "itens": [[it.get("alimento"), it.get("quantidade")] for it in itens],
+                "consumido_utc": instante(consumido).isoformat(),
+                "remover_sugestao": (a.remover_sugestao or "").strip().lower() or None}
+    return data.isoformat(), aplicar, conteudo
 
 
 def cmd_peso(a, dados, agora):
@@ -140,7 +197,7 @@ def cmd_peso(a, dados, agora):
         antes = dia.get("peso_kg")
         dia["peso_kg"] = arred(kg, 1)
         return f"peso {arred(kg, 1)} kg" + (f" (antes {antes} kg)" if antes is not None else "")
-    return a.data, aplicar
+    return a.data, aplicar, {"tipo": "peso", "data": a.data, "kg": arred(kg, 1)}
 
 
 def cmd_remover(a, dados, agora):
@@ -163,7 +220,7 @@ def cmd_remover(a, dados, agora):
             dia["correcoes"].append({"id_evento": a.evento, "tipo": "remover", "em": agora,
                                      "justificativa": a.justificativa.strip()})
         return f"removida '{r.get('refeicao')}' ({arred(t['kcal'])} kcal) lançada por {a.alvo}"
-    return a.data, aplicar
+    return a.data, aplicar, {"tipo": "remover", "data": a.data, "alvo": a.alvo}
 
 
 def cmd_completo(a, dados, agora):
@@ -177,7 +234,7 @@ def cmd_completo(a, dados, agora):
     def aplicar(dia):
         dia["registro"] = {"status": a.status, "em": agora, **({"obs": a.obs} if a.obs else {})}
         return f"registro do dia: {a.status}"
-    return a.data, aplicar
+    return a.data, aplicar, {"tipo": "completo", "data": a.data, "status": a.status}
 
 
 COMANDOS = {"refeicao": cmd_refeicao, "peso": cmd_peso, "remover": cmd_remover, "completo": cmd_completo}
@@ -212,17 +269,21 @@ def aplicar_evento(a, dados=DADOS, raiz=ROOT, agora=None):
     agora = agora or carimbo()
     if not a.evento or not re.fullmatch(r"[A-Za-z0-9._:\-]{3,80}", a.evento):
         raise Recusa("--evento obrigatório: id estável de 3–80 caracteres (letras, números, . _ : -)")
-    ja = achar_evento(a.evento, dados)
-    if ja:
-        return "repetido", f"Evento {a.evento} já registrado em {ja} — nada foi lançado de novo.", ja
-    data, aplicar = COMANDOS[a.cmd](a, dados, agora)
+    m = SUFIXO.fullmatch(a.evento)
+    if m and m.group(1) != a.cmd:
+        raise Recusa(f"o id {a.evento!r} diz '{m.group(1)}', mas o comando é '{a.cmd}'")
+    data, aplicar, conteudo = COMANDOS[a.cmd](a, dados, agora)
+    assin = assinatura(conteudo)
+    achado = achar_evento(a.evento, dados)
+    if achado[0]:
+        return "repetido", conferir_reuso(a.evento, a.cmd, assin, achado), achado[0]
     p = dados / f"{data}.json"
     if not p.exists() or data not in ler_json(dados / "dias.json"):
         raise Recusa(f"não existe o dia {data} em dados/ (dias só são criados pelo fechamento automático)")
     original = p.read_text(encoding="utf-8")
     dia = ler_json(p)
     resumo_evento = aplicar(dia)
-    anotar(dia, a.evento, a.cmd, agora, resumo_evento, a.justificativa)
+    anotar(dia, a.evento, a.cmd, agora, resumo_evento, a.justificativa, assin)
     novo = texto_json(dia)
     txt = recibo(dia, resumo_evento, agora)
     if a.dry_run:

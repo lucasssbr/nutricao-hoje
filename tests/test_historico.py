@@ -3,7 +3,6 @@ import datetime
 import json
 import os
 import shutil
-import socket
 import subprocess
 import sys
 import time
@@ -15,13 +14,6 @@ from comum import hoje_la
 NODE = shutil.which("node")
 TEM_PW = (RAIZ / "node_modules" / "playwright").exists()
 
-
-def porta_livre():
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    p = s.getsockname()[1]
-    s.close()
-    return p
 
 
 @unittest.skipUnless(NODE and TEM_PW, "node/playwright não instalados")
@@ -53,14 +45,23 @@ class HistoricoComPlanoFuturo(CopiaRepo):
         self.gravar(f"{ontem}.json", d)
         kcal_certo = round(sum(i["kcal"] for r in d["lancado"] for i in r["itens"]))
 
-        porta = porta_livre()
-        serv = subprocess.Popen([sys.executable, "-m", "http.server", str(porta)], cwd=self.tmp,
+        pronto = self.tmp / ".pronto"
+        serv = subprocess.Popen([sys.executable, str(self.tmp / "scripts" / "servidor_teste.py"), "--raiz", str(self.tmp),
+                                 "--token", "hist", "--pronto", str(pronto)],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
-            time.sleep(0.8)
+            for _ in range(100):                      # espera o PRÓPRIO servidor ficar pronto (sem sleep fixo)
+                if pronto.exists() and pronto.read_text():
+                    break
+                self.assertIsNone(serv.poll(), "servidor de teste não iniciou")
+                time.sleep(0.05)
+            porta = int(pronto.read_text())
+            import urllib.request
+            ident = urllib.request.urlopen(f"http://127.0.0.1:{porta}/__servidor_teste__", timeout=5).read().decode()
+            self.assertEqual(ident, f"hist {self.tmp.resolve()}")
             js = f"""
 const pw=require('playwright');(async()=>{{const b=await pw.chromium.launch();const p=await b.newPage();
-await p.goto('http://localhost:{porta}/historico.html',{{waitUntil:'networkidle'}});await p.waitForTimeout(300);
+await p.goto('http://127.0.0.1:{porta}/historico.html',{{waitUntil:'networkidle'}});await p.waitForTimeout(300);
 const t=await p.locator('#histList a[href$="{ontem}"] .d').innerText();console.log(t);await b.close();}})();"""
             env = dict(os.environ, NODE_PATH=str(RAIZ / "node_modules"))
             out = subprocess.check_output([NODE, "-e", js], text=True, env=env, timeout=60).strip()

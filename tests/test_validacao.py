@@ -153,5 +153,62 @@ class Validacao(CopiaRepo):
         self.assertFalse(any("chuck" in a.lower() and "lançado" in a.lower() for a in c.avisos), c.avisos)
 
 
+    # ---- revisão Codex #5, item 5: parâmetros da simulação dos 10% ----
+    def ritmo_com(self, **kw):
+        o = self.ler("objetivo.json")
+        o["meta_final"]["ritmo"].update(kw)
+        self.gravar("objetivo.json", o)
+
+    def test_ritmo_atual_passa(self):
+        self.assertSemErros()
+        self.assertEqual(self.ler("objetivo.json")["meta_final"]["ritmo"]["pct_semana"], [1.2, 1.0, 0.8])
+
+    def test_ritmo_invalido(self):
+        casos = [
+            (dict(pct_semana="oops"), "ritmo.pct_semana"),
+            (dict(pct_semana=[0, 0, 0]), "ritmo.pct_semana[0]"),
+            (dict(pct_semana=[1.2, 1.0]), "ritmo.pct_semana"),
+            (dict(pct_semana=[1.2, float("nan"), 0.8]), "objetivo.json"),   # NaN nem chega a ser JSON válido
+            (dict(pct_semana=[1.2, True, 0.8]), "ritmo.pct_semana[1]"),
+            (dict(faixas_gordura=[12, 15]), "ritmo.faixas_gordura"),
+            (dict(faixas_gordura=[15]), "ritmo.faixas_gordura"),
+            (dict(fracao_forbes=1.5), "ritmo.fracao_forbes"),
+            (dict(fracao_forbes="0,5"), "ritmo.fracao_forbes"),
+            (dict(pausa_semanas=[0, 1]), "ritmo.pausa_semanas[0]"),
+            (dict(pausa_semanas=[8.5, 1]), "ritmo.pausa_semanas[0]"),
+            (dict(pausa_semanas="8/1"), "ritmo.pausa_semanas"),
+        ]
+        original = self.ler("objetivo.json")
+        for kw, trecho in casos:
+            with self.subTest(kw=kw):
+                self.gravar("objetivo.json", original)
+                if any(isinstance(v, list) and any(isinstance(x, float) and x != x for x in v) for v in kw.values()):
+                    import re
+                    texto = re.sub(r'"pct_semana":\s*\[[^\]]*\]', '"pct_semana": [1.2, NaN, 0.8]',
+                                   (self.dados / "objetivo.json").read_text(), count=1)
+                    self.assertIn("NaN", texto)
+                    self.gravar_texto("objetivo.json", texto)
+                else:
+                    self.ritmo_com(**kw)
+                self.assertErro(trecho)
+                self.derivados_nao_mascaram()
+
+    def derivados_nao_mascaram(self):
+        """derivados.py não pode 'consertar' nem esconder um ritmo inválido: a checagem continua falhando."""
+        self.rodar("derivados.py")
+        self.assertTrue(self.validar().erros)
+
+    def test_pausa_nula_e_permitida(self):
+        self.ritmo_com(pausa_semanas=None)
+        self.assertSemErros()
+
+    # ---- item 10: nascimento no futuro ----
+    def test_nascimento_futuro(self):
+        p = self.ler("perfil.json")
+        p["nascimento"] = "2099-12"
+        self.gravar("perfil.json", p)
+        self.assertErro("perfil.json.nascimento")
+
+
 if __name__ == "__main__":
     unittest.main()
