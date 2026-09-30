@@ -193,7 +193,7 @@ Padronizar mensagens assim:
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
-O repositório é a única fonte do site; não manter espelho local separado. Para gerar PNG para o chat, fazer screenshot do site publicado ou de um servidor local servindo esta pasta do repo e esperar o render terminar. Mac/iCloud é opcional: se necessário, copiar a pasta inteira, incluindo HTML, CSS, JS e `dados/`.
+O repositório é a única fonte do site; não manter espelho local separado. Para gerar PNG para o chat, fazer screenshot do site publicado ou de um servidor local servindo esta pasta do repo e esperar o render terminar. **Não copiar mais nada pro Mac/iCloud** (`Documents/Grok-Bot` e `iCloud Drive/Grok-Bot` foram aposentadas pelo Lucas em 29/09): o backup é o próprio GitHub, com todo o histórico.
 
 ## Regras de alimentação
 
