@@ -184,12 +184,18 @@
         : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
       h += '<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
         ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
-      var gr = o.calculo.gasto_real;
-      // gasto real pelos dados: só informativo (não entra na meta) — o Lucas compara com o dele
-      if (gr) {
-        h += '<div class="obj-line obj-muted">Pelos seus dados (' + gr.dias + ' dias, ' + gr.pesos + ' pesos), o gasto real está em ~' + mil(gr.kcal) + ' kcal/dia — só pra comparar, não muda a meta.</div>';
-      } else if (o.calculo.gasto_real_falta) {
-        h += '<div class="obj-line obj-muted">Gasto real (pelos seus dados) ainda não: ' + esc(o.calculo.gasto_real_falta) + '.</div>';
+      // gasto INFERIDO pelos registros (não é medido): só informativo, não entra na meta
+      var gi = o.calculo.gasto_inferido, gf = o.calculo.gasto_inferido_falta;
+      if (gi) {
+        h += '<div class="obj-line obj-muted">Estimado pelos seus registros (' + gi.dias_completos + ' dias completos, ' + gi.pesagens + ' pesagens, cobertura ' + gi.cobertura_pct + '%): gasto ~' + mil(gi.kcal) + ' kcal/dia — só pra comparar, não muda a meta.</div>';
+      } else if (gf) {
+        h += '<div class="obj-line obj-muted">Gasto estimado pelos registros ainda não: ' + esc(typeof gf === 'string' ? gf : gf.falta) + '.</div>';
+      }
+      if (o.calculo.ingestao_fonte && o.calculo.dias_completos != null) {
+        h += '<div class="obj-line obj-muted">Ingestão usada: ' + esc(o.calculo.ingestao_fonte) + '.</div>';
+      }
+      if (o.meta_modo === 'manual') {
+        h += '<div class="obj-line obj-muted">Meta semanal manual (escolhida por você); pelo cálculo seria −' + kg(o.calculo.meta_calculada_kg || 0) + ' kg/sem.</div>';
       }
     }
     if (c.passados < 7) {

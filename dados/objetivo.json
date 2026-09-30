@@ -42,18 +42,24 @@
     "meta_modo": "auto",
     "calculo": {
       "peso_ref_kg": 87.6,
+      "pesagens_total": 2,
+      "ultima_pesagem": "2026-09-30",
       "idade": 32,
       "bmr": 1865,
       "atividade": 1.55,
       "gasto_estimado": 2890,
       "gasto_fonte": "estimado",
       "gasto_formula": 2890,
-      "gasto_real": null,
-      "gasto_real_falta": "faltam 6 peso(s), 10 dia(s) de intervalo, 7 dia(s) lançados",
+      "gasto_inferido": null,
+      "gasto_inferido_falta": "sem pesagens depois de 2026-10-03 (os 4 primeiros dias são pulados)",
       "ingestao_media": 1570,
-      "ingestao_fonte": "meta de kcal (menos de 3 dias fechados no objetivo)",
+      "ingestao_fonte": "meta de kcal — só 0 de 1 dia(s) fechados do objetivo têm registro completo confirmado (precisa 3)",
+      "dias_completos": 0,
+      "dias_fechados": 1,
       "deficit_dia": 1320,
-      "atualizado": "2026-09-30"
+      "atualizado": "2026-09-30",
+      "meta_calculada_kg": 1.2,
+      "meta_origem": "automática (déficit)"
     }
   },
   "anteriores": []

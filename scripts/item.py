@@ -10,40 +10,59 @@ Uso:
   python3 scripts/item.py --plano              # plano padrão do dia inteiro
 
 Quantidade: em gramas quando a base do alimento é em gramas (ex. "100 g"),
-em unidades quando a base é "1 un" / "1 lata". Imprime os itens em JSON
-(prontos para colar em "lancado" ou "sugestao") e o total.
+em unidades quando a base é "1 un" / "1 lata". Pode escrever a unidade junto ("200g", "2un",
+"1lata"); se escrever, ela precisa bater com a base. Quantidade tem que ser número > 0.
+Imprime os itens em JSON (prontos para colar em "lancado" ou "sugestao") e o total.
 """
-import json
+import math
 import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-MACROS = ("kcal", "p", "c", "g")
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from comum import DADOS, MACROS, ROOT, arred, eh_numero, enxuto, ler_json, texto_json  # noqa: E402,F401
 
 
 def carregar_alimentos():
-    a = json.loads((ROOT / "dados" / "alimentos.json").read_text(encoding="utf-8"))
+    a = ler_json(DADOS / "alimentos.json")
     return {k: v for k, v in a.items() if not k.startswith("_")}
 
 
 def base_de(alimento):
     """'100 g' -> ('g', 100); '1 un (~34 g)' -> ('un', 1); '1 lata (325 ml)' -> ('un', 1)."""
-    m = re.match(r"\s*([\d.,]+)\s*(g|un|lata)\b", alimento["base"])
+    m = re.match(r"\s*(\d+(?:[.,]\d+)?)\s*(g|un|lata)\b", str(alimento.get("base", "")))
     if not m:
-        raise ValueError(f"base inválida: {alimento['base']!r}")
+        raise ValueError(f"base inválida: {alimento.get('base')!r}")
     n = float(m.group(1).replace(",", "."))
+    if not n > 0:
+        raise ValueError(f"base precisa ser maior que zero: {alimento.get('base')!r}")
     return ("g" if m.group(2) == "g" else "un"), n
 
 
 def esperado(alimento, quantidade):
     """Macros (e fibra, se o alimento tiver) para a quantidade, com 1 casa decimal."""
+    if not (eh_numero(quantidade) and quantidade > 0):
+        raise ValueError(f"quantidade precisa ser número > 0: {quantidade!r}")
     unidade, n = base_de(alimento)
     f = float(quantidade) / n
-    vals = {k: round(alimento[k] * f, 1) for k in MACROS}
-    if isinstance(alimento.get("fibra"), (int, float)):
-        vals["fibra"] = round(alimento["fibra"] * f, 1)
+    vals = {k: arred(alimento[k] * f, 1) for k in MACROS}
+    if eh_numero(alimento.get("fibra")):
+        vals["fibra"] = arred(alimento["fibra"] * f, 1)
     return vals
+
+
+def ler_quantidade(texto, unidade_base):
+    """'200', '200g', '2un', '1lata', '1,5' → número > 0 (unidade, se escrita, tem que bater)."""
+    m = re.fullmatch(r"\s*(\d+(?:[.,]\d+)?)\s*(g|un|lata)?\s*", str(texto).lower())
+    if not m:
+        raise ValueError(f"quantidade inválida: {texto!r} (use número > 0, ex.: 200g, 2un, 1lata)")
+    q = float(m.group(1).replace(",", "."))
+    un = m.group(2)
+    if un and ("g" if un == "g" else "un") != unidade_base:
+        raise ValueError(f"unidade '{un}' não bate com a base do alimento ({unidade_base})")
+    if not (math.isfinite(q) and q > 0):
+        raise ValueError(f"quantidade precisa ser maior que zero: {texto!r}")
+    return q
 
 
 def resolver(alimentos, chave):
@@ -60,15 +79,18 @@ def resolver(alimentos, chave):
 
 
 def fmt(x):
-    return int(x) if float(x).is_integer() else x
+    return enxuto(x)
 
 
 def montar_item(alimentos, chave, qtd):
     aid = resolver(alimentos, chave)
     al = alimentos[aid]
     unidade, _ = base_de(al)
-    q = float(str(qtd).lower().replace("g", "").replace("un", "").replace(",", "."))
-    vals = esperado(al, q)
+    try:
+        q = ler_quantidade(qtd, unidade)
+        vals = esperado(al, q)
+    except ValueError as e:
+        raise SystemExit(f"{aid}: {e}")
     qtd_txt = f"{fmt(q)} g" if unidade == "g" else (f"{fmt(q)} lata" if "lata" in al["base"] else f"{fmt(q)} un")
     item = {"nome": al["nome"], "qtd": qtd_txt, "alimento": aid, "quantidade": fmt(q)}
     item.update({k: fmt(v) for k, v in vals.items()})
@@ -76,7 +98,7 @@ def montar_item(alimentos, chave, qtd):
 
 
 def carregar_refeicoes():
-    return json.loads((ROOT / "dados" / "refeicoes.json").read_text(encoding="utf-8"))
+    return ler_json(DADOS / "refeicoes.json")
 
 
 def resolver_refeicao(refs, chave):
@@ -104,14 +126,19 @@ def montar_plano(alimentos=None, refs=None):
 
 
 def total(refeicoes):
-    return {k: round(sum(i[k] for r in refeicoes for i in r["itens"]), 1) for k in MACROS}
+    return {k: arred(sum(i[k] for r in refeicoes for i in r["itens"]), 1) for k in MACROS}
+
+
+def linha_total(itens):
+    t = {k: sum(i[k] for i in itens) for k in MACROS}
+    fib = sum(i.get("fibra", 0) for i in itens)
+    return (f"TOTAL: {arred(t['kcal'])} kcal | P {arred(t['p'])} | C {arred(t['c'])} | "
+            f"G {arred(t['g'])} | fibra {arred(fib)} g")
 
 
 def imprimir(refeicoes):
-    print(json.dumps(refeicoes, ensure_ascii=False, indent=2))
-    t = total(refeicoes)
-    fib = sum(i.get("fibra", 0) for r in refeicoes for i in r["itens"])
-    print(f"TOTAL: {round(t['kcal'])} kcal | P {round(t['p'])} | C {round(t['c'])} | G {round(t['g'])} | fibra {round(fib)} g")
+    print(texto_json(refeicoes), end="")
+    print(linha_total([i for r in refeicoes for i in r["itens"]]))
 
 
 def main(args):
@@ -127,7 +154,7 @@ def main(args):
         refs = carregar_refeicoes()
         for k, v in refs["refeicoes"].items():
             t = total([montar_refeicao(alimentos, refs, k)])
-            print(f"{k:16} {v['nome']:10} {round(t['kcal'])} kcal | P{round(t['p'])} C{round(t['c'])} G{round(t['g'])}  apelidos: {', '.join(v.get('apelidos', []))}")
+            print(f"{k:16} {v['nome']:10} {arred(t['kcal'])} kcal | P{arred(t['p'])} C{arred(t['c'])} G{arred(t['g'])}  apelidos: {', '.join(v.get('apelidos', []))}")
         print("plano_padrao:", " → ".join(refs["plano_padrao"]))
         return
     if args[0] == "--refeicao":
@@ -140,10 +167,8 @@ def main(args):
     if len(args) % 2:
         raise SystemExit("Passe pares: <alimento> <quantidade> ...")
     itens = [montar_item(alimentos, args[i], args[i + 1]) for i in range(0, len(args), 2)]
-    tot = {k: round(sum(i[k] for i in itens), 1) for k in MACROS}
-    print(json.dumps(itens, ensure_ascii=False, indent=2))
-    fib = sum(i.get("fibra", 0) for i in itens)
-    print(f"TOTAL: {round(tot['kcal'])} kcal | P {round(tot['p'])} | C {round(tot['c'])} | G {round(tot['g'])} | fibra {round(fib)} g")
+    print(texto_json(itens), end="")
+    print(linha_total(itens))
 
 
 if __name__ == "__main__":
