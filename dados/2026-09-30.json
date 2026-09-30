@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-30T07:16:42-07:00",
+  "atualizado": "2026-09-30T07:57:17-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -8,7 +8,7 @@
     "c": 100,
     "g": 50
   },
-  "peso_kg": null,
+  "peso_kg": 87.6,
   "lancado": [],
   "sugestao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · chuck 200 g cru · 2 Nurri · 1 pote de iogurte (430 g) dividido: proteína ~40–55 g por refeição",
   "sugestao": [
@@ -190,5 +190,7 @@
         }
       ]
     }
-  ]
+  ],
+  "gordura_pct": 22.6,
+  "gordura_fonte": "bioimpedancia"
 }
