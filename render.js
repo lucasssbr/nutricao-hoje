@@ -13,10 +13,8 @@
 
   function pad2(n) { return String(n).padStart(2, '0'); }
 
-  function localISODate() {
-    var now = new Date();
-    return now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
-  }
+  // "hoje" sempre no fuso de Los Angeles (mesmo com o iPhone em outro fuso)
+  function localISODate() { return window.Nutri.hojeLA(); }
 
   function ddmm(iso) {
     var p = (iso || '').split('-');
@@ -51,7 +49,7 @@
     return t;
   }
 
-  function ri(n) { return Math.round(Number(n) || 0); }
+  var ri = window.Nutri.ri;  // meio para longe do zero, igual ao Python
 
   function fmtStamp(iso) {
     if (!iso) return '';
@@ -154,7 +152,12 @@
       document.getElementById('pageTitle').textContent = shortLabel;
     }
     var dateEl = document.getElementById('pageDate');
-    dateEl.textContent = labelDia(dia) + (data.fechado ? ' · fechado' : '');
+    // fechar à meia-noite não prova que tudo foi registrado: mostra a completude confirmada
+    var reg = (data.registro && data.registro.status) || '';
+    var regTxt = reg === 'completo' ? 'registro completo' : reg === 'parcial' ? 'registro parcial' : 'registro não confirmado';
+    var passado = dia < localISODate();
+    dateEl.textContent = labelDia(dia) + (data.fechado ? ' · fechado' : '') +
+      ((data.fechado || passado || reg) && !data.previa ? ' · ' + regTxt : '');
     var pesoEl = document.getElementById('pagePeso');
     if (!pesoEl) {
       pesoEl = document.createElement('div');
@@ -164,7 +167,7 @@
     }
     if (data.peso_kg != null && data.peso_kg !== '' && !isNaN(Number(data.peso_kg))) {
       var pesoStr = Number(data.peso_kg).toFixed(1).replace('.', ',');
-      var lbStr = (Math.round(Number(data.peso_kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
+      var lbStr = window.Nutri.arred(Number(data.peso_kg) * 2.20462, 1).toFixed(1).replace('.', ',');
       pesoEl.textContent = 'Peso ' + pesoStr + ' kg (' + lbStr + ' lb)';
       pesoEl.hidden = false;
     } else {
@@ -391,7 +394,7 @@
         var m = /^\s*([\d.,]+)\s*(g|un|lata)\b/.exec(a.base);
         var n = parseFloat(m[1].replace(',', '.')), f = q / n;
         var und = m[2] === 'g' ? ' g' : (m[2] === 'lata' ? ' lata' : ' un');
-        function r1(v) { return Math.round(v * f * 10) / 10; }
+        function r1(v) { return window.Nutri.arred(v * f, 1); }
         var it = { nome: a.nome, qtd: q + und, alimento: id, quantidade: q, kcal: r1(a.kcal), p: r1(a.p), c: r1(a.c), g: r1(a.g) };
         if (a.fibra != null) it.fibra = r1(a.fibra);
         return it;

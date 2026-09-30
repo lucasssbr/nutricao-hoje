@@ -4,34 +4,30 @@
   var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   var LB = 2.20462;
 
-  function dias(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
-  function somaDias(iso, n) {
-    var d = new Date(Date.parse(iso) + n * 86400000);
-    return d.toISOString().slice(0, 10);
-  }
+  var N = window.Nutri;
+  function dias(a, b) { return N.diasEntre(a, b); }
+  function somaDias(iso, n) { return N.somaDias(iso, n); }
   function curta(iso) { var p = iso.split('-'); return parseInt(p[2], 10) + ' ' + MESES[parseInt(p[1], 10) - 1]; }
-  function kg(n) { return (Math.round(n * 10) / 10).toFixed(1).replace('.', ','); }
-  function lb(n) { return (Math.round(n * LB * 10) / 10).toFixed(1).replace('.', ','); }
+  function kg(n) { return N.arred(n, 1).toFixed(1).replace('.', ','); }
+  function lb(n) { return N.arred(n * LB, 1).toFixed(1).replace('.', ','); }
   function peso(n) { return kg(n) + '\u00a0kg (' + lb(n) + '\u00a0lb)'; }
-  function sinal(n) { var r = Math.round(n * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '') + kg(Math.abs(r)); }
+  function sinal(n) { var r = N.arred(n, 1); return (r > 0 ? '+' : r < 0 ? '−' : '') + kg(Math.abs(r)); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function hojeISO() {
-    var n = new Date();
-    return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
-  }
+  function hojeISO() { return N.hojeLA(); }  // fuso de Los Angeles
 
   // números do objetivo para um dia qualquer
   function calc(o, hoje) {
     var tot = dias(o.inicio, o.data_alvo);
     var passados = Math.max(0, Math.min(tot, dias(o.inicio, hoje)));
-    var semana = Math.min(Math.floor(passados / 7) + 1, Math.ceil(tot / 7));
-    var fimSemana = somaDias(o.inicio, Math.min(tot, semana * 7));
+    var sem = N.semana(o.inicio, o.data_alvo, hoje);   // mesma definição do Histórico
+    var semana = sem.n;
+    var fimSemana = sem.pesagem;
     function esperado(iso) {
       var d = Math.max(0, Math.min(tot, dias(o.inicio, iso)));
       return o.peso_inicial_kg - o.meta_semanal_kg * d / 7;
     }
     return {
-      tot: tot, passados: passados, faltam: dias(hoje, o.data_alvo), semana: semana,
+      tot: tot, passados: passados, faltam: dias(hoje, o.data_alvo), semana: semana, sem: sem,
       fimSemana: fimSemana, esperadoHoje: esperado(hoje), esperadoFimSemana: esperado(fimSemana),
       esperadoAlvo: esperado(o.data_alvo), esperado: esperado
     };
@@ -176,8 +172,8 @@
     var pct = c.tot ? Math.round(100 * c.passados / c.tot) : 100;
     h += '<div class="obj-bar"><div style="width:' + pct + '%"></div></div>';
     h += '<div class="obj-line obj-muted">Dia ' + (c.passados + 1) + ' de ' + (c.tot + 1) + ' · semana ' + c.semana + '</div>';
-    function mil(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-    h += '<div class="obj-line"><b>Meta da semana:</b> −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' até ' + curta(c.fimSemana) + '</div>';
+    function mil(n) { return String(N.ri(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    h += '<div class="obj-line"><b>Meta da semana ' + c.sem.n + '</b> (' + curta(c.sem.ini) + '–' + curta(c.sem.fim) + '): −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' na pesagem de ' + curta(c.sem.pesagem) + '</div>';
     if (o.calculo) {
       var fonte = o.calculo.gasto_fonte;
       var gastoTxt = fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado)
@@ -210,6 +206,8 @@
     } else {
       h += '<div class="obj-line obj-muted">Mande o peso de hoje pro Grok pra comparar com o esperado (' + peso(c.esperadoHoje) + ').</div>';
     }
+    var nReais = (reais || []).length;
+    h += '<div class="obj-line obj-muted">Pesagens: ' + nReais + (nReais ? ' · última em ' + curta(reais[nReais - 1].data) : '') + ' (dias sem pesagem aparecem como estimativa e não contam como medida)</div>';
     h += '<div class="obj-line obj-muted">Esperado em ' + curta(o.data_alvo) + ': ' + peso(c.esperadoAlvo) + ' · total ' + sinal(c.esperadoAlvo - o.peso_inicial_kg) + ' kg</div>';
     h += marcosHtml(o, reais || [], medidas);
     return h + '</section>';

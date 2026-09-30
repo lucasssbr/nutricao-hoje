@@ -1,7 +1,8 @@
 (function () {
   var MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
-  function ri(n) { return Math.round(Number(n) || 0); }
+  var N = window.Nutri;
+  var ri = N.ri;  // meio para longe do zero, igual ao Python
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -31,11 +32,13 @@
 
   // Planilha (CSV) com todos os dias: pra fazer as contas por fora (Numbers, Excel, Google Sheets)
   function csvDias(dias) {
-    function n(v) { return v == null || v === '' || isNaN(Number(v)) ? '' : String(Math.round(Number(v) * 10) / 10); }
-    var linhas = ['data,fechado,kcal,proteina_g,carbo_g,gordura_g,fibra_g,peso_kg,gordura_corporal_pct,gordura_fonte,meta_kcal,meta_p,meta_c,meta_g'];
+    // 1 casa decimal, mesmo arredondamento das telas; vazio = sem dado (≠ zero)
+    function n(v) { return v == null || v === '' || isNaN(Number(v)) ? '' : String(N.arred(Number(v), 1)); }
+    var linhas = ['data,fechado,registro,refeicoes,kcal,proteina_g,carbo_g,gordura_g,fibra_g,peso_kg,gordura_corporal_pct,gordura_fonte,meta_kcal,meta_p,meta_c,meta_g'];
     dias.forEach(function (d) {
       var m = d.meta || {};
-      linhas.push([d.data, d.fechado ? 'sim' : 'nao', n(d.cons.kcal), n(d.cons.p), n(d.cons.c), n(d.cons.g),
+      linhas.push([d.data, d.fechado ? 'sim' : 'nao', d.registro || 'desconhecido', d.refeicoes == null ? '' : d.refeicoes,
+        n(d.cons.kcal), n(d.cons.p), n(d.cons.c), n(d.cons.g),
         n(d.cons.fibra), n(d.peso), n(d.gordura), d.gordura_fonte || '', n(m.kcal), n(m.p), n(m.c), n(m.g)].join(','));
     });
     return '\ufeff' + linhas.join('\n') + '\n';
@@ -65,8 +68,8 @@
 
   function fmtPeso(kg) {
     if (kg == null || kg === '' || isNaN(Number(kg))) return '';
-    var lb = (Math.round(Number(kg) * 2.20462 * 10) / 10).toFixed(1).replace('.', ',');
-    return (Math.round(Number(kg) * 10) / 10).toFixed(1).replace('.', ',') + ' kg (' + lb + ' lb)';
+    var lb = N.arred(Number(kg) * 2.20462, 1).toFixed(1).replace('.', ',');
+    return N.arred(Number(kg), 1).toFixed(1).replace('.', ',') + ' kg (' + lb + ' lb)';
   }
 
   function deltaStr(val, meta) {
@@ -128,7 +131,7 @@
     });
     var pesoLine = '';
     if (pesos.length) {
-      pesoLine = '<div class="hist-summary-peso">Peso médio ' + esc(fmtPeso(Math.round(avg(pesos) * 10) / 10)) + '</div>';
+      pesoLine = '<div class="hist-summary-peso">Peso médio ' + esc(fmtPeso(N.arred(avg(pesos), 1))) + '</div>';
     }
     // semana anterior (7 a 13 dias antes do dia fechado mais recente)
     var ref = days[0].data;
@@ -153,13 +156,21 @@
         '<span><b>G' + ri(avg(gs)) + '</b></span>' +
       '</div>' +
       '<div class="hist-summary-meta">' + ok + ' de ' + last7.length + ' dias na meta</div>' +
-      pesoLine + compLine;
+      coberturaLinha(last7) + pesoLine + compLine;
   }
 
-  function kgStr(n) { return (Math.round(n * 10) / 10).toFixed(1).replace('.', ','); }
-  function lbStr(n) { return (Math.round(n * 2.20462 * 10) / 10).toFixed(1).replace('.', ','); }
+  // cobertura: fechar à meia-noite não prova que tudo foi registrado
+  function coberturaLinha(dias) {
+    var c = dias.filter(function (d) { return d.registro === 'completo'; }).length;
+    var p = dias.filter(function (d) { return d.registro === 'parcial'; }).length;
+    return '<div class="hist-summary-comp">Registro confirmado completo: ' + c + ' de ' + dias.length + ' dia' + (dias.length > 1 ? 's' : '') +
+      (p ? ' · ' + p + ' parcial' + (p > 1 ? 'is' : '') : '') + (dias.length - c - p ? ' · ' + (dias.length - c - p) + ' sem confirmação' : '') + '</div>';
+  }
+
+  function kgStr(n) { return N.arred(n, 1).toFixed(1).replace('.', ','); }
+  function lbStr(n) { return N.arred(n * 2.20462, 1).toFixed(1).replace('.', ','); }
   function pesoStr(n) { return kgStr(n) + '\u00a0kg (' + lbStr(n) + '\u00a0lb)'; }
-  function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 86400000); }
+  function diasEntre(a, b) { return N.diasEntre(a, b); }
 
   // média dos pesos dos 7 dias corridos terminando em cada data
   function media7(pesos) {
@@ -196,12 +207,18 @@
       return;
     }
     var ult = pesos[pesos.length - 1];
-    var semana = pesos.filter(function (p) { return diasEntre(p.data, ult.data) < 7; });
     var linha = '<div class="peso-now"><b>' + (ult.estimado ? '~' : '') + kgStr(ult.kg) + ' kg</b> <span>(' + lbStr(ult.kg) + ' lb) · ' + esc(labelDia(ult.data).replace(/ \d{4}$/, '')) + (ult.estimado ? ' · estimado' : '') + '</span></div>';
-    if (semana.length >= 2) {
-      var dlt = semana[semana.length - 1].kg - semana[0].kg;
-      linha += '<div class="peso-delta">7 dias: ' + kgStr(semana[0].kg) + ' → ' + kgStr(ult.kg) + ' kg (' +
-        (dlt > 0 ? '+' : dlt < 0 ? '−' : '') + kgStr(Math.abs(dlt)) + ' kg)</div>';
+    var todasReais = reais.filter(function (p) { return p.data <= N.hojeLA(); });
+    if (todasReais.length) {
+      var uR = todasReais[todasReais.length - 1];
+      linha += '<div class="peso-delta">' + todasReais.length + ' pesage' + (todasReais.length > 1 ? 'ns' : 'm') + ' · última em ' + esc(labelDia(uR.data).replace(/ \d{4}$/, '')) + ' (pontos vazados = estimativa, não contam como medida)</div>';
+      // variação só entre pesagens reais dos últimos 7 dias
+      var semanaR = todasReais.filter(function (p) { return diasEntre(p.data, uR.data) < 7; });
+      if (semanaR.length >= 2) {
+        var dlt = semanaR[semanaR.length - 1].kg - semanaR[0].kg;
+        linha += '<div class="peso-delta">7 dias (pesagens reais): ' + kgStr(semanaR[0].kg) + ' → ' + kgStr(uR.kg) + ' kg (' +
+          (N.arred(dlt, 1) > 0 ? '+' : N.arred(dlt, 1) < 0 ? '−' : '') + kgStr(Math.abs(dlt)) + ' kg)</div>';
+      }
     }
     if (soReais.length < 2) {
       box.innerHTML = titulo + linha + '<div class="hist-summary-empty">O gráfico aparece a partir de 2 dias com peso.</div>';
@@ -271,17 +288,17 @@
     if (!obj || !N) { box.hidden = true; return; }
     var hoje = N.hojeISO();
     var c = N.calc(obj, hoje);
-    var serie = N.serieDiaria(reais, hoje);
-    function mediaPeso(ate) {  // média 7 dias da série (real + estimado) terminando em 'ate'
-      var win = serie.filter(function (p) { var d = diasEntre(p.data, ate); return d >= 0 && d < 7; });
-      return win.length ? avg(win.map(function (p) { return p.kg; })) : null;
+    function mediaPeso(ate) {  // média das PESAGENS REAIS dos 7 dias terminando em 'ate' (estimativas não entram)
+      var win = reais.filter(function (p) { var d = diasEntre(p.data, ate); return d >= 0 && d < 7; });
+      return win.length ? { kg: avg(win.map(function (p) { return p.kg; })), n: win.length } : null;
     }
-    var semanas = Math.max(1, Math.ceil(c.tot / 7));
+    var semanas = Nutri.semana(obj.inicio, obj.data_alvo, obj.data_alvo).n;
     var linhas = '';
     for (var w = 1; w <= semanas; w++) {
-      var ini = somaDias(obj.inicio, 7 * (w - 1));
+      var sw = Nutri.semana(obj.inicio, obj.data_alvo, somaDias(obj.inicio, 7 * (w - 1)));
+      var ini = sw.ini;
       if (ini > hoje) break;
-      var fim = somaDias(obj.inicio, Math.min(7 * w - 1, c.tot));
+      var fim = sw.fim;
       var andamento = hoje < fim;
       var ate = andamento ? hoje : fim;
       var ds = closed.filter(function (d) { return d.data >= ini && d.data <= fim; });
@@ -290,14 +307,15 @@
         (andamento ? ' · em andamento (dia ' + (diasEntre(ini, hoje) + 1) + '/' + (diasEntre(ini, fim) + 1) + ')' : '') + '</span></div>';
       var pReal = mediaPeso(ate), pEsp = c.esperado(ate);
       if (pReal != null) {
-        var st = N.status(pReal, pEsp);
-        h += '<div class="ck-l">Peso (média 7d) ' + kgStr(pReal) + ' kg · esperado ' + kgStr(pEsp) + ' kg · <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
+        var st = N.status(pReal.kg, pEsp);
+        h += '<div class="ck-l">Peso (média de ' + pReal.n + ' pesage' + (pReal.n > 1 ? 'ns' : 'm') + ') ' + kgStr(pReal.kg) + ' kg · esperado ' + kgStr(pEsp) + ' kg · <span class="obj-' + st.cls + '">' + st.txt + '</span></div>';
       } else {
         h += '<div class="ck-l ck-m">Sem peso nesta semana ainda.</div>';
       }
       if (ds.length) {
         h += '<div class="ck-l">Média ' + ri(avg(ds.map(function (d) { return d.cons.kcal; }))) + ' kcal · P' +
           ri(avg(ds.map(function (d) { return d.cons.p; }))) + ' · ' + ok + ' de ' + ds.length + ' dia' + (ds.length > 1 ? 's' : '') + ' na meta</div>';
+        h += coberturaLinha(ds).replace('hist-summary-comp', 'ck-l ck-m');
       } else {
         h += '<div class="ck-l ck-m">Nenhum dia fechado ainda nesta semana.</div>';
       }
@@ -331,6 +349,7 @@
       html += '<span class="' + (o.g ? 'over' : '') + '">G' + ri(d.cons.g) + ' (' + deltaStr(d.cons.g, d.meta.g) + ')</span>';
       html += '</div>';
       if (peso) html += '<div class="m">Peso ' + esc(peso) + '</div>';
+      html += '<div class="m">' + (d.registro === 'completo' ? 'Registro completo' : d.registro === 'parcial' ? 'Registro parcial' : 'Registro não confirmado') + '</div>';
       html += '</div></a>';
     });
     list.innerHTML = html;
@@ -350,7 +369,9 @@
     // resumo.json (gerado à meia-noite) cobre os dias antigos num arquivo só;
     // os 3 dias mais recentes e os que faltam no resumo vêm direto do JSON do dia
     uniq.sort();
-    var corte = uniq.length ? somaDias(uniq[uniq.length - 1], -2) : '';
+    // dias recentes (desde anteontem, pelo fuso de LA) vêm sempre direto do arquivo do dia;
+    // os antigos, do resumo (regenerado a cada envio). Planos futuros não mexem nessa janela.
+    var corte = somaDias(N.hojeLA(), -2);
     fetch('dados/resumo.json', { cache: 'no-store' })
       .then(function (res) { if (!res.ok) throw new Error(); return res.json(); })
       .catch(function () { return []; })
@@ -361,15 +382,13 @@
       });
   }
 
-  function somaDias(iso, n) {
-    return new Date(Date.parse(iso) + n * 86400000).toISOString().slice(0, 10);
-  }
+  function somaDias(iso, n) { return N.somaDias(iso, n); }
 
   function carregarDias(uniq, mapa, corte) {
     Promise.all(uniq.map(function (iso) {
       var r = mapa[iso];
-      if (r && iso < corte) {
-        return Promise.resolve({ ok: true, iso: iso, data: { data: iso, fechado: r.fechado, meta: r.meta, peso_kg: r.peso, gordura_pct: r.gordura, gordura_fonte: r.gordura_fonte, cons: r.cons } });
+      if (r && iso < corte && r.fechado) {
+        return Promise.resolve({ ok: true, iso: iso, data: { data: iso, fechado: r.fechado, meta: r.meta, peso_kg: r.peso, gordura_pct: r.gordura, gordura_fonte: r.gordura_fonte, cons: r.cons, registro: { status: r.registro }, refeicoes: r.refeicoes } });
       }
       return fetch('dados/' + iso + '.json', { cache: 'no-store' })
         .then(function (res) {
@@ -386,7 +405,7 @@
       var closed = [];
       var pesos = [];
       results.forEach(function (r) {
-        if (r.ok && r.data && r.data.peso_kg != null && !isNaN(Number(r.data.peso_kg))) {
+        if (r.ok && r.data && r.data.peso_kg != null && !isNaN(Number(r.data.peso_kg)) && (r.data.data || r.iso) <= N.hojeLA()) {
           pesos.push({ data: r.data.data || r.iso, kg: Number(r.data.peso_kg) });
         }
       });
@@ -407,17 +426,20 @@
           data: data.data || r.iso,
           meta: meta,
           cons: cons,
-          peso: data.peso_kg
+          peso: data.peso_kg,
+          registro: (data.registro && data.registro.status) || 'desconhecido'
         });
       });
       closed.sort(function (a, b) {
         return a.data < b.data ? 1 : (a.data > b.data ? -1 : 0);
       });
-      var todos = [];
+      var todos = [], hojeLA = N.hojeLA();
       results.forEach(function (r) {
         if (!r.ok) return;
         var dd = r.data || {};
-        todos.push({ data: dd.data || r.iso, fechado: !!dd.fechado, meta: dd.meta, cons: dd.cons || sumMeals(dd.lancado || []), peso: dd.peso_kg, gordura: dd.gordura_pct, gordura_fonte: dd.gordura_fonte });
+        if ((dd.data || r.iso) > hojeLA) return;  // plano futuro não é registro
+        todos.push({ data: dd.data || r.iso, fechado: !!dd.fechado, meta: dd.meta, cons: dd.cons || sumMeals(dd.lancado || []), peso: dd.peso_kg, gordura: dd.gordura_pct, gordura_fonte: dd.gordura_fonte,
+          registro: (dd.registro && dd.registro.status) || 'desconhecido', refeicoes: dd.refeicoes != null ? dd.refeicoes : (dd.lancado || []).length });
       });
       todos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
       ligarBotaoCsv(todos);

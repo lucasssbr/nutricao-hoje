@@ -10,7 +10,9 @@ import unittest
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "scripts"))
 
-COPIAR = ["dados", "scripts", "index.html", "dia.html", "historico.html", "alimentos.html"]
+# tudo que o site e os scripts usam (páginas, JS, CSS, dados, scripts)
+COPIAR = ["dados", "scripts"] + sorted(p.name for p in RAIZ.iterdir()
+                                       if p.suffix in (".html", ".js", ".css", ".webmanifest", ".png"))
 
 
 class CopiaRepo(unittest.TestCase):

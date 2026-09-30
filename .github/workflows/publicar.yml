@@ -1,0 +1,114 @@
+name: Conferir e publicar
+
+# Um único fluxo para tudo que mexe no site:
+#  - pull request (e mudanças nos próprios workflows): só confere — derivados, dados, testes e páginas;
+#  - push na main (Grok/Claude/Lucas): regenera derivados sobre o HEAD mais novo, confere tudo e só então
+#    grava/publica;
+#  - meia-noite de Los Angeles: fecha o dia (scripts/fechar_dia.py) e publica do mesmo jeito.
+# A publicação usa scripts/publicar.sh: nunca faz rebase de derivados; se alguém enviar no meio, regenera
+# e reconfere sobre o HEAD novo. O site publicado é exatamente o commit verificado (quando o Pages está
+# em "GitHub Actions" — ver o passo "Modo do Pages").
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # 07:05 e 08:05 UTC = 00:05 em Los Angeles (verão / inverno); 08:35 = segunda tentativa.
+    # Fechamento é idempotente: fora da hora certa não muda nada.
+    - cron: "5 7 * * *"
+    - cron: "5 8 * * *"
+    - cron: "35 8 * * *"
+  workflow_dispatch:
+    inputs:
+      fechar:
+        description: "Rodar também o fechamento do dia"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  # tudo que publica na main passa em fila (nunca dois ao mesmo tempo); PRs têm fila própria
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'publicar-main' }}
+  cancel-in-progress: false
+
+jobs:
+  conferir:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Navegadores de teste (Chromium + WebKit)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Derivados (só no workspace) + verificação completa
+        env:
+          EXIGIR_WEBKIT: "1"
+        run: |
+          python3 scripts/derivados.py
+          bash scripts/verificar.sh
+
+  publicar:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Navegadores de teste (Chromium + WebKit)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Sincronizar, gerar, conferir e enviar
+        id: pub
+        env:
+          PREPARO: ${{ (github.event_name == 'schedule' || inputs.fechar) && 'python3 scripts/fechar_dia.py' || '' }}
+          EXIGIR_WEBKIT: "1"
+        run: bash scripts/publicar.sh
+      - name: Modo do Pages
+        id: modo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tipo=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_type',''))" || true)
+          echo "tipo=$tipo" >> "$GITHUB_OUTPUT"
+          if [ "$tipo" != "workflow" ]; then
+            echo "::warning::O Pages está publicando direto do branch (build_type=$tipo): pushes ainda vão ao ar antes da conferência. Para publicar só o que foi verificado: Settings → Pages → Source: GitHub Actions."
+          fi
+      - name: Montar o site verificado
+        if: steps.modo.outputs.tipo == 'workflow'
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ steps.pub.outputs.sha }}"
+          mkdir -p _site
+          git archive "${{ steps.pub.outputs.sha }}" | tar -x -C _site
+          rm -rf _site/tests _site/.github
+          printf '{"sha":"%s","verificado_em":"%s"}\n' "${{ steps.pub.outputs.sha }}" "$(date -u +%FT%TZ)" > _site/publicado.json
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.modo.outputs.tipo == 'workflow'
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        if: steps.modo.outputs.tipo == 'workflow'
+      - name: Pedir publicação (Pages no modo branch)
+        if: steps.modo.outputs.tipo != 'workflow' && steps.pub.outputs.mudou == 'sim'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # push feito com GITHUB_TOKEN não dispara o build do Pages sozinho
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" \
+            || echo "::warning::Não consegui pedir a publicação do Pages."

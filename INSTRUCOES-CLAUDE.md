@@ -45,9 +45,36 @@ Todos os valores nutricionais ficam em **`dados/alimentos.json`** — é a únic
 4. Alimento com `fonte: estimado` → perguntar ao Lucas se ele tem o rótulo; com o rótulo, atualizar a entrada e a fonte.
 5. Nunca alterar uma entrada existente sem avisar no chat (valor antigo → novo). Dias já fechados não são recalculados quando a biblioteca muda (única exceção de mexer em dia fechado: refeição atrasada, ver "Fechar o dia").
 
-Pendentes de rótulo: **Nurri** (`lucas`), **iogurte grego** (marca usada).
+Pendentes de rótulo: qualquer alimento com `fonte` `lucas` ou `estimado` (ver `python3 scripts/item.py --lista`). Nurri e iogurte grego já estão com `rotulo`.
 
-### Calcular itens: SEMPRE com o script (não fazer conta à mão)
+### Lançar: SEMPRE com `scripts/registrar.py` (Grok)
+
+Refeição, peso, correção e completude passam pelo CLI — ele calcula pela biblioteca, grava de forma atômica, regenera os derivados, valida e desfaz tudo se algo falhar:
+
+```bash
+# refeição (unidade explícita em cada item: g, un, lata) — --evento = id estável da mensagem do Lucas
+python3 scripts/registrar.py refeicao --evento <id> --nome Almoço --consumido-em 2026-09-30T12:40 \
+    --item chuck-costco=200g --item batata-inglesa=150g [--remover-sugestao Almoço] --enviar
+python3 scripts/registrar.py refeicao --evento <id> --favorita cafe-padrao --consumido-em 2026-09-30T08:10 --enviar
+python3 scripts/registrar.py peso     --evento <id> --data 2026-09-30 --kg 88.4 --enviar
+python3 scripts/registrar.py remover  --evento <id> --data 2026-09-30 --alvo <id da refeição> --justificativa "…" --enviar
+python3 scripts/registrar.py completo --evento <id> --data 2026-09-30 --status completo|parcial --enviar
+```
+
+- **`--evento` é obrigatório e estável** (ex.: id da mensagem). Repetir o mesmo evento (retry, mensagem reenviada) responde "já registrado" e **não duplica**.
+- **`--consumido-em`** = hora em que o Lucas comeu (fuso de LA); o script guarda também `registrado_em` (hora do lançamento). A data do consumo decide o dia (refeição das 23:50 mandada depois da meia-noite vai para o dia anterior).
+- **Dia fechado** exige `--justificativa` (fica em `correcoes` do dia). Confirmar completude (`completo`) não exige.
+- **`--dry-run`** mostra o diff e o recibo sem gravar. **`--enviar`** faz o ciclo git inteiro (sincroniza, aplica, valida, commit, push; se alguém enviou no meio, reaplica sobre o HEAD novo sem duplicar). Exige árvore limpa.
+- O **recibo** traz: dia afetado, total da refeição, consumido/meta/restante, "Passou da meta" (se passou) e pendências. Copiar o recibo para o chat.
+- Consumo acima da meta é registrado normalmente — não existe limite.
+
+### Completude do registro (fechado ≠ completo)
+
+- Fechar à meia-noite **não** prova que tudo foi registrado. Cada dia tem `registro.status`: `completo` | `parcial`; sem o campo = **desconhecido** (dias antigos ficam assim — não migrar).
+- Quando o Lucas disser que registrou tudo do dia ("fechei tudo", "foi só isso hoje") → `registrar.py completo --status completo`. Se ele disser que faltou algo → `--status parcial`. Na dúvida, perguntar; **nunca** marcar completo por conta própria.
+- A meta automática e o gasto inferido usam **só dias fechados com registro completo**. O site mostra a cobertura (Histórico e check-in) e o status em cada dia.
+
+### Calcular itens (consulta, planos e sugestões): com `scripts/item.py`
 
 ```bash
 python3 scripts/item.py chuck-costco 200 batata-inglesa 300 ovo-inteiro 2
@@ -68,7 +95,8 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 
 - Pesar é **opcional**. Dia sem peso = `peso_kg: null` (nunca inventar nem copiar valor pro JSON).
 - O site preenche só na tela: dia sem peso **entre** dois registros = média proporcional dos vizinhos; **depois** do último registro = repete o último. Aparece como "estimado" (bolinha vazada no gráfico, "~" no número).
-- Lucas manda um peso atrasado ("ontem pesei 88,5") → gravar no JSON **daquele dia**, mesmo se já fechado (só o `peso_kg`), rodar `meta.py`. O preenchimento se ajusta sozinho.
+- Lucas manda um peso atrasado ("ontem pesei 88,5") → `registrar.py peso --data <aquele dia>` (dia fechado pede `--justificativa`, ex.: "pesou e mandou depois"). O preenchimento e a meta se ajustam sozinhos.
+- Médias, tendências, marcos e o gasto inferido usam **só pesagens reais**; a tela mostra quantas pesagens há e a data da última.
 
 ### Objetivo com data alvo (`dados/objetivo.json`)
 
@@ -76,21 +104,28 @@ Quantidade em **gramas** quando a base é "100 g"/"430 g", em **unidades** quand
 - Lucas muda algo ("meta de 0,5 kg por semana", "adia a data pra 24/10", "muda o nome") → editar `atual`, `validar.py`, commit `dados: objetivo`.
 - **Meta final (longo prazo, `meta_final` no topo do `objetivo.json`)**: **80 kg bem definido (~10% de gordura)** 🏁, depois dieta reversa. Base: ~19% de gordura em 88,9 kg (estimativa do Lucas) → 72,0 kg de massa magra ÷ 0,90 = 80 kg. **Não** muda quando um objetivo termina; só se o Lucas pedir. O card do Hoje mostra **marcos de 1 kg** até lá, pela média de 7 dias do peso, com previsão no ritmo atual.
 - **Novo objetivo** ("novo objetivo: 15/11, perder 0,5 kg por semana") → mover o `atual` para o fim de `anteriores` acrescentando `"peso_final_kg"` (último peso registrado) e `"encerrado_em"` (hoje); criar novo `atual` com `inicio` = hoje, `peso_inicial_kg` = peso mais recente e as **novas `metas`** (perguntar ao Lucas as metas e o gasto calórico dele; sem resposta, manter as metas anteriores). Atualizar o `meta` do dia aberto. Confirmar no chat: data alvo, metas, meta semanal, peso esperado na data alvo.
-- **Meta semanal automática (`meta_modo: "auto"`)**: `python3 scripts/meta.py` calcula pelo déficit — gasto − média de kcal lançadas nos dias fechados do objetivo — e grava `meta_semanal_kg` + `calculo`. Roda sozinho à meia-noite. **Grok roda `meta.py` depois de gravar um peso novo** (junto no mesmo commit).
-- **Gasto real (pelos dados) — só informativo:** `meta.py` calcula média de kcal lançadas − tendência do peso × 7700 (janela até 21 dias, pula os 4 primeiros dias do objetivo; precisa de ≥6 pesos em ≥10 dias) e grava em `calculo.gasto_real`. O card mostra esse número **só pra comparar**; ele **não** entra na meta semanal (decisão do Lucas, 29/09: opção C). A meta usa `gasto_kcal` (se o Lucas informou) ou a estimativa.
+- **Meta semanal automática (`meta_modo: "auto"`)**: `scripts/meta.py` (chamado por `scripts/derivados.py`) calcula pelo déficit — gasto − média de kcal dos **dias fechados com registro completo** do objetivo (com menos de 3, usa a meta de kcal e diz por quê) — só com dados **até hoje** (fuso de LA). Grava `meta_semanal_kg` + `calculo`. Roda sozinho a cada envio e à meia-noite; o `registrar.py` também roda.
+- **Modo manual** (`meta_modo: "manual"`): a meta semanal escolhida pelo Lucas fica; o `calculo` (diagnóstico, origem, data) continua sendo atualizado e mostra quanto seria pelo cálculo.
+- **Gasto inferido pelos registros — só informativo (não é medido):** média de kcal dos dias completos **dentro do intervalo das pesagens** − tendência do peso × 7700 (janela até 21 dias, pula os 4 primeiros dias do objetivo; precisa de ≥6 pesagens reais em ≥10 dias e ≥80% de cobertura de dias completos). Fica em `calculo.gasto_inferido` (ou `gasto_inferido_falta` com o motivo e a cobertura). **Não** entra na meta (decisão do Lucas, 29/09: opção C). A meta usa `gasto_kcal` (se o Lucas informou) ou a estimativa.
 - **Check-in semanal:** o Histórico mostra, por semana do objetivo, peso (média 7 dias) × esperado, média de kcal/proteína e dias na meta. Nada a fazer: sai dos dados.
-- **Gasto calórico do objetivo (`gasto_kcal`)**: é o Lucas quem define. Ele diz "meu gasto é 2500" → gravar `"gasto_kcal": 2500` em `objetivo.atual`, rodar `meta.py`, `validar.py`, commit `dados: objetivo`. Com `gasto_kcal`, o `meta.py` usa esse número; sem ele, usa a estimativa (Mifflin-St Jeor com `dados/perfil.json` × fator de atividade), que é só uma noção. O gasto real pelos dados é **só informativo** (ver acima) — nunca substitui o `gasto_kcal` nem a estimativa na meta; o Lucas faz essa análise. Em objetivo novo, perguntar o gasto dele.
+- **Gasto calórico do objetivo (`gasto_kcal`)**: é o Lucas quem define. Ele diz "meu gasto é 2500" → gravar `"gasto_kcal": 2500` em `objetivo.atual`, rodar `meta.py`, `validar.py`, commit `dados: objetivo`. Com `gasto_kcal`, o `meta.py` usa esse número; sem ele, usa a estimativa (Mifflin-St Jeor com `dados/perfil.json` × fator de atividade), que é só uma noção. O gasto inferido pelos registros é **só informativo** (ver acima) — nunca substitui o `gasto_kcal` nem a estimativa na meta; o Lucas faz essa análise. Em objetivo novo, perguntar o gasto dele.
 - Lucas diz quantos treinos faz / nível de atividade → ajustar `atividade` em `dados/perfil.json` (1.2 sedentário · 1.375 leve · 1.55 moderado · 1.725 intenso), rodar `meta.py`, commit `dados: perfil`.
 - Lucas quer uma meta fixa ("quero 0,5 kg por semana") → `meta_modo: "manual"` + `meta_semanal_kg`. Voltar pro cálculo: `meta_modo: "auto"` + `meta.py`.
 - Meta acima de 1,2 kg/semana gera aviso na checagem: comentar com o Lucas antes de salvar.
 
-**Antes de todo push** que mexa em `dados/`: `python3 scripts/validar.py` tem que dizer "Dados OK". O GitHub roda a mesma checagem a cada envio (workflow "Conferir dados") e avisa o Lucas por e-mail se falhar. O mesmo workflow também **abre as páginas num navegador** (`scripts/testar_paginas.js`: Hoje, dia, prévia, Histórico, Alimentos) e falha se alguma quebrar. Claude: ao mexer em HTML/JS/CSS, rodar local antes do push (`python3 -m http.server 8765 &` + `node scripts/testar_paginas.js http://localhost:8765`). A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
+**Derivados** (`dados/resumo.json` e `objetivo.atual.calculo`) **nunca se editam à mão**: `python3 scripts/derivados.py` regenera (idempotente). O `validar.py` acusa resumo desatualizado.
+
+**Antes de todo push** que mexa em `dados/` (se não usou `registrar.py --enviar`): `python3 scripts/derivados.py && python3 scripts/validar.py` → "Dados OK". Mensagens de erro dizem arquivo e campo.
+
+**Publicação (`.github/workflows/publicar.yml`, "Conferir e publicar"):** a cada push na main, PR, e à meia-noite, o GitHub roda `scripts/publicar.sh`: sincroniza com o HEAD mais novo → (fecha o dia, se for meia-noite) → regenera derivados → `scripts/verificar.sh` (validação + `tests/` + páginas no Chromium **e** WebKit) → commit/push só se tudo passar. Se alguém enviar no meio, **não faz rebase de derivado**: descarta, busca de novo, regenera e reconfere. Em PR, só confere. Falha = e-mail pro Lucas. Com o Pages em **Settings → Pages → Source: GitHub Actions**, só o commit verificado vai ao ar (senão o workflow avisa que o modo branch publica antes da conferência).
+
+**Claude, antes de push:** `bash scripts/verificar.sh` (tudo) — ou `SEM_PAGINAS=1` para pular o navegador. A partir de 29/09, todo item de dia aberto precisa ter `alimento` + `quantidade`.
 
 Escala proporcional: ex. chuck 200 g = 446 | P40 | C0 | G34; batata 300 g = 231 | P6 | C51 | G0; melancia 300 g = 90 | P3 | C24 | G0.
 
-**kcal de cada item** = valor de `alimentos.json` × proporção. **Nunca** recalcular kcal por 4/4/9. Totais = soma dos itens, arredondados a inteiro **só no final**.
+**Precisão (Python, páginas e CSV iguais):** cada item guarda kcal/P/C/G/fibra com **1 casa decimal** (biblioteca × proporção); totais = **soma dos valores guardados**, arredondada só na hora de mostrar, sempre "meio para longe do zero" (176,5 → 177) — `scripts/comum.py:arred` e `comum.js:Nutri.arred`. **Nunca** recalcular kcal por 4/4/9 e **nunca** reescrever dias antigos para corrigir diferença de arredondamento.
 
-- Sugestão: calcular com valores de `alimentos.json` sem arredondar por item; arredondar só os totais exibidos
+**Calendário:** tudo decide "hoje" pelo fuso de **America/Los_Angeles** (scripts e páginas, mesmo com o iPhone em outro fuso). **Semana do objetivo:** semana 1 = 7 dias a partir do `inicio` (29/09–05/10); a "meta da semana" é o peso esperado na **pesagem da manhã seguinte** (06/10). Hoje e Histórico usam a mesma definição (`Nutri.semana`).
 
 
 ## Formato do log no chat
@@ -146,18 +181,18 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
 1. **Início do dia** — o JSON do dia e o `data-dia` já foram criados pelo fechamento automático da meia-noite. O Grok só faz `git pull` e, se `sugestao` estiver vazia, escreve a sugestão completa (macros só por `alimentos.json`). **Não** mexer no `data-dia` do index.
-2. **Lançar refeição** — editar **somente** o JSON: acrescentar a refeição em `lancado` e atualizar `atualizado`. **Não** editar o HTML do index no dia a dia. Recalcular/refazer `sugestao` do restante se fizer sentido.
+2. **Lançar refeição** — `scripts/registrar.py refeicao … --enviar` (ver "Lançar"). Não editar `lancado` à mão. **Não** editar o HTML do index no dia a dia. Refazer `sugestao` do restante se fizer sentido (`--remover-sugestao` tira a refeição já comida).
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos foram removidos; dia futuro sem arquivo mostra uma prévia do plano padrão em `dia.html?d=`.
-5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): gravar `peso_kg` (número) no JSON do **Hoje**, atualizar `atualizado`, commit `peso DD/MM` + push. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
+5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): `registrar.py peso --data <hoje> --kg 82.4 --enviar`. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
 5b. **Gordura corporal** — o Lucas manda foto (frente/lado, luz boa, de manhã) ou o número ("gordura 18", "DEXA deu 17,5"). Foto → estimar a % com faixa (ex.: "~18% (16–20%)") e gravar o número do meio. Gravar no JSON do **dia** (mesmo lugar do peso): `"gordura_pct": 18` + `"gordura_fonte"`: `foto` · `fita` · `dexa` · `bioimpedancia` · `lucas`. `atualizado`, `validar.py`, commit `gordura DD/MM`. O card do Hoje usa a **medida mais recente** pra recalcular quando chega a 10% e com que peso. Claude também pode estimar por foto se o Lucas mandar pra ele. Frequência sugerida: a cada 2–4 semanas (foto) ou quando fizer DEXA.
-6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/fechar-dia.yml` → `scripts/fechar_dia.py`) faz sozinho:
+6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/publicar.yml` → `scripts/publicar.sh` com `scripts/fechar_dia.py`) faz sozinho — e **fechar não marca o registro como completo**:
    1. `fechado: true` em todo dia passado ainda aberto;
    2. cria o JSON do novo dia se não existir, **já com o plano padrão como sugestão** (`dados/refeicoes.json`), e inclui em `dados/dias.json`;
    3. muda `data-dia` do `index.html` para o novo dia;
    4. aponta o botão **Plano** para o dia seguinte.
    Commit `fechar DD/MM (automático)`. **Ninguém precisa fechar o dia na mão.** Se o Lucas pedir "fecha o dia" antes da meia-noite, basta `fechado: true` no JSON; o resto o script faz.
-   **Refeição que atravessa a meia-noite — vale a hora em que o Lucas comeu.** Comeu às 23:50 e mandou depois da meia-noite → lançar no JSON do **dia anterior** (em `lancado`, mesmo com `fechado: true`; **não** mexer em `fechado`), atualizar `atualizado`, commit `log DD/MM: <refeição> (atrasado)`. Comeu depois da meia-noite → dia novo. Na dúvida sobre a hora, perguntar. O fechamento automático não reabre nada.
+   **Refeição que atravessa a meia-noite — vale a hora em que o Lucas comeu.** `--consumido-em` com a hora real: 23:50 → dia anterior (fechado: passar `--justificativa "comeu 23:50, mandou depois"`); depois da meia-noite → dia novo. Na dúvida sobre a hora, perguntar. O fechamento automático não reabre nada.
    **Grok, de manhã:** `git pull`. O dia já vem com o plano padrão; só refazer a sugestão se o Lucas pedir algo diferente. Plano de amanhã pode ser criado antes (`dados/<amanhã>.json` + `dias.json`); o script usa o que existir.
 
 Arquivos `dia-YYYY-MM-DD.html` antigos (ex.: `dia-2026-09-28.html`) ficam no repo como arquivo estático legado — **não** tocá-los e **não** criar cópias novas do index. Dias a partir da generic `dia.html` abrem via query string.
@@ -174,11 +209,13 @@ Padronizar mensagens assim:
 - `peso DD/MM` — `peso_kg` no JSON do dia + `atualizado`
 - `dados: DD/MM em JSON` — criar/ajustar arquivo do dia (+ entrada em `dias.json` se for novo)
 - `docs: <assunto>` — só documentação (ex.: este arquivo)
+- `registrar.py --enviar` faz os commits sozinho: `log DD/MM: <refeição>`, `peso DD/MM`, `correcao DD/MM: <id>`, `registro DD/MM: completo`.
+- `auto: derivados atualizados` / `fechar DD/MM (automático)` — feitos pelo GitHub (publicar.sh).
 
 ## Mapa de arquivos
 
 - `dados/dias.json` — índice ordenado de datas (`["YYYY-MM-DD", …]`); todo JSON novo entra aqui.
-- `dados/resumo.json` — **gerado automaticamente** à meia-noite (`scripts/resumo.py`): totais/meta/peso de cada dia, para o Histórico carregar rápido. Ninguém edita à mão; o Histórico busca os 3 dias mais recentes direto do JSON do dia.
+- `dados/resumo.json` — **derivado** (`scripts/derivados.py`, regenerado a cada envio e à meia-noite): totais/meta/peso/registro de cada dia. Ninguém edita à mão. O Histórico busca direto do arquivo do dia os dias desde anteontem (fuso de LA) e os que não estão fechados; planos futuros não mexem nessa janela.
 - `dados/YYYY-MM-DD.json` — **fonte da verdade** do dia (lançado, sugestão, `sugestao_nota`, meta, `peso_kg`, fechado, carimbo).
 - `index.html` — shell **Hoje**; `body data-dia="YYYY-MM-DD"` + `estilo.css` + `render.js`. Não editar macros no HTML no dia a dia.
 - `dia.html` — shell genérico de qualquer dia; **sem** `data-dia`. Lê `?d=YYYY-MM-DD` e busca `dados/{d}.json`. Título mostra a data (ex.: "30 set"), não "Hoje".
@@ -191,7 +228,8 @@ Padronizar mensagens assim:
 - `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
 - `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial. `manifest.webmanifest` + metas `apple-mobile-web-app-capable` — abre em tela cheia pelo ícone (sem service worker/offline: continua site estático).
-- `scripts/item.py` — calculadora de itens e refeições (Grok usa pra lançar/sugerir). `scripts/validar.py` — checagem dos dados. `scripts/fechar_dia.py` — fechamento da meia-noite.
+- `scripts/registrar.py` — **lançamento** (refeição, peso, remover, completo) com evento idempotente. `scripts/item.py` — calculadora (planos/sugestões). `scripts/validar.py` — checagem estrita. `scripts/derivados.py` — resumo + cálculo do objetivo (`resumo.py` e `meta.py` por baixo). `scripts/fechar_dia.py` — fechamento. `scripts/publicar.sh` / `scripts/verificar.sh` — publicação e verificação usadas pelo GitHub. `scripts/comum.py` / `comum.js` — JSON estrito, arredondamento, fuso e semana, compartilhados.
+- `tests/` — testes de regressão (`python3 -m unittest discover -s tests`); `scripts/testar_paginas.js` — páginas no Chromium/WebKit, totais iguais ao Python e CSV.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
@@ -231,7 +269,8 @@ O Lucas copia e cola mensagens entre os dois assistentes. Pra ficar claro de que
 Dois assistentes trabalham neste repo:
 
 - **Grok** — uso diário: refeições, sugestões, peso, alimentos novos. Mexe só em `dados/`. Virar o dia é automático (não mexer no `data-dia`).
-- **Claude** — melhorias do site: `render.js`, `estilo.css`, `historico.js`, páginas HTML, `scripts/`, `.github/` e este arquivo.
+- **Claude** — melhorias do site: `render.js`, `estilo.css`, `historico.js`, `comum.js`, páginas HTML, `scripts/`, `tests/`, `.github/` e este arquivo.
+- **Codex** — auditoria/revisão técnica (mensagens `[CODEX → CLAUDE] #N`); mudanças passam pelo mesmo fluxo de verificação.
 
 **Sempre** rodar `git pull --rebase origin main` antes de editar e antes do push. Se aparecer conflito, parar e avisar o Lucas.
 
@@ -256,7 +295,14 @@ Curto e direto; detalhe técnico só se ajudar a decidir.
 4. Revisar o diff e confirmar que nenhum `dia-*.html` legado foi alterado acidentalmente.
 5. Fazer commit na branch `main` e publicar com `git push origin main`.
 6. Não inventar complexidade. Para um redesign grande, mudança de arquitetura ou alteração do fluxo, perguntar antes ao usuário (ver "Como o Claude trabalha e responde ao Lucas").
-7. Toda alteração em `render.js`, `estilo.css` ou `historico.js` deve incrementar o `?v=` nos HTML que os carregam.
+7. Toda alteração em `render.js`, `estilo.css`, `historico.js`, `objetivo.js`, `alimentos.js` ou `comum.js` deve incrementar o `?v=` nos HTML que os carregam.
+8. Rodar `bash scripts/verificar.sh` antes do push (o GitHub roda de novo e só publica se passar).
+
+## Pendências conhecidas (não resolvidas nesta rodada)
+
+- **Modelo de gordura corporal/Forbes** (`objetivo.js: simular`) — revisar premissas separadamente (fração de Forbes, pausas, faixas).
+- **Pages ainda no modo branch?** Se o workflow avisar, o Lucas troca em Settings → Pages → Source: GitHub Actions (1 clique) para só o commit verificado ir ao ar.
+- **Teste no iPhone real**: os testes usam Chromium e WebKit do Playwright; Safari/iOS real (tela cheia pelo ícone, compartilhar CSV) não é testado automaticamente.
 
 ## Estado atual
 

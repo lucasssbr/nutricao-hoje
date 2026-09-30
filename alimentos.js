@@ -13,8 +13,8 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  function n1(v) { return String(Math.round(Number(v) * 10) / 10).replace('.', ','); }
-  function ri(v) { return Math.round(Number(v) || 0); }
+  function n1(v) { return String(window.Nutri.arred(Number(v), 1)).replace('.', ','); }
+  var ri = window.Nutri.ri;
   function data(iso) {
     var p = String(iso || '').split('-');
     return p.length === 3 ? parseInt(p[2], 10) + ' ' + MESES[parseInt(p[1], 10) - 1] : '';

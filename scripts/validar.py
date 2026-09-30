@@ -299,6 +299,20 @@ class Checagem:
             if reg.get("status") not in STATUS_REGISTRO:
                 self.erro(f"{nome}.registro.status", f"use 'completo' ou 'parcial' (veio {reg.get('status')!r})")
             self.carimbo(f"{nome}.registro.em", reg.get("em"))
+        evs = dia.get("eventos")
+        if evs is not None and self.lista(f"{nome}.eventos", evs):
+            vistos = set()
+            for i, e in enumerate(evs):
+                o = f"{nome}.eventos[{i}]"
+                if not self.objeto(o, e):
+                    continue
+                if self.texto(f"{o}.id_evento", e.get("id_evento")):
+                    if e["id_evento"] in vistos:
+                        self.erro(f"{o}.id_evento", f"'{e['id_evento']}' repetido no mesmo dia")
+                    vistos.add(e["id_evento"])
+                if e.get("tipo") not in ("refeicao", "peso", "remover", "completo"):
+                    self.erro(f"{o}.tipo", f"tipo inválido {e.get('tipo')!r}")
+                self.carimbo(f"{o}.em", e.get("em"))
         cor = dia.get("correcoes")
         if cor is not None and self.lista(f"{nome}.correcoes", cor):
             for i, c in enumerate(cor):
