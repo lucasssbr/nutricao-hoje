@@ -99,15 +99,15 @@
       "greek yogurt"
     ],
     "base": "430 g",
-    "kcal": 253.7,
-    "p": 43.9,
-    "c": 15.5,
-    "g": 1.7,
+    "kcal": 303.5,
+    "p": 40.5,
+    "c": 17.7,
+    "g": 8.9,
     "fibra": 0,
-    "fonte": "usda",
+    "fonte": "rotulo",
     "salvo_em": "2026-09-28",
-    "obs": "conferir no rótulo da marca usada · USDA FDC 170894 (Yogurt, Greek, plain, nonfat) × 4,3. 29/09: 1 casa decimal (antes 254 | P43 | C15 | G0).",
-    "atualizado_em": "2026-09-29"
+    "obs": "Green Mountain Creamery Organic Greek Plain 2% · rótulo, porção de 170 g: 120 kcal | P16 | C7 | G3,5 | fibra 0.",
+    "atualizado_em": "2026-09-30"
   },
   "iogurte-grego-100g": {
     "nome": "Iogurte grego desnatado",
@@ -116,15 +116,15 @@
       "iogurte grego"
     ],
     "base": "100 g",
-    "kcal": 59,
-    "p": 10.2,
-    "c": 3.6,
-    "g": 0.4,
+    "kcal": 70.6,
+    "p": 9.4,
+    "c": 4.1,
+    "g": 2.1,
     "fibra": 0,
-    "fonte": "usda",
+    "fonte": "rotulo",
     "salvo_em": "2026-09-28",
-    "obs": "USDA FDC 170894 (Yogurt, Greek, plain, nonfat). 29/09: 1 casa decimal (antes 59 | P10 | C3 | G0).",
-    "atualizado_em": "2026-09-29"
+    "obs": "Green Mountain Creamery Organic Greek Plain 2% · rótulo, porção de 170 g: 120 kcal | P16 | C7 | G3,5 | fibra 0.",
+    "atualizado_em": "2026-09-30"
   },
   "batata-inglesa": {
     "nome": "Batata inglesa (crua)",

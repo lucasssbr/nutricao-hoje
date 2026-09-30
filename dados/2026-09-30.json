@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-29T15:13:56-07:00",
+  "atualizado": "2026-09-30T07:16:42-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -93,10 +93,10 @@
           "qtd": "200 g",
           "alimento": "iogurte-grego-100g",
           "quantidade": 200,
-          "kcal": 118,
-          "p": 20.4,
-          "c": 7.2,
-          "g": 0.8,
+          "kcal": 141.2,
+          "p": 18.8,
+          "c": 8.2,
+          "g": 4.2,
           "fibra": 0
         }
       ]
@@ -132,10 +132,10 @@
           "qtd": "100 g",
           "alimento": "iogurte-grego-100g",
           "quantidade": 100,
-          "kcal": 59,
-          "p": 10.2,
-          "c": 3.6,
-          "g": 0.4,
+          "kcal": 70.6,
+          "p": 9.4,
+          "c": 4.1,
+          "g": 2.1,
           "fibra": 0
         }
       ]
@@ -182,10 +182,10 @@
           "qtd": "130 g",
           "alimento": "iogurte-grego-100g",
           "quantidade": 130,
-          "kcal": 76.7,
-          "p": 13.3,
-          "c": 4.7,
-          "g": 0.5,
+          "kcal": 91.8,
+          "p": 12.2,
+          "c": 5.3,
+          "g": 2.7,
           "fibra": 0
         }
       ]
