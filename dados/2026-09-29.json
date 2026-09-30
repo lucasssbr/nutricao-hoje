@@ -90,6 +90,22 @@
           "fibra": 0
         }
       ]
+    },
+    {
+      "refeicao": "Vegetais",
+      "itens": [
+        {
+          "nome": "Kirkland Signature Organic Normandy Vegetables",
+          "qtd": "250 g",
+          "alimento": "kirkland-normandy-vegetables",
+          "quantidade": 250,
+          "kcal": 72,
+          "p": 6.1,
+          "c": 14.3,
+          "g": 0,
+          "fibra": 0
+        }
+      ]
     }
   ],
   "sugestao": [

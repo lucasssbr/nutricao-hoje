@@ -208,5 +208,22 @@
     "fibra": 0,
     "fonte": "rotulo",
     "salvo_em": "2026-09-29"
+  },
+  "kirkland-normandy-vegetables": {
+    "nome": "Kirkland Signature Organic Normandy Vegetables",
+    "apelidos": [
+      "normandy vegetables",
+      "vegetais normandy",
+      "kirkland vegetables"
+    ],
+    "base": "100 g",
+    "kcal": 28.8,
+    "p": 2.44,
+    "c": 5.72,
+    "g": 0,
+    "fibra": 0,
+    "fonte": "lucas",
+    "salvo_em": "2026-09-30",
+    "obs": "MFP verified Kirkland Organic Normandy Vegetables 250 g = 72 kcal | P6.1 | C14.3 | G0; fibra desconhecida, mantida em 0."
   }
 }
