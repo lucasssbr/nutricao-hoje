@@ -99,6 +99,24 @@
              magraPerdida: magraHoje - FFM, cruza: cruza, cenario: r.cenario || 'cenário', base: base };
   }
 
+  // Qual medida de gordura manda na previsão (decisão do Lucas, 30/09: a mais CONFIÁVEL, não a mais recente).
+  // Prioridade dexa > fita > foto/lucas > bioimpedância, só entre medidas dos últimos 30 dias (senão, a mais
+  // recente de qualquer tipo). Da fonte escolhida: média das leituras das 2 semanas até a última dela.
+  var PRIORIDADE = { dexa: 4, fita: 3, foto: 2, lucas: 2, bioimpedancia: 1 };
+  var NOME_FONTE = { dexa: 'DEXA', fita: 'fita', foto: 'foto', lucas: 'informado', bioimpedancia: 'bioimpedância' };
+  function escolherMedida(medidas, hoje) {
+    if (!medidas || !medidas.length) return null;
+    var recentes = medidas.filter(function (m) { return dias(m.data, hoje) <= 30; });
+    var pool = recentes.length ? recentes : [medidas[medidas.length - 1]];
+    var melhor = pool.reduce(function (a, m) {
+      var pa = PRIORIDADE[a.fonte] || 0, pm = PRIORIDADE[m.fonte] || 0;
+      return pm > pa || (pm === pa && m.data > a.data) ? m : a;
+    });
+    var mesmas = pool.filter(function (m) { return (PRIORIDADE[m.fonte] || 0) === (PRIORIDADE[melhor.fonte] || 0) && dias(m.data, melhor.data) < 14; });
+    var media = mesmas.reduce(function (s, m) { return s + m.pct; }, 0) / mesmas.length;
+    return { data: melhor.data, pct: media, fonte: (NOME_FONTE[melhor.fonte] || melhor.fonte || 'medida') + (mesmas.length > 1 ? ', média de ' + mesmas.length : '') };
+  }
+
   function marcosHtml(o, reais, medidas) {
     var mf = o.meta_final;
     if (!mf || !(mf.peso_kg > 0) || !reais.length) return '';
@@ -117,7 +135,7 @@
     }
     var feitos = marcos.filter(function (m) { return ref <= m; });
     var prox = marcos.filter(function (m) { return ref > m; })[0];
-    var medida = medidas && medidas.length ? medidas[medidas.length - 1] : null;
+    var medida = escolherMedida(medidas, ultData);
     var sim = simular(mf, ref, ultData, medida, reais);
     var rit = ritmoKgDia(reais, o);
     function previsao(alvo) {
