@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-30T07:57:17-07:00",
+  "atualizado": "2026-09-30T10:18:19-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -191,6 +191,6 @@
       ]
     }
   ],
-  "gordura_pct": 17,
-  "gordura_fonte": "foto"
+  "gordura_pct": 19,
+  "gordura_fonte": "lucas"
 }
