@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-30T11:24:06-07:00",
+  "atualizado": "2026-09-30T14:39:15-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -9,7 +9,38 @@
     "g": 50
   },
   "peso_kg": 87.6,
-  "lancado": [],
+  "lancado": [
+    {
+      "refeicao": "Almoço",
+      "id_evento": "t115u",
+      "consumido_em": "2026-09-30T14:39:00-07:00",
+      "registrado_em": "2026-09-30T14:39:15-07:00",
+      "itens": [
+        {
+          "nome": "Batata inglesa (crua)",
+          "qtd": "250 g",
+          "alimento": "batata-inglesa",
+          "quantidade": 250,
+          "kcal": 192.5,
+          "p": 5.3,
+          "c": 43.8,
+          "g": 0.3,
+          "fibra": 5.3
+        },
+        {
+          "nome": "Chuck steak Costco (cru)",
+          "qtd": "250 g",
+          "alimento": "chuck-costco",
+          "quantidade": 250,
+          "kcal": 557.5,
+          "p": 50,
+          "c": 0,
+          "g": 42.5,
+          "fibra": 0
+        }
+      ]
+    }
+  ],
   "sugestao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite (até ~5) · acém 200 g cru · 2 Nurri · iogurte 2% (rótulo) · G acima da meta até o Lucas escolher o ajuste",
   "sugestao": [
     {
@@ -48,56 +79,6 @@
           "c": 27,
           "g": 0.4,
           "fibra": 3.1
-        }
-      ]
-    },
-    {
-      "refeicao": "Almoço",
-      "favorita": "almoco-padrao",
-      "itens": [
-        {
-          "nome": "Chuck steak Costco (cru)",
-          "qtd": "100 g",
-          "alimento": "chuck-costco",
-          "quantidade": 100,
-          "kcal": 223,
-          "p": 20,
-          "c": 0,
-          "g": 17,
-          "fibra": 0
-        },
-        {
-          "nome": "Batata inglesa (crua)",
-          "qtd": "100 g",
-          "alimento": "batata-inglesa",
-          "quantidade": 100,
-          "kcal": 77,
-          "p": 2.1,
-          "c": 17.5,
-          "g": 0.1,
-          "fibra": 2.1
-        },
-        {
-          "nome": "Tomate",
-          "qtd": "150 g",
-          "alimento": "tomate",
-          "quantidade": 150,
-          "kcal": 27,
-          "p": 1.4,
-          "c": 5.9,
-          "g": 0.3,
-          "fibra": 1.8
-        },
-        {
-          "nome": "Iogurte grego desnatado",
-          "qtd": "200 g",
-          "alimento": "iogurte-grego-100g",
-          "quantidade": 200,
-          "kcal": 141.2,
-          "p": 18.8,
-          "c": 8.2,
-          "g": 4.2,
-          "fibra": 0
         }
       ]
     },
@@ -192,5 +173,14 @@
     }
   ],
   "gordura_pct": 19,
-  "gordura_fonte": "lucas"
+  "gordura_fonte": "lucas",
+  "eventos": [
+    {
+      "id_evento": "t115u",
+      "tipo": "refeicao",
+      "em": "2026-09-30T14:39:15-07:00",
+      "resumo": "Almoço: 750 kcal | P 55 | C 44 | G 43 (2 item(ns))",
+      "assinatura": "6ce3d85f2e2ea004"
+    }
+  ]
 }
