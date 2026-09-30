@@ -229,7 +229,7 @@ Padronizar mensagens assim:
 - `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial. `manifest.webmanifest` + metas `apple-mobile-web-app-capable` — abre em tela cheia pelo ícone (sem service worker/offline: continua site estático).
 - `scripts/registrar.py` — **lançamento** (refeição, peso, remover, completo) com evento idempotente. `scripts/item.py` — calculadora (planos/sugestões). `scripts/validar.py` — checagem estrita. `scripts/derivados.py` — resumo + cálculo do objetivo (`resumo.py` e `meta.py` por baixo). `scripts/fechar_dia.py` — fechamento. `scripts/publicar.sh` / `scripts/verificar.sh` — publicação e verificação usadas pelo GitHub. `scripts/comum.py` / `comum.js` — JSON estrito, arredondamento, fuso e semana, compartilhados.
-- `tests/` — testes de regressão (`python3 -m unittest discover -s tests`); `scripts/testar_paginas.js` — páginas no Chromium/WebKit, totais iguais ao Python e CSV.
+- `tests/` — testes de regressão (`python3 -m unittest discover -s tests`), incluindo dias fechados nunca reescritos e o fechamento nos horários reais do agendamento na troca de horário (`AGORA_UTC` simula o relógio só em teste); `scripts/testar_paginas.js` — páginas no Chromium/WebKit, totais iguais ao Python e CSV.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
 - `.nojekyll` — mantém a publicação estática do GitHub Pages sem processamento Jekyll.
 
@@ -301,7 +301,7 @@ Curto e direto; detalhe técnico só se ajudar a decidir.
 ## Pendências conhecidas (não resolvidas nesta rodada)
 
 - **Modelo de gordura corporal/Forbes** (`objetivo.js: simular`) — revisar premissas separadamente (fração de Forbes, pausas, faixas).
-- **Pages ainda no modo branch?** Se o workflow avisar, o Lucas troca em Settings → Pages → Source: GitHub Actions (1 clique) para só o commit verificado ir ao ar.
+- **Pages está no modo branch (confirmado no log de 30/09: `build_type=legacy`).** Enquanto for assim, um push vai ao ar antes da conferência terminar. O Lucas troca em Settings → Pages → Build and deployment → Source: **GitHub Actions** (1 clique); o workflow já está pronto para publicar só o commit verificado.
 - **Teste no iPhone real**: os testes usam Chromium e WebKit do Playwright; Safari/iOS real (tela cheia pelo ícone, compartilhar CSV) não é testado automaticamente.
 
 ## Estado atual

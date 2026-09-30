@@ -42,7 +42,8 @@ def metas_do_objetivo():
 
 
 def main():
-    agora = agora_la()
+    # AGORA_UTC (ISO com fuso) só para testes: simula o instante em que o GitHub rodou o agendamento
+    agora = agora_la(datetime.datetime.fromisoformat(os.environ["AGORA_UTC"])) if os.environ.get("AGORA_UTC") else agora_la()
     hoje = datetime.date.fromisoformat(os.environ["HOJE"]) if os.environ.get("HOJE") else agora.date()
     amanha = hoje + datetime.timedelta(days=1)
     carimbo = agora.isoformat()

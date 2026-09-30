@@ -80,6 +80,22 @@ class Fechamento(CopiaRepo):
         self.assertSemErros()
         self.assertNotIn("registro", self.ler(f"{d}.json"))   # fechar ≠ completo
 
+    def test_agendamentos_na_troca_de_horario(self):
+        """Execuções reais do GitHub (07:05, 08:05 e 08:35 UTC) na noite em que acaba o horário de verão
+        (1º/11/2026): às 07:05 UTC ainda é 23:05 de 1º/11 em LA — não pode abrir o dia 2."""
+        seq = [("2026-11-02T07:05:00+00:00", "2026-11-01", True),   # 23:05 PST de 1º/11
+               ("2026-11-02T08:05:00+00:00", "2026-11-02", True),   # 00:05 PST de 2/11: vira o dia
+               ("2026-11-02T08:35:00+00:00", "2026-11-02", False)]  # segunda tentativa: nada a fazer
+        for agora, esperado, muda in seq:
+            r = self.rodar("fechar_dia.py", env={"AGORA_UTC": agora}, check=True)
+            self.assertEqual(self.dia_aberto(), esperado, f"{agora}: {r.stdout}")
+            self.assertEqual("criado:" in r.stdout, muda, f"{agora}: {r.stdout}")
+        self.derivados()
+        self.assertSemErros()
+        # no inverno (PST) a execução das 07:05 UTC é 23:05 do dia anterior em LA: não vira o dia
+        r = self.rodar("fechar_dia.py", env={"AGORA_UTC": "2026-11-03T07:05:00+00:00"}, check=True)
+        self.assertEqual(self.dia_aberto(), "2026-11-02", "07:05 UTC de 3/11 ainda é 23:05 PST de 2/11")
+
 
 if __name__ == "__main__":
     unittest.main()
