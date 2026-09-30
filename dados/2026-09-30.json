@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-30T14:39:15-07:00",
+  "atualizado": "2026-09-30T15:00:09-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -37,6 +37,25 @@
           "c": 0,
           "g": 42.5,
           "fibra": 0
+        }
+      ]
+    },
+    {
+      "refeicao": "Lanche",
+      "id_evento": "t117u:refeicao:1",
+      "consumido_em": "2026-09-30T14:59:00-07:00",
+      "registrado_em": "2026-09-30T15:00:09-07:00",
+      "itens": [
+        {
+          "nome": "Uva verde sem semente",
+          "qtd": "500 g",
+          "alimento": "uva-verde",
+          "quantidade": 500,
+          "kcal": 400,
+          "p": 4.5,
+          "c": 93,
+          "g": 1,
+          "fibra": 4.5
         }
       ]
     }
@@ -181,6 +200,13 @@
       "em": "2026-09-30T14:39:15-07:00",
       "resumo": "Almoço: 750 kcal | P 55 | C 44 | G 43 (2 item(ns))",
       "assinatura": "6ce3d85f2e2ea004"
+    },
+    {
+      "id_evento": "t117u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-09-30T15:00:09-07:00",
+      "resumo": "Lanche: 400 kcal | P 5 | C 93 | G 1 (1 item(ns))",
+      "assinatura": "4281cbfc244af86b"
     }
   ]
 }
