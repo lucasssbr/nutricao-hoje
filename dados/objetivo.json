@@ -7,7 +7,25 @@
     "peso_inicial_kg": 88.9,
     "definido_em": "2026-09-29",
     "depois": "dieta reversa",
-    "obs": "80 kg bem definido (~10% de gordura). Conta: 88,9 kg com ~19% = 16,9 kg de gordura e 72,0 kg de massa magra; 72,0 ÷ 0,90 = 80,0 kg mantendo a massa magra. Depois, dieta reversa pra não acumular gordura rápido."
+    "obs": "80 kg bem definido (~10% de gordura). Conta: 88,9 kg com ~19% = 16,9 kg de gordura e 72,0 kg de massa magra; 72,0 ÷ 0,90 = 80,0 kg mantendo a massa magra. Depois, dieta reversa pra não acumular gordura rápido.",
+    "ritmo": {
+      "cenario": "agressivo",
+      "pct_semana": [
+        1.2,
+        1.0,
+        0.8
+      ],
+      "faixas_gordura": [
+        15,
+        12
+      ],
+      "fracao_forbes": 0.5,
+      "pausa_semanas": [
+        8,
+        1
+      ],
+      "obs": "% do peso por semana: acima de 15% de gordura / 12–15% / abaixo de 12%. Massa magra perdida = 0,5 × Forbes (10,4/(10,4+gordura)). 1 semana de manutenção a cada 8 de déficit. Escolhido pelo Lucas em 29/09 (aceita perder um pouco de massa magra)."
+    }
   },
   "atual": {
     "nome": "Estar melhor fisicamente",

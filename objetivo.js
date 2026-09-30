@@ -66,6 +66,36 @@
     }
     return o.meta_semanal_kg > 0 ? { kgDia: o.meta_semanal_kg / 7, fonte: 'ritmo da meta semanal' } : null;
   }
+  // Simulação semana a semana até a gordura alvo (cenário em meta_final.ritmo, ex.: agressivo):
+  // ritmo = % do peso por semana que cai conforme a gordura baixa; parte da perda vem de massa magra
+  // (fração × Forbes: 10,4/(10,4+gordura)); pausa de manutenção a cada N semanas de déficit.
+  // Parte do peso atual (média 7 dias), reconstruindo a composição desde o peso/gordura iniciais.
+  function simular(mf, refKg, desde) {
+    var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8], faixas = r.faixas_gordura || [15, 12];
+    var fr = r.fracao_forbes != null ? r.fracao_forbes : 0.5, pausa = r.pausa_semanas || null, C = 10.4;
+    var W0 = mf.peso_inicial_kg, bf0 = (mf.gordura_inicial_pct || 19) / 100, alvo = (mf.gordura_pct || 10) / 100;
+    if (!(W0 > 0)) return null;
+    var FM = W0 * bf0, FFM = W0 - FM, magra0 = FFM;
+    if (refKg >= W0) FM += refKg - W0;
+    else for (var perda = W0 - refKg; perda > 1e-9; perda -= 0.1) {
+      var passo = Math.min(0.1, perda), l = fr * C / (C + FM);
+      FM -= passo * (1 - l); FFM -= passo * l;
+    }
+    var bfHoje = FM / (FM + FFM), sem = 0, ds = 0, cruza = {};
+    while (FM / (FM + FFM) > alvo && sem < 260) {
+      if (pausa && ds && ds % pausa[0] === 0) sem += pausa[1];
+      var W = FM + FFM, bf = W ? FM / W : 0;
+      var t = bf * 100 > faixas[0] ? pct[0] : bf * 100 > faixas[1] ? pct[1] : pct[2];
+      var dW = W * t / 100, lean = fr * C / (C + FM);
+      for (var m = Math.floor(W - 1e-9); m >= W - dW; m--) {
+        if (cruza[m] == null) cruza[m] = somaDias(desde, Math.round((sem + (W - m) / dW) * 7));
+      }
+      FM -= dW * (1 - lean); FFM -= dW * lean; sem++; ds++;
+    }
+    return { bfHoje: bfHoje, fim: somaDias(desde, sem * 7), semanas: sem, pesoFim: FM + FFM,
+             magraPerdida: magra0 - FFM, cruza: cruza, cenario: r.cenario || 'cenário' };
+  }
+
   function marcosHtml(o, reais) {
     var mf = o.meta_final;
     if (!mf || !(mf.peso_kg > 0) || !reais.length) return '';
@@ -84,10 +114,12 @@
     }
     var feitos = marcos.filter(function (m) { return ref <= m; });
     var prox = marcos.filter(function (m) { return ref > m; })[0];
+    var sim = simular(mf, ref, ultData);
     var rit = ritmoKgDia(reais, o);
     function previsao(alvo) {
-      if (!rit || ref <= alvo) return '';
-      return ' · ~' + curta(somaDias(ultData, Math.ceil((ref - alvo) / rit.kgDia)));
+      if (ref <= alvo) return '';
+      if (sim && sim.cruza[alvo]) return ' · ~' + curta(sim.cruza[alvo]);
+      return rit ? ' · ~' + curta(somaDias(ultData, Math.ceil((ref - alvo) / rit.kgDia))) : '';
     }
     var h = '<div class="obj-marcos">';
     h += '<div class="obj-line"><b>🏔 Marcos</b> · ' + feitos.length + ' de ' + marcos.length +
@@ -102,8 +134,17 @@
     h += '<div class="obj-bar marcos-bar"><div style="width:' + Math.round(100 * feito / total) + '%"></div></div>';
     h += '<div class="obj-line obj-muted">Meta final <b>' + mf.peso_kg + '\u00a0kg</b>' + (mf.gordura_pct ? ' (~' + mf.gordura_pct + '% de gordura' + (mf.gordura_inicial_pct ? ', saindo de ~' + mf.gordura_inicial_pct + '%' : '') + ')' : '') +
       (mf.satisfeito_kg ? ' · ⭐ ' + mf.satisfeito_kg + '\u00a0kg satisfeito' : '') + ' · faltam ' + kg(Math.max(0, ref - mf.peso_kg)) + '\u00a0kg' +
-      (rit ? previsao(mf.peso_kg) + ' no ' + rit.fonte + ' (−' + kg(rit.kgDia * 7) + '\u00a0kg/sem)' : '') +
-      ' · média 7 dias ' + kg(ref) + '\u00a0kg' + (mf.depois ? ' · depois: ' + esc(mf.depois) : '') + '</div>';
+      previsao(mf.peso_kg) + ' · média 7 dias ' + kg(ref) + '\u00a0kg' + (mf.depois ? ' · depois: ' + esc(mf.depois) : '') + '</div>';
+    if (sim) {
+      var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8];
+      h += '<div class="obj-line obj-muted">📉 Cenário ' + esc(sim.cenario) + ' (' + pct.map(function (x) { return kg(x).replace(',0', ''); }).join(' → ') +
+        '% do peso/sem, desacelerando' + (r.pausa_semanas ? '; 1 sem de manutenção a cada ' + r.pausa_semanas[0] : '') + '): gordura hoje ~' +
+        Math.round(sim.bfHoje * 100) + '% · <b>' + (mf.gordura_pct || 10) + '% ≈ ' + curta(sim.fim) + ' ' + sim.fim.slice(0, 4) + '</b> com ~' + kg(sim.pesoFim) +
+        '\u00a0kg (~' + kg(sim.magraPerdida) + '\u00a0kg de massa magra perdida). Estimativa — vale se os ' + (mf.gordura_inicial_pct || 19) + '% iniciais estiverem certos.</div>';
+    }
+    if (rit && rit.fonte === 'ritmo atual') {
+      h += '<div class="obj-line obj-muted">Ritmo real das últimas 2 semanas: −' + kg(rit.kgDia * 7) + '\u00a0kg/sem.</div>';
+    }
     return h + '</div>';
   }
 
