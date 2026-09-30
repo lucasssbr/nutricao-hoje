@@ -1,6 +1,6 @@
 {
   "data": "2026-09-29",
-  "atualizado": "2026-09-30T00:22:25-07:00",
+  "atualizado": "2026-09-30T08:27:44-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -103,6 +103,33 @@
           "p": 6.1,
           "c": 14.3,
           "g": 0,
+          "fibra": 0
+        }
+      ]
+    },
+    {
+      "refeicao": "Extra / 2ª refeição",
+      "itens": [
+        {
+          "nome": "Batata inglesa (crua)",
+          "qtd": "250 g",
+          "alimento": "batata-inglesa",
+          "quantidade": 250,
+          "kcal": 192.5,
+          "p": 5.2,
+          "c": 43.8,
+          "g": 0.2,
+          "fibra": 5.2
+        },
+        {
+          "nome": "Chuck steak Costco (cru)",
+          "qtd": "150 g",
+          "alimento": "chuck-costco",
+          "quantidade": 150,
+          "kcal": 334.5,
+          "p": 30,
+          "c": 0,
+          "g": 25.5,
           "fibra": 0
         }
       ]
