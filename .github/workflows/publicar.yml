@@ -83,11 +83,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tipo=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pages" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_type',''))" || true)
+          # legacy | workflow; qualquer outra resposta (HTTP 4xx/5xx persistente, JSON inválido, tipo
+          # desconhecido) FALHA o job — nunca vira "modo branch" por engano (scripts/pages.py, testado)
+          tipo=$(python3 scripts/pages.py modo)
           echo "tipo=$tipo" >> "$GITHUB_OUTPUT"
-          if [ "$tipo" != "workflow" ]; then
-            echo "::warning::O Pages está publicando direto do branch (build_type=$tipo): pushes ainda vão ao ar antes da conferência. Para publicar só o que foi verificado: Settings → Pages → Source: GitHub Actions."
+          if [ "$tipo" = "legacy" ]; then
+            echo "::warning::O Pages está publicando direto do branch (build_type=legacy): pushes ainda vão ao ar antes da conferência. Para publicar só o que foi verificado: Settings → Pages → Source: GitHub Actions."
           fi
       - name: Montar o site verificado
         if: steps.modo.outputs.tipo == 'workflow'
@@ -104,11 +105,9 @@ jobs:
       - uses: actions/deploy-pages@v4
         if: steps.modo.outputs.tipo == 'workflow'
       - name: Pedir publicação (Pages no modo branch)
-        if: steps.modo.outputs.tipo != 'workflow' && steps.pub.outputs.mudou == 'sim'
+        if: steps.modo.outputs.tipo == 'legacy' && steps.pub.outputs.mudou == 'sim'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # push feito com GITHUB_TOKEN não dispara o build do Pages sozinho
-          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pages/builds" \
-            || echo "::warning::Não consegui pedir a publicação do Pages."
+          # push feito com GITHUB_TOKEN não dispara o build do Pages sozinho; falha de verdade se não conseguir
+          python3 scripts/pages.py pedir-build
