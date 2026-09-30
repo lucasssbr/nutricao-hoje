@@ -6,7 +6,7 @@
     "lanche-padrao",
     "jantar-padrao"
   ],
-  "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · acém 150 g cru · 2 Nurri · iogurte 2% (rótulo) 400 g dividido · ajustado em 30/09 pra bater 1570 | P180 | C100 | G50",
+  "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite (até ~5) · acém 200 g cru · 2 Nurri · iogurte 2% (rótulo) · G acima da meta até o Lucas escolher o ajuste",
   "refeicoes": {
     "cafe-padrao": {
       "nome": "Café",
@@ -44,7 +44,7 @@
         ],
         [
           "batata-inglesa",
-          80
+          100
         ],
         [
           "tomate",
@@ -70,7 +70,7 @@
         ],
         [
           "melancia",
-          150
+          200
         ],
         [
           "iogurte-grego-100g",
@@ -88,7 +88,7 @@
       "itens": [
         [
           "chuck-costco",
-          50
+          100
         ],
         [
           "batata-inglesa",
@@ -96,11 +96,11 @@
         ],
         [
           "clara-100g",
-          390
+          180
         ],
         [
           "iogurte-grego-100g",
-          100
+          130
         ]
       ]
     }
