@@ -1,13 +1,13 @@
 {
   "_sobre": "Objetivo atual do Lucas (data alvo, metas diárias de kcal/macros, meta de peso por semana) e histórico de objetivos. O Grok atualiza quando o Lucas pedir. Peso em kg. meta_final: objetivo de longo prazo (marcos de 1 kg até lá), atravessa vários objetivos.",
   "meta_final": {
-    "peso_kg": 79,
-    "satisfeito_kg": 80,
+    "peso_kg": 80,
     "gordura_pct": 10,
+    "gordura_inicial_pct": 19,
     "peso_inicial_kg": 88.9,
     "definido_em": "2026-09-29",
     "depois": "dieta reversa",
-    "obs": "80 kg = satisfeito; 79 kg = bem definido (~10% de gordura); depois, dieta reversa pra não acumular gordura rápido"
+    "obs": "80 kg bem definido (~10% de gordura). Conta: 88,9 kg com ~19% = 16,9 kg de gordura e 72,0 kg de massa magra; 72,0 ÷ 0,90 = 80,0 kg mantendo a massa magra. Depois, dieta reversa pra não acumular gordura rápido."
   },
   "atual": {
     "nome": "Estar melhor fisicamente",

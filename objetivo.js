@@ -100,7 +100,7 @@
     }).join('') + '</div>';
     var total = inicio - mf.peso_kg, feito = Math.max(0, Math.min(total, inicio - ref));
     h += '<div class="obj-bar marcos-bar"><div style="width:' + Math.round(100 * feito / total) + '%"></div></div>';
-    h += '<div class="obj-line obj-muted">Meta final <b>' + mf.peso_kg + '\u00a0kg</b>' + (mf.gordura_pct ? ' (~' + mf.gordura_pct + '% de gordura)' : '') +
+    h += '<div class="obj-line obj-muted">Meta final <b>' + mf.peso_kg + '\u00a0kg</b>' + (mf.gordura_pct ? ' (~' + mf.gordura_pct + '% de gordura' + (mf.gordura_inicial_pct ? ', saindo de ~' + mf.gordura_inicial_pct + '%' : '') + ')' : '') +
       (mf.satisfeito_kg ? ' · ⭐ ' + mf.satisfeito_kg + '\u00a0kg satisfeito' : '') + ' · faltam ' + kg(Math.max(0, ref - mf.peso_kg)) + '\u00a0kg' +
       (rit ? previsao(mf.peso_kg) + ' no ' + rit.fonte + ' (−' + kg(rit.kgDia * 7) + '\u00a0kg/sem)' : '') +
       ' · média 7 dias ' + kg(ref) + '\u00a0kg' + (mf.depois ? ' · depois: ' + esc(mf.depois) : '') + '</div>';
