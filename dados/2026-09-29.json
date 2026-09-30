@@ -1,6 +1,6 @@
 {
   "data": "2026-09-29",
-  "atualizado": "2026-09-29T16:11:06-07:00",
+  "atualizado": "2026-09-29T19:25:18-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -74,6 +74,22 @@
           "fibra": 3.1
         }
       ]
+    },
+    {
+      "refeicao": "Doce",
+      "itens": [
+        {
+          "nome": "Bauducco Wafer Roll",
+          "qtd": "4 un",
+          "alimento": "bauducco-wafer-roll",
+          "quantidade": 4,
+          "kcal": 160,
+          "p": 2,
+          "c": 23,
+          "g": 6,
+          "fibra": 0
+        }
+      ]
     }
   ],
   "sugestao": [
@@ -82,28 +98,28 @@
       "itens": [
         {
           "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "2 lata",
+          "qtd": "1 lata",
           "alimento": "nurri-vanilla",
-          "quantidade": 2,
-          "kcal": 300,
-          "p": 60,
-          "c": 8,
-          "g": 5,
-          "fibra": 2
+          "quantidade": 1,
+          "kcal": 150,
+          "p": 30,
+          "c": 4,
+          "g": 2.5,
+          "fibra": 1
         },
         {
           "nome": "Iogurte grego desnatado",
-          "qtd": "300 g",
+          "qtd": "250 g",
           "alimento": "iogurte-grego-100g",
-          "quantidade": 300,
-          "kcal": 177,
-          "p": 30.6,
-          "c": 10.8,
-          "g": 1.2,
+          "quantidade": 250,
+          "kcal": 147.5,
+          "p": 25.5,
+          "c": 9,
+          "g": 1,
           "fibra": 0
         }
       ]
     }
   ],
-  "sugestao_nota": "sem clara · sem peixe · sem mais chuck (250 g já lançado) · 2 Nurri + 300 g de iogurte para priorizar proteína; carboidrato e gordura ficam acima da meta projetada"
+  "sugestao_nota": "sem claras · 1 Nurri + 250 g de iogurte; fecha proteína possível sem passar da meta de kcal, mas carboidrato e gordura já estão acima da meta"
 }
