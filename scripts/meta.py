@@ -5,10 +5,10 @@
   python3 scripts/meta.py --ver      # só mostra a conta
 
 Conta:
-  gasto (TDEE) = 1) objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
-                 2) GASTO REAL, quando houver dados suficientes: média de kcal lançadas − tendência do
-                    peso × 7700 (se comeu 1570 e perdeu 1 kg/semana, gastou ~1570 + 1100);
-                 3) senão estimativa: Mifflin-St Jeor (peso, altura, idade, sexo) × fator de atividade
+  gasto (TDEE) = objetivo.atual.gasto_kcal, se o Lucas informou (vale sempre esse);
+                 senão estimativa: Mifflin-St Jeor (peso, altura, idade, sexo) × fator de atividade
+  gasto real   = só INFORMATIVO (decisão do Lucas, 29/09): média de kcal lançadas − tendência do
+                 peso × 7700. Vai para calculo.gasto_real e aparece no card, mas NÃO entra na meta.
   ingestão     = média de kcal lançadas nos dias fechados do objetivo (dias com < 800 kcal
                  lançadas são ignorados por parecerem incompletos); com menos de 3 dias → meta de kcal
                  (um dia só distorce muito a média)
@@ -105,8 +105,6 @@ def calcular(hoje=None):
     formula = bmr * perfil["atividade"]
     if isinstance(informado, (int, float)) and not isinstance(informado, bool):
         tdee, gasto_fonte = float(informado), "informado"
-    elif real:
-        tdee, gasto_fonte = float(real["kcal"]), "real"
     else:
         tdee, gasto_fonte = formula, "estimado"
     if len(ingestao) >= MIN_DIAS:
@@ -145,8 +143,6 @@ def main():
         print(f"Gasto real: ainda não ({c['gasto_real_falta']})")
     if c["gasto_fonte"] == "informado":
         print(f"Gasto informado pelo Lucas: {c['gasto_estimado']} kcal")
-    elif c["gasto_fonte"] == "real":
-        print(f"Usando o gasto real ({c['gasto_estimado']} kcal); fórmula daria {c['gasto_formula']}")
     else:
         print(f"Gasto estimado {c['gasto_estimado']} kcal (BMR {c['bmr']} × {c['atividade']}, {c['idade']} anos, {c['peso_ref_kg']} kg)")
     print(f"Comendo {c['ingestao_media']} kcal ({c['ingestao_fonte']}) → déficit {c['deficit_dia']} kcal/dia")

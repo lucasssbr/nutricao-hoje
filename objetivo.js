@@ -68,15 +68,13 @@
     if (o.calculo) {
       var fonte = o.calculo.gasto_fonte;
       var gastoTxt = fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado)
-        : fonte === 'real' ? 'gasto real ~' + mil(o.calculo.gasto_estimado)
         : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
       h += '<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
         ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
       var gr = o.calculo.gasto_real;
-      if (gr && fonte === 'real') {
-        h += '<div class="obj-line obj-muted">Gasto real calculado pelos seus dados (' + gr.dias + ' dias, ' + gr.pesos + ' pesos); a fórmula dava ~' + mil(o.calculo.gasto_formula) + '.</div>';
-      } else if (gr) {
-        h += '<div class="obj-line obj-muted">Pelos seus dados, o gasto real está em ~' + mil(gr.kcal) + ' kcal/dia.</div>';
+      // gasto real pelos dados: só informativo (não entra na meta) — o Lucas compara com o dele
+      if (gr) {
+        h += '<div class="obj-line obj-muted">Pelos seus dados (' + gr.dias + ' dias, ' + gr.pesos + ' pesos), o gasto real está em ~' + mil(gr.kcal) + ' kcal/dia — só pra comparar, não muda a meta.</div>';
       } else if (o.calculo.gasto_real_falta) {
         h += '<div class="obj-line obj-muted">Gasto real (pelos seus dados) ainda não: ' + esc(o.calculo.gasto_real_falta) + '.</div>';
       }
