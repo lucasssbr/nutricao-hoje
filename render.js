@@ -331,7 +331,7 @@
     .then(function (data) {
       render(data);
       mostrarLimites(data);
-      if (isHoje && window.NutriObjetivo) window.NutriObjetivo.montarHoje(data.peso_kg, data.data);
+      if (isHoje && window.NutriObjetivo) window.NutriObjetivo.montarHoje(data.peso_kg, data.data, data);
     })
     .catch(function () {
       if (!isHoje && pageDia > localISODate()) {

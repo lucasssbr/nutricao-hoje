@@ -39,6 +39,8 @@ def gerar():
             "meta": dia.get("meta"),
             "cons": cons,
             "peso": dia.get("peso_kg"),
+            "gordura": dia.get("gordura_pct"),
+            "gordura_fonte": dia.get("gordura_fonte"),
         })
     novo = json.dumps(saida, ensure_ascii=False, separators=(",", ":")) + "\n"
     arq = DADOS / "resumo.json"

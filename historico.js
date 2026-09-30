@@ -32,11 +32,11 @@
   // Planilha (CSV) com todos os dias: pra fazer as contas por fora (Numbers, Excel, Google Sheets)
   function csvDias(dias) {
     function n(v) { return v == null || v === '' || isNaN(Number(v)) ? '' : String(Math.round(Number(v) * 10) / 10); }
-    var linhas = ['data,fechado,kcal,proteina_g,carbo_g,gordura_g,fibra_g,peso_kg,meta_kcal,meta_p,meta_c,meta_g'];
+    var linhas = ['data,fechado,kcal,proteina_g,carbo_g,gordura_g,fibra_g,peso_kg,gordura_corporal_pct,gordura_fonte,meta_kcal,meta_p,meta_c,meta_g'];
     dias.forEach(function (d) {
       var m = d.meta || {};
       linhas.push([d.data, d.fechado ? 'sim' : 'nao', n(d.cons.kcal), n(d.cons.p), n(d.cons.c), n(d.cons.g),
-        n(d.cons.fibra), n(d.peso), n(m.kcal), n(m.p), n(m.c), n(m.g)].join(','));
+        n(d.cons.fibra), n(d.peso), n(d.gordura), d.gordura_fonte || '', n(m.kcal), n(m.p), n(m.c), n(m.g)].join(','));
     });
     return '\ufeff' + linhas.join('\n') + '\n';
   }
@@ -369,7 +369,7 @@
     Promise.all(uniq.map(function (iso) {
       var r = mapa[iso];
       if (r && iso < corte) {
-        return Promise.resolve({ ok: true, iso: iso, data: { data: iso, fechado: r.fechado, meta: r.meta, peso_kg: r.peso, cons: r.cons } });
+        return Promise.resolve({ ok: true, iso: iso, data: { data: iso, fechado: r.fechado, meta: r.meta, peso_kg: r.peso, gordura_pct: r.gordura, gordura_fonte: r.gordura_fonte, cons: r.cons } });
       }
       return fetch('dados/' + iso + '.json', { cache: 'no-store' })
         .then(function (res) {
@@ -417,7 +417,7 @@
       results.forEach(function (r) {
         if (!r.ok) return;
         var dd = r.data || {};
-        todos.push({ data: dd.data || r.iso, fechado: !!dd.fechado, meta: dd.meta, cons: dd.cons || sumMeals(dd.lancado || []), peso: dd.peso_kg });
+        todos.push({ data: dd.data || r.iso, fechado: !!dd.fechado, meta: dd.meta, cons: dd.cons || sumMeals(dd.lancado || []), peso: dd.peso_kg, gordura: dd.gordura_pct, gordura_fonte: dd.gordura_fonte });
       });
       todos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
       ligarBotaoCsv(todos);

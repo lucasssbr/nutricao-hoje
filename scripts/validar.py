@@ -25,6 +25,7 @@ DATA_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 EXIGE_ID_DESDE = "2026-09-29"
 FONTES = {"rotulo", "usda", "openfoodfacts", "lucas", "estimado"}
 TOL = 1.0
+FONTES_GORDURA = {"foto", "fita", "dexa", "bioimpedancia", "lucas"}
 
 erros, avisos = [], []
 
@@ -78,6 +79,10 @@ def checar_dia(nome, dia, alimentos):
         erros.append(f"{nome}: 'meta' inválida")
     if dia.get("peso_kg") is not None and not num(dia.get("peso_kg")):
         erros.append(f"{nome}: 'peso_kg' deve ser número ou null")
+    if dia.get("gordura_pct") is not None and not (num(dia["gordura_pct"]) and 3 <= dia["gordura_pct"] <= 50):
+        erros.append(f"{nome}: 'gordura_pct' deve ser número entre 3 e 50 (ou null)")
+    if dia.get("gordura_pct") is not None and dia.get("gordura_fonte") not in FONTES_GORDURA:
+        erros.append(f"{nome}: 'gordura_fonte' deve ser um de {sorted(FONTES_GORDURA)}")
     gramas = {}
     for lista in ("lancado", "sugestao"):
         refeicoes = dia.get(lista)

@@ -70,18 +70,25 @@
   // ritmo = % do peso por semana que cai conforme a gordura baixa; parte da perda vem de massa magra
   // (fração × Forbes: 10,4/(10,4+gordura)); pausa de manutenção a cada N semanas de déficit.
   // Parte do peso atual (média 7 dias), reconstruindo a composição desde o peso/gordura iniciais.
-  function simular(mf, refKg, desde) {
+  function simular(mf, refKg, desde, medida, reais) {
     var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8], faixas = r.faixas_gordura || [15, 12];
     var fr = r.fracao_forbes != null ? r.fracao_forbes : 0.5, pausa = r.pausa_semanas || null, C = 10.4;
     var W0 = mf.peso_inicial_kg, bf0 = (mf.gordura_inicial_pct || 19) / 100, alvo = (mf.gordura_pct || 10) / 100;
+    var base = { pct: bf0 * 100, txt: 'estimativa inicial ' + Math.round(bf0 * 100) + '%' };
+    if (medida) {  // medida mais recente (foto/fita/DEXA): composição a partir do peso daquele dia
+      var antes = (reais || []).filter(function (x) { return x.data <= medida.data; });
+      W0 = antes.length ? antes[antes.length - 1].kg : refKg;
+      bf0 = medida.pct / 100;
+      base = { pct: medida.pct, txt: kg(medida.pct).replace(',0', '') + '% por ' + (medida.fonte || 'medida') + ' em ' + curta(medida.data) };
+    }
     if (!(W0 > 0)) return null;
-    var FM = W0 * bf0, FFM = W0 - FM, magra0 = FFM;
+    var FM = W0 * bf0, FFM = W0 - FM;
     if (refKg >= W0) FM += refKg - W0;
     else for (var perda = W0 - refKg; perda > 1e-9; perda -= 0.1) {
       var passo = Math.min(0.1, perda), l = fr * C / (C + FM);
       FM -= passo * (1 - l); FFM -= passo * l;
     }
-    var bfHoje = FM / (FM + FFM), sem = 0, ds = 0, cruza = {};
+    var bfHoje = FM / (FM + FFM), magraHoje = FFM, sem = 0, ds = 0, cruza = {};
     while (FM / (FM + FFM) > alvo && sem < 260) {
       if (pausa && ds && ds % pausa[0] === 0) sem += pausa[1];
       var W = FM + FFM, bf = W ? FM / W : 0;
@@ -93,10 +100,10 @@
       FM -= dW * (1 - lean); FFM -= dW * lean; sem++; ds++;
     }
     return { bfHoje: bfHoje, fim: somaDias(desde, sem * 7), semanas: sem, pesoFim: FM + FFM,
-             magraPerdida: magra0 - FFM, cruza: cruza, cenario: r.cenario || 'cenário' };
+             magraPerdida: magraHoje - FFM, cruza: cruza, cenario: r.cenario || 'cenário', base: base };
   }
 
-  function marcosHtml(o, reais) {
+  function marcosHtml(o, reais, medidas) {
     var mf = o.meta_final;
     if (!mf || !(mf.peso_kg > 0) || !reais.length) return '';
     var ultData = reais[reais.length - 1].data;
@@ -114,7 +121,8 @@
     }
     var feitos = marcos.filter(function (m) { return ref <= m; });
     var prox = marcos.filter(function (m) { return ref > m; })[0];
-    var sim = simular(mf, ref, ultData);
+    var medida = medidas && medidas.length ? medidas[medidas.length - 1] : null;
+    var sim = simular(mf, ref, ultData, medida, reais);
     var rit = ritmoKgDia(reais, o);
     function previsao(alvo) {
       if (ref <= alvo) return '';
@@ -139,8 +147,8 @@
       var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8];
       h += '<div class="obj-line obj-muted">📉 Cenário ' + esc(sim.cenario) + ' (' + pct.map(function (x) { return kg(x).replace(',0', ''); }).join(' → ') +
         '% do peso/sem, desacelerando' + (r.pausa_semanas ? '; 1 sem de manutenção a cada ' + r.pausa_semanas[0] : '') + '): gordura hoje ~' +
-        Math.round(sim.bfHoje * 100) + '% · <b>' + (mf.gordura_pct || 10) + '% ≈ ' + curta(sim.fim) + ' ' + sim.fim.slice(0, 4) + '</b> com ~' + kg(sim.pesoFim) +
-        '\u00a0kg (~' + kg(sim.magraPerdida) + '\u00a0kg de massa magra perdida). Estimativa — vale se os ' + (mf.gordura_inicial_pct || 19) + '% iniciais estiverem certos.</div>';
+        Math.round(sim.bfHoje * 100) + '% (base: ' + esc(sim.base.txt) + ') · <b>' + (mf.gordura_pct || 10) + '% ≈ ' + curta(sim.fim) + ' ' + sim.fim.slice(0, 4) + '</b> com ~' + kg(sim.pesoFim) +
+        '\u00a0kg (~' + kg(sim.magraPerdida) + '\u00a0kg de massa magra perdida até lá). Estimativa: fica mais certa a cada medida de gordura (foto, fita ou DEXA).</div>';
     }
     if (rit && rit.fonte === 'ritmo atual') {
       h += '<div class="obj-line obj-muted">Ritmo real das últimas 2 semanas: −' + kg(rit.kgDia * 7) + '\u00a0kg/sem.</div>';
@@ -148,7 +156,7 @@
     return h + '</div>';
   }
 
-  function cardHoje(o, hoje, pesoHoje, estimado, reais) {
+  function cardHoje(o, hoje, pesoHoje, estimado, reais, medidas) {
     var c = calc(o, hoje);
     var h = '<section class="obj-card">';
     h += '<div class="obj-top"><span class="obj-nome">🎯 ' + esc(o.nome || 'Objetivo') + '</span><span class="obj-data">alvo ' + curta(o.data_alvo) + '</span></div>';
@@ -158,7 +166,7 @@
         h += '<div class="obj-line">Resultado: ' + peso(o.peso_inicial_kg) + ' → ' + peso(pesoHoje) + ' · ' + sinal(pesoHoje - o.peso_inicial_kg) + ' kg · meta era ' + peso(c.esperadoAlvo) + '</div>';
       }
       h += '<div class="obj-line obj-muted">Pra começar outro, fale pro Grok: "novo objetivo: 15/11, perder 0,5 kg por semana" — e diga as metas (kcal/P/C/G) e o seu gasto.</div>';
-      h += marcosHtml(o, reais || []);
+      h += marcosHtml(o, reais || [], medidas);
       return h + '</section>';
     }
     h += '<div class="obj-big">' + (c.faltam === 0 ? 'É hoje!' : 'Faltam ' + c.faltam + ' dia' + (c.faltam > 1 ? 's' : '')) + '</div>';
@@ -197,7 +205,7 @@
       h += '<div class="obj-line obj-muted">Mande o peso de hoje pro Grok pra comparar com o esperado (' + peso(c.esperadoHoje) + ').</div>';
     }
     h += '<div class="obj-line obj-muted">Esperado em ' + curta(o.data_alvo) + ': ' + peso(c.esperadoAlvo) + ' · total ' + sinal(c.esperadoAlvo - o.peso_inicial_kg) + ' kg</div>';
-    h += marcosHtml(o, reais || []);
+    h += marcosHtml(o, reais || [], medidas);
     return h + '</section>';
   }
 
@@ -213,7 +221,7 @@
   }
 
   // Hoje: insere o card no #objetivo
-  function montarHoje(pesoHoje, dia) {
+  function montarHoje(pesoHoje, dia, diaDados) {
     var el = document.getElementById('objetivo');
     if (!el) return;
     var peso = (pesoHoje == null || pesoHoje === '' || isNaN(Number(pesoHoje))) ? null : Number(pesoHoje);
@@ -221,19 +229,21 @@
     // pesos reais anteriores a hoje (resumo.json) + o de hoje: base dos marcos e do "repetindo o último"
     var historico = fetch('dados/resumo.json', { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
-      .then(function (lista) {
-        return (lista || []).filter(function (x) { return x.peso != null && x.data < d; })
-          .map(function (x) { return { data: x.data, kg: Number(x.peso) }; })
-          .sort(function (a, b) { return a.data < b.data ? -1 : 1; });
-      })
+      .then(function (lista) { return (lista || []).filter(function (x) { return x.data < d; }); })
       .catch(function () { return []; });
     Promise.all([carregar(), historico]).then(function (r) {
-      var o = r[0], reais = r[1];
+      var o = r[0], lista = r[1].slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+      var reais = lista.filter(function (x) { return x.peso != null; }).map(function (x) { return { data: x.data, kg: Number(x.peso) }; });
+      var medidas = lista.filter(function (x) { return x.gordura != null; })
+        .map(function (x) { return { data: x.data, pct: Number(x.gordura), fonte: x.gordura_fonte }; });
+      if (diaDados && diaDados.gordura_pct != null && !isNaN(Number(diaDados.gordura_pct))) {
+        medidas.push({ data: d, pct: Number(diaDados.gordura_pct), fonte: diaDados.gordura_fonte });
+      }
       if (!o) { el.innerHTML = ''; return; }
       var u = peso == null && reais.length ? reais[reais.length - 1] : null;
       var todos = peso != null ? reais.concat([{ data: d, kg: peso }]) : reais;
-      el.innerHTML = u ? cardHoje(o, d, u.kg, 'repetindo o de ' + curta(u.data) + ' até você se pesar', todos)
-                       : cardHoje(o, d, peso, null, todos);
+      el.innerHTML = u ? cardHoje(o, d, u.kg, 'repetindo o de ' + curta(u.data) + ' até você se pesar', todos, medidas)
+                       : cardHoje(o, d, peso, null, todos, medidas);
     });
   }
 
