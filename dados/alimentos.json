@@ -190,5 +190,23 @@
     "salvo_em": "2026-09-29",
     "obs": "USDA FDC 170457 (Tomatoes, red, ripe, raw). 29/09: 1 casa decimal (antes 18 | P1 | C4 | G0).",
     "atualizado_em": "2026-09-29"
+  },
+  "bauducco-wafer-roll": {
+    "nome": "Bauducco Wafer Roll",
+    "apelidos": [
+      "bauducco",
+      "wafer roll",
+      "wafer rolls",
+      "bauducco wafer",
+      "chocolate hazelnut"
+    ],
+    "base": "1 un",
+    "kcal": 40,
+    "p": 0.5,
+    "c": 5.75,
+    "g": 1.5,
+    "fibra": 0,
+    "fonte": "rotulo",
+    "salvo_em": "2026-09-29"
   }
 }
