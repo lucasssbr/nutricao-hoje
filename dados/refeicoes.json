@@ -6,7 +6,7 @@
     "lanche-padrao",
     "jantar-padrao"
   ],
-  "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · chuck 200 g cru · 2 Nurri · 1 pote de iogurte (430 g) dividido: proteína ~40–55 g por refeição",
+  "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite · acém 150 g cru · 2 Nurri · iogurte 2% (rótulo) 400 g dividido · ajustado em 30/09 pra bater 1570 | P180 | C100 | G50",
   "refeicoes": {
     "cafe-padrao": {
       "nome": "Café",
@@ -44,7 +44,7 @@
         ],
         [
           "batata-inglesa",
-          100
+          80
         ],
         [
           "tomate",
@@ -70,7 +70,7 @@
         ],
         [
           "melancia",
-          200
+          150
         ],
         [
           "iogurte-grego-100g",
@@ -88,7 +88,7 @@
       "itens": [
         [
           "chuck-costco",
-          100
+          50
         ],
         [
           "batata-inglesa",
@@ -96,11 +96,11 @@
         ],
         [
           "clara-100g",
-          180
+          390
         ],
         [
           "iogurte-grego-100g",
-          130
+          100
         ]
       ]
     }
