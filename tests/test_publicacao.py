@@ -47,10 +47,11 @@ class Publicacao(unittest.TestCase):
     def setUp(self):
         self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="nutri-pub-"))
         fonte = self.tmp / "fonte"
-        arquivos = git(RAIZ, "ls-files").splitlines()
-        # inclui arquivos novos ainda não commitados desta rodada (scripts/tests)
-        extra = [str(p.relative_to(RAIZ)) for p in list((RAIZ / "scripts").glob("*")) + list((RAIZ / "tests").glob("*.py"))]
-        for rel in set(arquivos + extra):
+        # o estado ATUAL do checkout, inclusive arquivos novos ainda não commitados (não ignorados): no CI, o
+        # fechamento da meia-noite cria dados/<dia novo>.json antes dos testes — copiar só os rastreados
+        # deixava dias.json/index.html apontando para um dia sem arquivo (falhou na virada 30/09 → 01/10)
+        arquivos = git(RAIZ, "ls-files", "--cached", "--others", "--exclude-standard").splitlines()
+        for rel in set(arquivos):
             src = RAIZ / rel
             if src.is_file():
                 (fonte / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -154,6 +155,21 @@ class Publicacao(unittest.TestCase):
         c = self.conferir_remoto()
         self.assertTrue(json.loads((c / "dados" / f"{d}.json").read_text())["fechado"])
         self.assertIn(f'data-dia="{amanha}"', (c / "index.html").read_text())
+
+    def test_testes_rodam_no_meio_da_virada(self):
+        """Regressão 01/10: no CI, fechar_dia cria o dia novo (ainda não commitado) e SÓ DEPOIS os testes rodam.
+        A suíte copiava só arquivos rastreados → dia novo sumia da cópia → 3 agendamentos da meia-noite falharam."""
+        import datetime
+        d = self.dia_aberto(self.a)
+        amanha = (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat()
+        r = subprocess.run([sys.executable, "scripts/fechar_dia.py"], cwd=self.a, capture_output=True, text=True,
+                           env=dict(os.environ, HOJE=amanha))
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(f"dados/{amanha}.json", git(self.a, "status", "--porcelain", "--untracked-files=all"))
+        # a suíte de publicação, rodando a partir do checkout "no meio da virada", tem que ver o dia novo
+        r = subprocess.run([sys.executable, "-m", "unittest", "test_publicacao.Publicacao.test_idempotente"],
+                           cwd=self.a / "tests", capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 class Workflow(unittest.TestCase):
