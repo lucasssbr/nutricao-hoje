@@ -3,6 +3,8 @@
 
   - dados/resumo.json   → totais/meta/peso/registro de cada dia (o Histórico e o card Hoje leem)
   - dados/objetivo.json → atual.calculo e, no modo automático, atual.meta_semanal_kg (scripts/meta.py)
+  - dados/previa.json   → prévia da sugestão automática de AMANHÃ (scripts/sugerir.py), para o botão Plano;
+                          refeita a cada registro de hoje. Falhou? fica sem prévia (a página usa o plano padrão)
 
   python3 scripts/derivados.py          # regenera (idempotente: sem mudança nos dias, nada muda)
   python3 scripts/derivados.py --checar # só diz se está desatualizado (sai 1 se estiver)
@@ -61,14 +63,54 @@ def gerar_resumo(dados=DADOS):
     return True
 
 
+def previa_texto(dados=DADOS, hoje=None):
+    """Prévia da sugestão de amanhã (mesma conta da meia-noite, com o histórico de agora)."""
+    import datetime
+    from comum import hoje_la
+    from sugerir import sugerir
+    dados = pathlib.Path(dados)
+    hoje = hoje or hoje_la()
+    amanha = (hoje + datetime.timedelta(days=1)).isoformat()
+    try:
+        meta = {k: ler_json(dados / "objetivo.json")["atual"]["metas"][k] for k in MACROS}
+    except Exception:  # noqa: BLE001 — sem objetivo: meta do último dia
+        dias = sorted(ler_json(dados / "dias.json"))
+        meta = ler_json(dados / f"{dias[-1]}.json").get("meta") if dias else None
+    sug, nota = sugerir(amanha, {"meta": meta, "lancado": []}, dados=dados)
+    return texto_json({"_sobre": "DERIVADO (scripts/derivados.py) — não editar. Prévia da sugestão de amanhã; "
+                                 "a oficial é montada à meia-noite (fechar_dia.py).",
+                       "para": amanha, "meta": meta, "sugestao_nota": nota, "sugestao": sug})
+
+
+def gerar_previa(dados=DADOS, hoje=None):
+    arq = pathlib.Path(dados) / "previa.json"
+    try:
+        novo = previa_texto(dados, hoje)
+    except Exception as e:  # noqa: BLE001 — prévia nunca derruba a publicação
+        print(f"aviso: prévia de amanhã não gerada ({e})", file=sys.stderr)
+        return False
+    if arq.exists() and arq.read_text(encoding="utf-8") == novo:
+        return False
+    tmp = arq.with_suffix(".json.tmp")
+    tmp.write_text(novo, encoding="utf-8")
+    tmp.replace(arq)
+    return True
+
+
 def gerar(dados=DADOS, hoje=None, silencioso=False):
-    """Regenera resumo + cálculo do objetivo. Devolve lista do que mudou."""
+    """Regenera resumo + cálculo do objetivo + prévia de amanhã. Devolve lista do que mudou."""
+    import datetime
+    import os
+    if hoje is None and os.environ.get("HOJE"):   # testes simulam a data (mesma variável do fechar_dia.py)
+        hoje = datetime.date.fromisoformat(os.environ["HOJE"])
     mudou = []
     if gerar_resumo(dados):
         mudou.append("resumo.json")
     import meta  # noqa: E402 — meta usa resumo/dias
     if meta.atualizar(dados=dados, hoje=hoje, silencioso=True):
         mudou.append("objetivo.json")
+    if gerar_previa(dados, hoje):
+        mudou.append("previa.json")
     if not silencioso:
         print("derivados: " + (", ".join(mudou) + " atualizado(s)" if mudou else "já estavam em dia"))
     return mudou

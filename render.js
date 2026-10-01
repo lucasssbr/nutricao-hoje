@@ -119,7 +119,7 @@
       return;
     }
     if (localISODate() !== dia && parts.length === 3) {
-      el.textContent = 'Página de ' + parts[2] + '/' + parts[1] + ' — dia ainda não fechado (ou cache antigo)';
+      el.textContent = 'Dia ' + parts[2] + '/' + parts[1] + ' ainda não fechado — o fechamento da meia-noite atrasou (ou a página está em cache). Avise o Grok/Claude.';
       el.classList.add('show');
     }
   }
@@ -380,8 +380,28 @@
       .catch(function () { /* sem biblioteca: não mostra o contador */ });
   }
 
-  // Dia futuro sem arquivo: calcula o plano padrão aqui mesmo (mesma conta do scripts/item.py)
+  // Dia futuro sem arquivo. Amanhã: prévia da SUGESTÃO AUTOMÁTICA (dados/previa.json, gerada pelo
+  // scripts/derivados.py a cada registro). Outros dias (ou sem prévia): plano padrão calculado aqui mesmo
+  // (mesma conta do scripts/item.py).
   function previaPlano() {
+    function get(u) {
+      return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); });
+    }
+    get('dados/previa.json').then(function (pv) {
+      if (!pv || pv.para !== pageDia || !pv.sugestao || !pv.sugestao.length) throw new Error('sem prévia');
+      var previa = {
+        data: pageDia, fechado: false, previa: true, lancado: [], sugestao: pv.sugestao,
+        meta: pv.meta || { kcal: 1570, p: 180, c: 100, g: 50 },
+        sugestao_nota: 'Prévia da sugestão automática · refeita a cada refeição de hoje; vira a oficial à meia-noite'
+      };
+      render(previa);
+      mostrarLimites(previa);
+      var stamp = document.getElementById('updateStamp');
+      if (stamp) stamp.textContent = 'Prévia · ainda não é um dia salvo';
+    }).catch(previaPlanoPadrao);
+  }
+
+  function previaPlanoPadrao() {
     function get(u) {
       return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); });
     }

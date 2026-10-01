@@ -187,6 +187,15 @@ class Workflow(unittest.TestCase):
         self.assertRegex(wf, r"(?m)^\s+PREPARO: python3 scripts/fechar_dia\.py$")
         self.assertNotIn("date -d", (RAIZ / "scripts" / "publicar.sh").read_text(encoding="utf-8"))
 
+    def test_navegadores_pela_imagem_e_caminho_rapido(self):
+        """Sem "playwright install --with-deps" (apt: 43 s a 23 min); rápida pula testes e páginas, nunca o validar."""
+        wf = (RAIZ / ".github" / "workflows" / "publicar.yml").read_text(encoding="utf-8")
+        self.assertNotIn("--with-deps", wf)
+        self.assertEqual(wf.count("PAGINAS_IMAGEM: mcr.microsoft.com/playwright:v1.56.1-noble"), 2)   # PR e main
+        self.assertIn("SEM_TESTES: ${{ steps.tipo.outputs.modo == 'rapida' && '1' || '' }}", wf)
+        sh = (RAIZ / "scripts" / "verificar.sh").read_text(encoding="utf-8")
+        self.assertLess(sh.index("python3 scripts/validar.py"), sh.index('if [ "${SEM_TESTES'), "validar roda sempre, antes")
+
 
 if __name__ == "__main__":
     unittest.main()

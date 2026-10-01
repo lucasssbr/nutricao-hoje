@@ -5,7 +5,7 @@
 
 RÁPIDA só quando é um push e o CÓDIGO (tudo fora de dados/) do HEAD é idêntico ao do commit que está
 no ar (publicado.json do site). Esse código já passou pela verificação completa (navegadores) quando foi
-publicado; mudou só dado → validar.py + testes Python bastam (~1 min em vez de 2–20 min).
+publicado; mudou só dado → validar.py + derivados bastam (~1 min em vez de 2–20 min).
 Qualquer dúvida (agendamento da meia-noite, dispatch, site sem publicado.json, sha desconhecido, rede
 falhou, código diferente) → COMPLETA. Nunca escolhe "rápida" por engano: erro = completa.
 

@@ -45,13 +45,22 @@ const PAGINAS = [
   ['Histórico · peso', '/historico.html', '#pesoCard', /peso/i],
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
+  ['Hoje · horário da atualização', '/', '#updateStamp', /^Atualizado \d{2}\/\d{2} · \d{2}:\d{2}$/],
 ];
+// prévia de amanhã = sugestão automática (dados/previa.json, gerada pelo derivados.py)
+const previaArq = path.join(ROOT, 'dados', 'previa.json');
+if (fs.existsSync(previaArq)) {
+  const para = JSON.parse(fs.readFileSync(previaArq, 'utf8')).para;
+  if (para && !dias.includes(para)) {
+    PAGINAS.push(['Prévia de amanhã (sugestão automática)', '/dia.html?d=' + para, '#meals', /Prévia da sugestão automática/, 'dados/' + para + '.json']);
+  }
+}
 
 async function checarPagina(ctx, [nome, url, sel, texto, ok404]) {
   const page = await ctx.newPage();
   const erros = [];
   page.on('pageerror', (e) => erros.push(e.message));
-  page.on('response', (r) => { if (r.status() >= 400 && !/favicon/.test(r.url()) && !(ok404 && r.url().endsWith(ok404))) erros.push(`HTTP ${r.status()} ${r.url().replace(BASE, '')}`); });
+  page.on('response', (r) => { if (r.status() >= 400 && !/favicon|dados\/previa\.json$/.test(r.url()) && !(ok404 && r.url().endsWith(ok404))) erros.push(`HTTP ${r.status()} ${r.url().replace(BASE, '')}`); });
   try {
     await page.goto(BASE + url, { waitUntil: 'networkidle' });
     await page.waitForTimeout(300);
@@ -104,6 +113,23 @@ async function checarCsv(ctx) {
   return erros;
 }
 
+// aviso amarelo quando o dia aberto ficou para trás (fechamento da meia-noite atrasado): relógio simulado
+async function checarAvisoFechamento(ctx) {
+  const erros = [];
+  for (const [quando, deveAparecer] of [[hoje + 'T20:00:00Z', false], [somaDias(hoje, 1) + 'T20:00:00Z', true]]) {
+    const page = await ctx.newPage();
+    await page.clock.setFixedTime(new Date(quando));
+    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    const visivel = await page.locator('#staleBanner').isVisible();
+    const txt = visivel ? await page.locator('#staleBanner').innerText() : '';
+    if (visivel !== deveAparecer) erros.push(`relógio em ${quando}: aviso ${visivel ? 'apareceu' : 'não apareceu'}`);
+    if (deveAparecer && !/não fechado/.test(txt)) erros.push(`texto do aviso: ${txt}`);
+    await page.close();
+  }
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -123,7 +149,7 @@ async function checarCsv(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -136,5 +162,5 @@ async function checarCsv(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 2} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 3} checagens cada).`);
 })();

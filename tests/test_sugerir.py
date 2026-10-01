@@ -193,6 +193,28 @@ class Integracao(CopiaRepo):
         self.assertIn("não refiz a sugestão", r.stderr)
         self.assertEqual(len([x for x in self.ler(f"{d}.json")["lancado"] if x.get("id_evento") == "msg-sug:refeicao:1"]), 1)
 
+    def test_previa_de_amanha(self):
+        import datetime
+        d = self.dia_aberto()
+        self.rodar("derivados.py", check=True, env={"HOJE": d})
+        pv = self.ler("previa.json")
+        self.assertEqual(pv["para"], (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat())
+        self.assertTrue(pv["sugestao"])
+        self.assertEqual(pv["meta"], {k: self.ler("objetivo.json")["atual"]["metas"][k] for k in ("kcal", "p", "c", "g")})
+        r = self.rodar("derivados.py", check=True, env={"HOJE": d})
+        self.assertIn("já estavam em dia", r.stdout, "prévia tem que ser determinística (sem commit à toa)")
+        self.assertSemErros()
+
+    def test_previa_quebrada_nao_derruba_derivados(self):
+        (self.tmp / "scripts" / "sugerir.py").write_text("def sugerir(*a, **k):\n    raise RuntimeError('quebrado')\n")
+        r = self.rodar("derivados.py", check=True)
+        self.assertIn("prévia de amanhã não gerada", r.stderr)
+
+    def test_previa_com_formato_errado_e_erro(self):
+        self.gravar("previa.json", {"para": "2026-13-40", "sugestao": [{"itens": 3}]})
+        self.assertErro("previa.json.para")
+        self.assertErro("previa.json.sugestao[0]")
+
     def test_validacao_da_configuracao(self):
         refs = self.ler("refeicoes.json")
         refs["sugestao_auto"] = {"janela_dias": "14", "incluir": {"frango-peito-cru": ["Brunch"], "nao-existe": ["Jantar"]},

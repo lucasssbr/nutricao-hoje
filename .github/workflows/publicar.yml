@@ -3,8 +3,8 @@ name: Conferir e publicar
 # Um único fluxo para tudo que mexe no site:
 #  - pull request (e mudanças nos próprios workflows): só confere — derivados, dados, testes e páginas;
 #  - push na main (Grok/Claude/Lucas): regenera derivados sobre o HEAD mais novo, confere e só então
-#    grava/publica. Push que só muda dados/ (log do Grok) usa o caminho RÁPIDO: validar + testes Python,
-#    sem navegadores — o código é idêntico ao que já está no ar e já passou pelas páginas (modo_verificacao.py).
+#    grava/publica. Push que só muda dados/ (log do Grok) usa o caminho RÁPIDO: validar.py + derivados,
+#    sem testes nem navegadores — o código é idêntico ao que já está no ar e já passou pelas páginas (modo_verificacao.py).
 #    Código novo → verificação completa (Chromium + WebKit);
 #  - meia-noite de Los Angeles: fecha o dia (scripts/fechar_dia.py) e publica do mesmo jeito.
 # A publicação usa scripts/publicar.sh: nunca faz rebase de derivados; se alguém enviar no meio, regenera
@@ -44,14 +44,15 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Navegadores de teste (Chromium + WebKit)
-        timeout-minutes: 15
+      - name: Navegadores de teste (imagem pronta do Playwright — sem apt)
+        timeout-minutes: 10
         run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium webkit
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --no-package-lock playwright@1.56.1
+          docker pull -q mcr.microsoft.com/playwright:v1.56.1-noble
       - name: Derivados (só no workspace) + verificação completa
         env:
           EXIGIR_WEBKIT: "1"
+          PAGINAS_IMAGEM: mcr.microsoft.com/playwright:v1.56.1-noble
         run: |
           python3 scripts/derivados.py
           bash scripts/verificar.sh
@@ -70,22 +71,17 @@ jobs:
           python-version: "3.12"
       - name: Tipo de verificação (rápida = só dados mudaram desde o que está no ar)
         id: tipo
-        # push que só mexe em dados/ (log do Grok) → validar + testes Python, sem navegadores (~1–2 min no ar).
+        # push que só mexe em dados/ (log do Grok) → validar.py + derivados, sem testes nem navegadores (~1 min no ar).
         # Código novo, meia-noite, dispatch ou qualquer dúvida → completa (Chromium + WebKit).
         run: python3 scripts/modo_verificacao.py
-      - name: Cache dos navegadores
+      - name: Navegadores de teste (imagem pronta do Playwright — sem apt)
         if: steps.tipo.outputs.modo != 'rapida'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-1.56.1-${{ runner.os }}
-      - name: Navegadores de teste (Chromium + WebKit)
-        if: steps.tipo.outputs.modo != 'rapida'
-        # instalação travada (já passou de 20 min) não pode segurar a fila por horas (padrão do job: 6 h)
-        timeout-minutes: 15
+        # instalar navegadores + dependências pelo apt levava de 43 s a 23 min; a imagem oficial já traz Chromium,
+        # WebKit e as dependências do sistema. Limite: travado não segura a fila (padrão do job: 6 h)
+        timeout-minutes: 10
         run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium webkit
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --no-package-lock playwright@1.56.1
+          docker pull -q mcr.microsoft.com/playwright:v1.56.1-noble
       - name: Sincronizar, gerar, conferir e enviar
         id: pub
         env:
@@ -94,6 +90,10 @@ jobs:
           PREPARO: python3 scripts/fechar_dia.py
           EXIGIR_WEBKIT: ${{ steps.tipo.outputs.modo != 'rapida' && '1' || '' }}
           SEM_PAGINAS: ${{ steps.tipo.outputs.modo == 'rapida' && '1' || '' }}
+          # rápida: o código é idêntico ao que já passou pelos testes; os DADOS continuam conferidos (validar.py).
+          # Os testes completos rodam em toda mudança de código e toda meia-noite.
+          SEM_TESTES: ${{ steps.tipo.outputs.modo == 'rapida' && '1' || '' }}
+          PAGINAS_IMAGEM: mcr.microsoft.com/playwright:v1.56.1-noble
           # caminho rápido: se aparecer código novo no HEAD durante a fila, esta execução não publica
           CODIGO_BASE: ${{ steps.tipo.outputs.base }}
         run: bash scripts/publicar.sh

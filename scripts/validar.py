@@ -479,7 +479,23 @@ class Checagem:
             esperado_txt = resumo_texto(self.dados)
             if not atual.exists() or atual.read_text(encoding="utf-8") != esperado_txt:
                 self.erro("resumo.json", "desatualizado em relação aos dias — rode python3 scripts/derivados.py")
+        self.previa()
         return self
+
+    def previa(self):
+        """dados/previa.json (derivado, opcional): só o formato — a página usa se servir, senão o plano padrão."""
+        arq = self.dados / "previa.json"
+        if not arq.exists():
+            return
+        pv = self.ler("previa.json")
+        if pv is None or not self.objeto("previa.json", pv):
+            return
+        if not data_valida(pv.get("para")):
+            self.erro("previa.json.para", f"data inválida {pv.get('para')!r}")
+        if self.lista("previa.json.sugestao", pv.get("sugestao")):
+            for i, r in enumerate(pv["sugestao"]):
+                if not (isinstance(r, dict) and isinstance(r.get("refeicao"), str) and isinstance(r.get("itens"), list)):
+                    self.erro(f"previa.json.sugestao[{i}]", "precisa ter refeicao (texto) e itens (lista)")
 
 
 def validar(raiz=ROOT):
