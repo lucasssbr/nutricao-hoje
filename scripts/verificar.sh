@@ -12,7 +12,11 @@ if [ "${SEM_TESTES:-}" = "1" ]; then
   echo "== testes: pulados (SEM_TESTES=1)"
 else
   echo "== testes"
-  python3 -m unittest discover -s tests -q
+  # os testes rodam publicar.sh/verificar.sh/fechar_dia.py como subprocessos: as variáveis de CONTROLE desta
+  # execução (caminho rápido, fechamento, data simulada…) não podem vazar para eles (falhou no run 26)
+  env -u CODIGO_BASE -u SEM_PAGINAS -u SEM_TESTES -u PREPARO -u EXIGIR_WEBKIT -u NAVEGADORES -u PORTA \
+      -u HOJE -u AGORA_UTC -u GITHUB_OUTPUT -u REMOTO -u RAMO -u TENTATIVAS \
+      python3 -m unittest discover -s tests -q
 fi
 
 if [ "${SEM_PAGINAS:-}" = "1" ]; then

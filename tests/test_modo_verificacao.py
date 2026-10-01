@@ -129,6 +129,14 @@ class Modo(BasePublicacao):
             i = wf.index(passo)
             self.assertIn("steps.pub.outputs.pular != 'sim'", wf[i:i + 200], passo)
 
+    def test_variaveis_do_caminho_rapido_nao_vazam_para_os_testes(self):
+        """Regressão run 26: com CODIGO_BASE/SEM_PAGINAS no ambiente, os testes de publicação falhavam."""
+        sh = (RAIZ / "scripts" / "verificar.sh").read_text(encoding="utf-8")
+        i = sh.index("python3 -m unittest")
+        trecho = sh[sh.rindex("env ", 0, i):i]
+        for var in ("CODIGO_BASE", "SEM_PAGINAS", "SEM_TESTES", "PREPARO", "EXIGIR_WEBKIT", "HOJE", "AGORA_UTC", "GITHUB_OUTPUT"):
+            self.assertIn(f"-u {var}", trecho, var)
+
 
 class Esperar(BasePublicacao):
     """scripts/esperar_site.py: só diz 'pode atualizar' quando o site contém o commit."""
