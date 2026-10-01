@@ -1,6 +1,6 @@
 {
   "data": "2026-10-01",
-  "atualizado": "2026-10-01T12:18:57-07:00",
+  "atualizado": "2026-10-01T13:44:17-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -50,60 +50,63 @@
           "fibra": 0
         }
       ]
+    },
+    {
+      "refeicao": "Lanche",
+      "id_evento": "t128u:refeicao:1",
+      "consumido_em": "2026-10-01T13:44:00-07:00",
+      "registrado_em": "2026-10-01T13:44:17-07:00",
+      "itens": [
+        {
+          "nome": "Melancia",
+          "qtd": "400 g",
+          "alimento": "melancia",
+          "quantidade": 400,
+          "kcal": 120,
+          "p": 2.4,
+          "c": 30.4,
+          "g": 0.8,
+          "fibra": 1.6
+        }
+      ]
     }
   ],
   "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 2 dias + Peito de frango sem pele (cru) · refaz o restante do dia a cada refeição lançada",
   "sugestao": [
     {
-      "refeicao": "Lanche",
-      "itens": [
-        {
-          "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "2 lata",
-          "alimento": "nurri-vanilla",
-          "quantidade": 2,
-          "kcal": 300,
-          "p": 60,
-          "c": 8,
-          "g": 5,
-          "fibra": 2
-        },
-        {
-          "nome": "Uva verde sem semente",
-          "qtd": "400 g",
-          "alimento": "uva-verde",
-          "quantidade": 400,
-          "kcal": 320,
-          "p": 3.6,
-          "c": 74.4,
-          "g": 0.8,
-          "fibra": 3.6
-        }
-      ]
-    },
-    {
       "refeicao": "Jantar",
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
-          "qtd": "100 g",
+          "qtd": "180 g",
           "alimento": "chuck-costco",
-          "quantidade": 100,
-          "kcal": 223,
-          "p": 20,
+          "quantidade": 180,
+          "kcal": 401.4,
+          "p": 36,
           "c": 0,
-          "g": 17,
+          "g": 30.6,
           "fibra": 0
         },
         {
+          "nome": "Melancia",
+          "qtd": "775 g",
+          "alimento": "melancia",
+          "quantidade": 775,
+          "kcal": 232.5,
+          "p": 4.7,
+          "c": 58.9,
+          "g": 1.6,
+          "fibra": 3.1
+        },
+        {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "140 g",
+          "qtd": "250 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 140,
-          "kcal": 168,
-          "p": 31.5,
+          "quantidade": 250,
+          "kcal": 300,
+          "p": 56.3,
           "c": 0,
-          "g": 3.6,
+          "g": 6.5,
           "fibra": 0
         }
       ]
@@ -123,6 +126,13 @@
       "em": "2026-10-01T10:37:05-07:00",
       "resumo": "Almoço: 550 kcal | P 65 | C 22 | G 27 (3 item(ns))",
       "assinatura": "8426713cf91774dd"
+    },
+    {
+      "id_evento": "t128u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-01T13:44:17-07:00",
+      "resumo": "Lanche: 120 kcal | P 2 | C 30 | G 1 (1 item(ns))",
+      "assinatura": "db968e7391c5cf5e"
     }
   ]
 }
