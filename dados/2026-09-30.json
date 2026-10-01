@@ -1,6 +1,6 @@
 {
   "data": "2026-09-30",
-  "atualizado": "2026-09-30T15:00:09-07:00",
+  "atualizado": "2026-09-30T17:48:03-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -56,6 +56,25 @@
           "c": 93,
           "g": 1,
           "fibra": 4.5
+        }
+      ]
+    },
+    {
+      "refeicao": "Lanche",
+      "id_evento": "t118u:refeicao:1",
+      "consumido_em": "2026-09-30T17:47:00-07:00",
+      "registrado_em": "2026-09-30T17:48:03-07:00",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "1 lata",
+          "alimento": "nurri-vanilla",
+          "quantidade": 1,
+          "kcal": 150,
+          "p": 30,
+          "c": 4,
+          "g": 2.5,
+          "fibra": 1
         }
       ]
     }
@@ -207,6 +226,13 @@
       "em": "2026-09-30T15:00:09-07:00",
       "resumo": "Lanche: 400 kcal | P 5 | C 93 | G 1 (1 item(ns))",
       "assinatura": "4281cbfc244af86b"
+    },
+    {
+      "id_evento": "t118u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-09-30T17:48:03-07:00",
+      "resumo": "Lanche: 150 kcal | P 30 | C 4 | G 3 (1 item(ns))",
+      "assinatura": "56c1d025ed454e47"
     }
   ]
 }
