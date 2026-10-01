@@ -215,6 +215,7 @@ class Checagem:
             for aid, v in mx.items():
                 if aid not in alimentos:
                     self.erro(f"{onde}.max_dia", f"alimento '{aid}' não existe em alimentos.json")
+                # pode ser fracionário (3.0, 2.5): sugerir.py usa unidades inteiras até o teto (2.5 → 2 latas)
                 self.numero(f"{onde}.max_dia.{aid}", v, maior_que=0)
         sj = cfg.get("so_jantar", [])
         if self.lista(f"{onde}.so_jantar", sj):

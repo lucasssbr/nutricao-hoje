@@ -21,6 +21,7 @@ Macros sempre pela biblioteca (item.montar_item). Sugestão nunca conta como con
 """
 import argparse
 import datetime
+import math
 import statistics
 import sys
 import unicodedata
@@ -104,17 +105,26 @@ def perfil(hist, alimentos):
 
 
 def grade(al, tipico, teto):
-    """Quantidades possíveis de um alimento numa refeição (0 = não incluir)."""
+    """Quantidades possíveis de um alimento numa refeição (0 = não incluir).
+
+    teto = quanto ainda cabe no PLANEJAMENTO do dia (None = sem teto). Pode ser fracionário (3.0, 2.5): em
+    unidades (lata/un) a sugestão é sempre inteira e fica no máximo no inteiro abaixo do teto (2.5 → 2)."""
     unidade, _ = base_de(al)
+    if teto is not None and teto <= 1e-9:
+        return [0]
     if unidade == "un":
-        hi = max(1, min(teto if teto else 99, int(round(max(tipico * 1.5, tipico + 1)))))
+        hi = max(1, int(round(max(tipico * 1.5, tipico + 1))))
+        if teto is not None:
+            hi = min(hi, int(math.floor(teto + 1e-9)))
         return list(range(0, hi + 1))
     passo = 10 if tipico <= 300 else 25
     hi = max(passo, max(tipico * 1.5, tipico + 100))
-    if teto:
+    if teto is not None:
         hi = min(hi, teto)
     hi = int(hi // passo * passo)
     lo = max(passo, int(tipico * 0.5 // passo * passo))   # nada de "30 g de acém": no mínimo ~metade da porção
+    if hi < lo:
+        return [0]
     return [0] + list(range(lo, hi + 1, passo))
 
 
@@ -145,14 +155,29 @@ def custo(tot, meta, por_horario, escolha, tipicos, freq):
     return f
 
 
-def otimizar(variaveis, alimentos, meta, base_tot, cfg):
-    """Busca local determinística. variaveis: [(horario, alimento, tipico, grade, freq)]."""
-    tipicos = {(h, a): t for h, a, t, _, _ in variaveis}
-    freq = {(h, a): fr for h, a, _, _, fr in variaveis}
-    tetos = dict(cfg.get("max_dia") or {})
+def tetos_do_dia(alimentos, cfg):
+    """Teto de PLANEJAMENTO por alimento no dia (max_dia; senão plano_ate_g). Nunca limita o que é registrado."""
+    tetos = {a: float(v) for a, v in (cfg.get("max_dia") or {}).items()}
     for aid, al in alimentos.items():
         if al.get("plano_ate_g") and aid not in tetos:
-            tetos[aid] = al["plano_ate_g"]
+            tetos[aid] = float(al["plano_ate_g"])
+    return tetos
+
+
+def consumo_por_alimento(lancado):
+    q = {}
+    for r in lancado:
+        for i in r.get("itens", []):
+            if i.get("alimento") and isinstance(i.get("quantidade"), (int, float)):
+                q[i["alimento"]] = q.get(i["alimento"], 0) + i["quantidade"]
+    return q
+
+
+def otimizar(variaveis, alimentos, meta, base_tot, tetos):
+    """Busca local determinística. variaveis: [(horario, alimento, tipico, grade, freq)].
+    tetos = o que AINDA cabe na sugestão por alimento (teto do dia menos o já consumido)."""
+    tipicos = {(h, a): t for h, a, t, _, _ in variaveis}
+    freq = {(h, a): fr for h, a, _, _, fr in variaveis}
 
     def avaliar(esc):
         tot = list(base_tot)
@@ -220,7 +245,15 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
         return montar_plano(alimentos, refs), refs.get("plano_padrao_nota", "Plano padrão automático")
 
     dias_h, porcoes, globais, dias_ha = perfil(hist, alimentos)
-    n_dias = len(hist)
+    # só conta como histórico UTILIZÁVEL o dia com ao menos uma refeição de horário identificável (nome ou
+    # hora). Ex.: "Refeição 1/2" sem consumido_em não diz quando ele come → mesmo caminho de "sem histórico"
+    # (plano padrão), em vez de confundir com "dia completo". Registros antigos não são alterados.
+    uteis = set().union(*dias_h.values())
+    if len(uteis) < int(cfg["min_dias"]):
+        if lancado:
+            return [], "Sem histórico com horário das refeições para sugerir o restante"
+        return montar_plano(alimentos, refs), refs.get("plano_padrao_nota", "Plano padrão automático")
+    n_dias = len(uteis)
     horarios = [h for h in HORARIOS if len(dias_h[h]) >= max(1, n_dias / 3)]
     # já lançado hoje: planeja só os horários depois do último lançado
     if lancado:
@@ -230,6 +263,9 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
     if not horarios:
         return [], "Dia completo — sem refeições a sugerir"
 
+    # teto de planejamento MENOS o que já foi comido hoje (comeu 3 Nurri no almoço → nenhuma a mais na sugestão)
+    comido = consumo_por_alimento(lancado)
+    restante = {a: max(0.0, t - comido.get(a, 0)) for a, t in tetos_do_dia(alimentos, cfg).items()}
     variaveis = []
     so_jantar = set(cfg.get("so_jantar") or [])
     for h in horarios:
@@ -246,13 +282,13 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
             else:   # alimento novo (incluir): porção de ~1 base ou 150 g
                 unidade, n = base_de(alimentos[aid])
                 tipico = 1 if unidade == "un" else 150
-            teto = alimentos[aid].get("plano_ate_g") or (cfg.get("max_dia") or {}).get(aid)
+            teto = restante.get(aid)
             # frequência NAQUELA refeição; alimento pedido (incluir) sem histórico ali: neutro
             freq = len(dias_ha[(h, aid)]) / len(dias_h[h]) if (h, aid) in dias_ha else 0.5
             variaveis.append((h, aid, tipico, grade(alimentos[aid], tipico, teto), freq))
 
     base_tot = [sum(i.get(k, 0) for r in lancado for i in r.get("itens", [])) for k in MACROS]
-    esc = otimizar(variaveis, alimentos, meta, base_tot, cfg)
+    esc = otimizar(variaveis, alimentos, meta, base_tot, restante)
 
     sugestao = []
     for h in horarios:

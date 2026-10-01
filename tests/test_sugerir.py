@@ -143,6 +143,52 @@ class Sugerir(unittest.TestCase):
         self.assertTrue({a for _, a in self.alimentos_em(sug)} <=
                         {"chuck-costco", "batata-inglesa", "nurri-vanilla", "bauducco-wafer-roll", "melancia"})
 
+    # ---- auditoria Codex #6
+    def nurri(self, sug):
+        return sum(i["quantidade"] for r in sug for i in r["itens"] if i["alimento"] == "nurri-vanilla")
+
+    def test_teto_desconta_o_que_ja_foi_comido(self):
+        """#1: comeu 3 Nurri no almoço (max_dia 3) → a sugestão não traz mais nenhuma; acém idem (plano_ate_g)."""
+        self.config(max_dia={"nurri-vanilla": 3})
+        almoco = [ref("Almoço", "12:00", self.alvo, ("nurri-vanilla", 3), ("chuck-costco", 200))]
+        sug, _ = self.rodar(almoco)
+        self.assertEqual(self.nurri(sug), 0, sug)
+        self.assertNotIn("chuck-costco", {a for _, a in self.alimentos_em(sug)}, "acém já chegou nos 200 g planejados")
+        # comer ACIMA do teto é registrado normalmente; a sugestão só não acrescenta mais
+        sug, _ = self.rodar([ref("Almoço", "12:00", self.alvo, ("nurri-vanilla", 5))])
+        self.assertEqual(self.nurri(sug), 0)
+        # sobra parcial: 1 comida → no máximo 2 na sugestão
+        sug, _ = self.rodar([ref("Almoço", "12:00", self.alvo, ("nurri-vanilla", 1))])
+        self.assertLessEqual(self.nurri(sug), 2)
+
+    def test_historico_sem_horario_usa_plano_padrao(self):
+        """#2: "Refeição 1/2" sem consumido_em não identifica horário → plano padrão, não "Dia completo"."""
+        for d in self.dias:
+            dia = dia_hist(d)
+            for i, r in enumerate(dia["lancado"], 1):
+                r["refeicao"] = f"Refeição {i}"
+                del r["consumido_em"]
+            (self.tmp / f"{d}.json").write_text(json.dumps(dia, ensure_ascii=False))
+        sug, nota = self.rodar()
+        self.assertEqual([r.get("favorita") for r in sug], self.refs["plano_padrao"])
+        self.assertNotIn("Dia completo", nota)
+        sug, nota = self.rodar([ref("Almoço", "12:00", self.alvo, ("melancia", 300))])
+        self.assertEqual(sug, [])
+        self.assertIn("Sem histórico com horário", nota)
+
+    def test_teto_decimal(self):
+        """#4: max_dia 3.0 / 2.5 com porção típica de 2 latas não pode quebrar (range com float)."""
+        for d in self.dias:
+            dia = dia_hist(d)
+            dia["lancado"][1] = ref("Lanche", "16:30", d, ("nurri-vanilla", 2))
+            (self.tmp / f"{d}.json").write_text(json.dumps(dia, ensure_ascii=False))
+        for teto, maximo in ((3.0, 3), (2.5, 2), (3, 3)):
+            self.config(max_dia={"nurri-vanilla": teto})
+            sug, _ = self.rodar()
+            self.assertLessEqual(self.nurri(sug), maximo, teto)
+            self.assertTrue(all(float(i["quantidade"]).is_integer() for r in sug for i in r["itens"]
+                                if i["alimento"] == "nurri-vanilla"), "lata é sempre inteira")
+
 
 class Integracao(CopiaRepo):
     def test_fechamento_cria_dia_com_sugestao_automatica(self):
@@ -214,6 +260,24 @@ class Integracao(CopiaRepo):
         self.gravar("previa.json", {"para": "2026-13-40", "sugestao": [{"itens": 3}]})
         self.assertErro("previa.json.para")
         self.assertErro("previa.json.sugestao[0]")
+
+    def test_rollback_restaura_todos_os_derivados(self):
+        """#3: falha de validação depois dos derivados → dados/ inteiro volta ao estado anterior (inclui previa.json;
+        arquivo que não existia antes não pode ficar)."""
+        refs = self.ler("refeicoes.json")
+        refs["sugestao_auto"]["chave_errada"] = 1           # validar recusa só DEPOIS de gerar derivados
+        self.gravar("refeicoes.json", refs)
+        for previa_existia in (True, False):
+            if not previa_existia:
+                (self.dados / "previa.json").unlink(missing_ok=True)
+            antes = {q.name: q.read_bytes() for q in self.dados.iterdir() if q.is_file()}
+            d, r = self._lancar("Café", "--item", "nurri-vanilla=2lata")
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+            self.assertIn("validação falhou", r.stdout)
+            depois = {q.name: q.read_bytes() for q in self.dados.iterdir() if q.is_file()}
+            self.assertEqual(sorted(depois), sorted(antes), "arquivo criado na tentativa ficou para trás")
+            for nome in antes:
+                self.assertEqual(depois[nome], antes[nome], f"{nome} não foi restaurado")
 
     def test_validacao_da_configuracao(self):
         refs = self.ler("refeicoes.json")

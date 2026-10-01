@@ -298,8 +298,9 @@ def aplicar_evento(a, dados=DADOS, raiz=ROOT, agora=None):
         diff = "".join(difflib.unified_diff(original.splitlines(True), novo.splitlines(True),
                                             f"dados/{data}.json (antes)", f"dados/{data}.json (depois)"))
         return "dry-run", f"{diff}\n--dry-run: nada foi gravado.\n{txt}", data
-    # grava tudo e confere; se a validação falhar, desfaz (dia + derivados)
-    guardados = {q: q.read_text(encoding="utf-8") for q in (p, dados / "resumo.json", dados / "objetivo.json") if q.exists()}
+    # grava tudo e confere; se a validação falhar, desfaz TUDO em dados/: o dia e todos os derivados
+    # (resumo, objetivo, previa…), e apaga arquivo que não existia antes da tentativa
+    guardados = {q: q.read_bytes() for q in dados.iterdir() if q.is_file()}
     try:
         gravar_json(p, dia)
         import derivados
@@ -309,8 +310,12 @@ def aplicar_evento(a, dados=DADOS, raiz=ROOT, agora=None):
         if c.erros:
             raise Recusa("validação falhou, nada foi gravado:\n  " + "\n  ".join(c.erros))
     except BaseException:
+        for q in dados.iterdir():
+            if q.is_file() and q not in guardados:
+                q.unlink()
         for q, t in guardados.items():
-            q.write_text(t, encoding="utf-8")
+            if not q.exists() or q.read_bytes() != t:
+                q.write_bytes(t)
         raise
     return "ok", txt, data
 
