@@ -406,7 +406,7 @@
       var previa = {
         data: pageDia, fechado: false, previa: true, lancado: [], sugestao: sugestao,
         meta: metas || { kcal: 1570, p: 180, c: 100, g: 50 },
-        sugestao_nota: 'Prévia do plano padrão · vira o plano oficial à meia-noite (pra mudar, peça ao Grok)'
+        sugestao_nota: 'Prévia do plano padrão · à meia-noite a sugestão de verdade é montada com o que você comeu nos últimos dias'
       };
       render(previa);
       mostrarLimites(previa);

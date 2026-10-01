@@ -7,6 +7,24 @@
     "jantar-padrao"
   ],
   "plano_padrao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite (até ~5) · acém 200 g cru · 2 Nurri · iogurte 2% (rótulo) · G acima da meta até o Lucas escolher o ajuste",
+  "sugestao_auto": {
+    "_sobre": "Sugestão automática (scripts/sugerir.py): usa o que o Lucas comeu nos últimos dias. incluir = alimento novo que ele pediu para recomendar, com os horários; max_dia = teto de PLANEJAMENTO por dia (não limite do que ele come); so_jantar = só sugerir no jantar. Sem histórico suficiente (min_dias), usa o plano padrão.",
+    "janela_dias": 14,
+    "min_dias": 2,
+    "incluir": {
+      "frango-peito-cru": [
+        "Almoço",
+        "Jantar"
+      ]
+    },
+    "max_dia": {
+      "nurri-vanilla": 3
+    },
+    "so_jantar": [
+      "clara-100g",
+      "clara-un"
+    ]
+  },
   "refeicoes": {
     "cafe-padrao": {
       "nome": "Café",

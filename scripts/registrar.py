@@ -284,6 +284,14 @@ def aplicar_evento(a, dados=DADOS, raiz=ROOT, agora=None):
     dia = ler_json(p)
     resumo_evento = aplicar(dia)
     anotar(dia, a.evento, a.cmd, agora, resumo_evento, a.justificativa, assin)
+    if a.cmd in ("refeicao", "remover") and not dia.get("fechado") and not getattr(a, "sem_replanejar", False):
+        # "Pra fechar o dia": refaz a sugestão do RESTANTE com o que já foi comido (scripts/sugerir.py).
+        # Nunca impede o lançamento: se a sugestão falhar, fica a anterior.
+        try:
+            from sugerir import sugerir
+            dia["sugestao"], dia["sugestao_nota"] = sugerir(data, dia, dados=dados)
+        except Exception as e:  # noqa: BLE001
+            print(f"aviso: não refiz a sugestão ({e})", file=sys.stderr)
     novo = texto_json(dia)
     txt = recibo(dia, resumo_evento, agora)
     if a.dry_run:
@@ -349,6 +357,8 @@ def main(argv=None):
     ap.add_argument("--favorita")
     ap.add_argument("--consumido-em")
     ap.add_argument("--remover-sugestao", metavar="NOME", help="tira da sugestão a refeição com esse nome")
+    ap.add_argument("--sem-replanejar", action="store_true",
+                    help="não refaz a sugestão do restante do dia (padrão: refaz a cada refeição lançada/removida)")
     ap.add_argument("--data")
     ap.add_argument("--kg")
     ap.add_argument("--alvo")

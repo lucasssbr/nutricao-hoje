@@ -3,7 +3,8 @@
 
 Idempotente: pode rodar várias vezes sem estragar nada.
 1. Todo dia em dados/dias.json anterior a hoje e ainda aberto -> "fechado": true.
-2. Se não existe dados/<hoje>.json, cria o dia com o PLANO PADRÃO (dados/refeicoes.json) como sugestão
+2. Se não existe dados/<hoje>.json, cria o dia com a SUGESTÃO AUTOMÁTICA (scripts/sugerir.py: o que o Lucas
+   comeu nos últimos dias; sem histórico, o PLANO PADRÃO de dados/refeicoes.json)
    e a meta do objetivo atual (dados/objetivo.json → atual.metas).
 3. index.html: data-dia -> hoje.
 4. Botão "Plano" (index, dia, historico, alimentos) -> dia.html?d=<amanhã>.
@@ -73,12 +74,18 @@ def main():
         meta = metas_do_objetivo() or meta
         sugestao, nota = [], "Sugestão do dia ainda não feita — peça ao Grok"
         try:
-            from item import carregar_refeicoes, montar_plano
-            refs = carregar_refeicoes()
-            sugestao = montar_plano(refs=refs)
-            nota = refs.get("plano_padrao_nota", "Plano padrão automático")
-        except Exception as e:  # noqa: BLE001 — sem plano, o dia abre vazio
-            print(f"aviso: plano padrão indisponível ({e})")
+            # sugestão pelo que o Lucas comeu nos últimos dias (sem histórico suficiente: plano padrão)
+            from sugerir import sugerir
+            sugestao, nota = sugerir(hoje_iso, {"meta": meta, "lancado": []})
+        except Exception as e:  # noqa: BLE001 — falhou a automática: plano padrão; sem plano, o dia abre vazio
+            print(f"aviso: sugestão automática indisponível ({e}); usando o plano padrão")
+            try:
+                from item import carregar_refeicoes, montar_plano
+                refs = carregar_refeicoes()
+                sugestao = montar_plano(refs=refs)
+                nota = refs.get("plano_padrao_nota", "Plano padrão automático")
+            except Exception as e2:  # noqa: BLE001
+                print(f"aviso: plano padrão indisponível ({e2})")
         salvar(p_hoje, {
             "data": hoje_iso,
             "atualizado": carimbo,

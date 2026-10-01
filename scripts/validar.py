@@ -185,6 +185,42 @@ class Checagem:
                 if rid not in todas:
                     self.erro("refeicoes.json.plano_padrao", f"cita '{rid}', que não existe")
         self.texto("refeicoes.json.plano_padrao_nota", refs.get("plano_padrao_nota"), obrigatorio=False)
+        if "sugestao_auto" in refs:
+            self.sugestao_auto(refs["sugestao_auto"], alimentos)
+
+    def sugestao_auto(self, cfg, alimentos):
+        """Configuração da sugestão automática (scripts/sugerir.py)."""
+        onde = "refeicoes.json.sugestao_auto"
+        if not self.objeto(onde, cfg):
+            return
+        conhecidas = {"_sobre", "janela_dias", "min_dias", "incluir", "max_dia", "so_jantar"}
+        for k in cfg:
+            if k not in conhecidas:
+                self.erro(onde, f"chave desconhecida '{k}' (válidas: {', '.join(sorted(conhecidas - {'_sobre'}))})")
+        for k, lo, hi in (("janela_dias", 1, 90), ("min_dias", 1, 30)):
+            if k in cfg:
+                v = cfg[k]
+                if not (isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi):
+                    self.erro(f"{onde}.{k}", f"precisa ser inteiro entre {lo} e {hi} (veio {v!r})")
+        horarios = {"Café", "Almoço", "Lanche", "Jantar"}
+        inc = cfg.get("incluir", {})
+        if self.objeto(f"{onde}.incluir", inc):
+            for aid, hs in inc.items():
+                if aid not in alimentos:
+                    self.erro(f"{onde}.incluir", f"alimento '{aid}' não existe em alimentos.json")
+                if not (isinstance(hs, list) and hs and all(h in horarios for h in hs)):
+                    self.erro(f"{onde}.incluir.{aid}", f"precisa ser lista de horários entre {sorted(horarios)} (veio {hs!r})")
+        mx = cfg.get("max_dia", {})
+        if self.objeto(f"{onde}.max_dia", mx):
+            for aid, v in mx.items():
+                if aid not in alimentos:
+                    self.erro(f"{onde}.max_dia", f"alimento '{aid}' não existe em alimentos.json")
+                self.numero(f"{onde}.max_dia.{aid}", v, maior_que=0)
+        sj = cfg.get("so_jantar", [])
+        if self.lista(f"{onde}.so_jantar", sj):
+            for aid in sj:
+                if aid not in alimentos:
+                    self.erro(f"{onde}.so_jantar", f"alimento '{aid}' não existe em alimentos.json")
 
     # ---- perfil ----
     def perfil(self):

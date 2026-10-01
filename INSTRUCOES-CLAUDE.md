@@ -182,8 +182,9 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 
 `atualizado` usa timezone America/Los_Angeles (`-07:00` / `-08:00`).
 
-1. **Início do dia** — o JSON do dia e o `data-dia` já foram criados pelo fechamento automático da meia-noite. O Grok só faz `git pull` e, se `sugestao` estiver vazia, escreve a sugestão completa (macros só por `alimentos.json`). **Não** mexer no `data-dia` do index.
-2. **Lançar refeição** — `scripts/registrar.py refeicao … --enviar` (ver "Lançar"). Não editar `lancado` à mão. **Não** editar o HTML do index no dia a dia. Refazer `sugestao` do restante se fizer sentido (`--remover-sugestao` tira a refeição já comida).
+1. **Início do dia** — o JSON do dia, o `data-dia` e a **sugestão automática** já foram criados pelo fechamento da meia-noite. O Grok só faz `git pull`. **Não** mexer no `data-dia` do index.
+   **Sugestão automática (`scripts/sugerir.py`, pedido do Lucas 01/10):** monta o dia com os alimentos que ele **realmente comeu** nos últimos 14 dias (em cada refeição: Café/Almoço/Lanche/Jantar, pelo nome ou pela hora) + os de `refeicoes.json → sugestao_auto.incluir`, com porções parecidas com as dele, aproximando o total da meta (P ≥ meta, G ≤ meta). Respeita `plano_ate_g`/`max_dia` (teto de planejamento, não limite) e claras só no jantar. Com menos de 2 dias de histórico, usa o plano padrão. Ver sem gravar: `python3 scripts/sugerir.py`.
+2. **Lançar refeição** — `scripts/registrar.py refeicao … --enviar` (ver "Lançar"). Não editar `lancado` à mão. **Não** editar o HTML do index no dia a dia. O `registrar.py` **refaz sozinho a sugestão do restante do dia** ("Pra fechar o dia") a cada refeição lançada ou removida, contando o que já foi comido; `--sem-replanejar` desliga. Se a sugestão falhar, o lançamento vale assim mesmo (fica a sugestão anterior).
 3. **Refazer sugestão** — reescrever o array `sugestao` no JSON (+ `atualizado`). Uma sugestão **NUNCA conta como consumo** até o usuário confirmar o lançamento em `lancado`.
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos foram removidos; dia futuro sem arquivo mostra uma prévia do plano padrão em `dia.html?d=`.
 5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): `registrar.py peso --data <hoje> --kg 82.4 --enviar`. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
@@ -230,7 +231,7 @@ Padronizar mensagens assim:
 - `dados/objetivo.json` — objetivo com data alvo e meta semanal; `objetivo.js` desenha o card e a meta no gráfico.
 - `dados/perfil.json` — altura, mês/ano de nascimento, sexo, fator de atividade (repo público: só o necessário). `scripts/meta.py` — meta semanal pelo déficit.
 - `apple-touch-icon.png` / `icone-512.png` — ícone da tela inicial. `manifest.webmanifest` + metas `apple-mobile-web-app-capable` — abre em tela cheia pelo ícone (sem service worker/offline: continua site estático).
-- `scripts/registrar.py` — **lançamento** (refeição, peso, remover, completo) com evento idempotente. `scripts/item.py` — calculadora (planos/sugestões). `scripts/validar.py` — checagem estrita. `scripts/derivados.py` — resumo + cálculo do objetivo (`resumo.py` e `meta.py` por baixo). `scripts/fechar_dia.py` — fechamento. `scripts/publicar.sh` / `scripts/verificar.sh` — publicação e verificação usadas pelo GitHub. `scripts/comum.py` / `comum.js` — JSON estrito, arredondamento, fuso e semana, compartilhados.
+- `scripts/registrar.py` — **lançamento** (refeição, peso, remover, completo) com evento idempotente. `scripts/item.py` — calculadora (planos/sugestões). `scripts/sugerir.py` — sugestão automática pelo histórico. `scripts/validar.py` — checagem estrita. `scripts/derivados.py` — resumo + cálculo do objetivo (`resumo.py` e `meta.py` por baixo). `scripts/fechar_dia.py` — fechamento. `scripts/publicar.sh` / `scripts/verificar.sh` — publicação e verificação usadas pelo GitHub. `scripts/comum.py` / `comum.js` — JSON estrito, arredondamento, fuso e semana, compartilhados.
 - `scripts/pages.py` — consulta o modo do GitHub Pages (`legacy`/`workflow`) e pede build; erro HTTP/JSON/tipo desconhecido **falha** o workflow (nunca vira "modo branch" por engano).
 - `tests/` — testes de regressão (`python3 -m unittest discover -s tests`), incluindo dias fechados nunca reescritos e o fechamento nos horários reais do agendamento na troca de horário (`AGORA_UTC` simula o relógio só em teste); `scripts/testar_paginas.js` — páginas no Chromium/WebKit, totais iguais ao Python e CSV.
 - `INSTRUCOES-CLAUDE.md` — estas regras (fluxo, busca de alimentos, commits).
@@ -245,7 +246,7 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Chuck: nas **sugestões**, planejar até 200 g cru/dia (`alimentos.json` → `chuck-costco.plano_ate_g`). É referência de planejamento, não limite: o Hoje só mostra quanto já foi ("Acém 250 g cru hoje").
 - Dar preferência a batata, frutas, tomate, iogurte grego desnatado e **ovos inteiros**.
 - Claras de ovo: **só à noite** e somente se forem necessárias para fechar a proteína/macros.
-- Frango é opcional e pode estar indisponível; não presumir que há frango.
+- **Peito de frango cru: liberado (Lucas, 01/10 — comprou e quer que seja recomendado).** Está em `sugestao_auto.incluir` (almoço e jantar).
 - **Plano B sem frango** (ordem de prioridade para fechar proteína): ovo inteiro → iogurte grego desnatado → Nurri → claras (só à noite).
 - Ao sugerir refeições, respeitar as metas e essas restrições sem inventar ingredientes ou disponibilidade; macros só por `dados/alimentos.json`.
 - **Proteína distribuída:** ~40–55 g por refeição (≈0,4–0,55 g/kg × 4 refeições). Evitar concentrar tudo numa refeição; o iogurte (pote de 430 g) pode ser dividido entre almoço, lanche e jantar.
@@ -256,7 +257,7 @@ O repositório é a única fonte do site; não manter espelho local separado. Pa
 - Manter a interface em português.
 - Manter o badge **NÃO LANÇADO** quando uma refeição/plano ainda for apenas sugestão.
 - Não apagar, reescrever ou quebrar dias arquivados ao editar o dia atual.
-- Não mudar `lancado` / `sugestao` no JSON sem confirmação explícita do usuário; sugestões e consumo confirmado devem permanecer distinguíveis. No dia a dia, editar o JSON — não o HTML do index.
+- Não mudar `lancado` no JSON sem confirmação explícita do usuário (a `sugestao` é refeita automaticamente — pedido do Lucas 01/10); sugestões e consumo confirmado devem permanecer distinguíveis. No dia a dia, editar o JSON — não o HTML do index.
 
 ## Comunicação Claude ↔ Grok (via Lucas)
 
