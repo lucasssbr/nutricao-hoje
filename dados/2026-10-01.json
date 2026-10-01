@@ -1,6 +1,6 @@
 {
   "data": "2026-10-01",
-  "atualizado": "2026-10-01T10:26:56-07:00",
+  "atualizado": "2026-10-01T10:37:05-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -9,7 +9,49 @@
     "g": 50
   },
   "peso_kg": 88.0,
-  "lancado": [],
+  "lancado": [
+    {
+      "refeicao": "Almoço",
+      "id_evento": "t125u:refeicao:1",
+      "consumido_em": "2026-10-01T10:35:00-07:00",
+      "registrado_em": "2026-10-01T10:37:05-07:00",
+      "itens": [
+        {
+          "nome": "Inked Timber Wolf Keto Seeds Bread",
+          "qtd": "2 un",
+          "alimento": "inked-timber-wolf",
+          "quantidade": 2,
+          "kcal": 90,
+          "p": 8,
+          "c": 22,
+          "g": 4,
+          "fibra": 20
+        },
+        {
+          "nome": "Castello Havarti (fatia)",
+          "qtd": "2 un",
+          "alimento": "castello-havarti",
+          "quantidade": 2,
+          "kcal": 220,
+          "p": 12,
+          "c": 0,
+          "g": 18,
+          "fibra": 0
+        },
+        {
+          "nome": "Peito de frango sem pele (cru)",
+          "qtd": "200 g",
+          "alimento": "frango-peito-cru",
+          "quantidade": 200,
+          "kcal": 240,
+          "p": 45,
+          "c": 0,
+          "g": 5.2,
+          "fibra": 0
+        }
+      ]
+    }
+  ],
   "sugestao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite (até ~5) · acém 200 g cru · 2 Nurri · iogurte 2% (rótulo) · G acima da meta até o Lucas escolher o ajuste",
   "sugestao": [
     {
@@ -48,56 +90,6 @@
           "c": 27,
           "g": 0.4,
           "fibra": 3.1
-        }
-      ]
-    },
-    {
-      "refeicao": "Almoço",
-      "favorita": "almoco-padrao",
-      "itens": [
-        {
-          "nome": "Chuck steak Costco (cru)",
-          "qtd": "100 g",
-          "alimento": "chuck-costco",
-          "quantidade": 100,
-          "kcal": 223,
-          "p": 20,
-          "c": 0,
-          "g": 17,
-          "fibra": 0
-        },
-        {
-          "nome": "Batata inglesa (crua)",
-          "qtd": "100 g",
-          "alimento": "batata-inglesa",
-          "quantidade": 100,
-          "kcal": 77,
-          "p": 2.1,
-          "c": 17.5,
-          "g": 0.1,
-          "fibra": 2.1
-        },
-        {
-          "nome": "Tomate",
-          "qtd": "150 g",
-          "alimento": "tomate",
-          "quantidade": 150,
-          "kcal": 27,
-          "p": 1.4,
-          "c": 5.9,
-          "g": 0.3,
-          "fibra": 1.8
-        },
-        {
-          "nome": "Iogurte grego desnatado",
-          "qtd": "200 g",
-          "alimento": "iogurte-grego-100g",
-          "quantidade": 200,
-          "kcal": 141.2,
-          "p": 18.8,
-          "c": 8.2,
-          "g": 4.2,
-          "fibra": 0
         }
       ]
     },
@@ -198,6 +190,13 @@
       "em": "2026-10-01T10:26:56-07:00",
       "resumo": "peso 88.0 kg",
       "assinatura": "011a672fad0dcae2"
+    },
+    {
+      "id_evento": "t125u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-01T10:37:05-07:00",
+      "resumo": "Almoço: 550 kcal | P 65 | C 22 | G 27 (3 item(ns))",
+      "assinatura": "8426713cf91774dd"
     }
   ]
 }
