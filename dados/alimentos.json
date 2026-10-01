@@ -244,5 +244,59 @@
     "fonte": "estimado",
     "salvo_em": "2026-09-30",
     "obs": "Sem rótulo. Cruzamento: USDA FNNDS Grapes green seedless raw FDC~2263891 = 80|P0.9|C18.6|G0.23; USDA SR Legacy Grapes red or green Thompson seedless raw = 69|P0.72|C18.1|G0.16|fibra0.9. kcal difere >10% → conservador = mais alto (FNNDS). Fibra do SR Legacy."
+  },
+  "inked-timber-wolf": {
+    "nome": "Inked Timber Wolf Keto Seeds Bread",
+    "apelidos": [
+      "inked",
+      "timber wolf",
+      "pão keto",
+      "pao keto",
+      "pão inked"
+    ],
+    "base": "1 un",
+    "kcal": 45,
+    "p": 4,
+    "c": 11,
+    "g": 2,
+    "fibra": 10,
+    "fonte": "rotulo",
+    "salvo_em": "2026-10-01",
+    "obs": "rótulo 1 slice 30g: 45 kcal, Fat 2g, Carb 11g (Fiber 10g, Sugar 0), Protein 4g; sodium 110mg"
+  },
+  "castello-havarti": {
+    "nome": "Castello Havarti (fatia)",
+    "apelidos": [
+      "havarti",
+      "castello",
+      "queijo havarti",
+      "queijo castello"
+    ],
+    "base": "1 un",
+    "kcal": 110,
+    "p": 6,
+    "c": 0,
+    "g": 9,
+    "fibra": 0,
+    "fonte": "rotulo",
+    "salvo_em": "2026-10-01",
+    "obs": "rótulo 1 slice 28g: 110 kcal, Fat 9g (Sat 6g), Carb 0, Protein 6g"
+  },
+  "frango-peito-cru": {
+    "nome": "Peito de frango sem pele (cru)",
+    "apelidos": [
+      "frango",
+      "peito de frango",
+      "chicken breast"
+    ],
+    "base": "100 g",
+    "kcal": 120,
+    "p": 22.5,
+    "c": 0,
+    "g": 2.6,
+    "fibra": 0,
+    "fonte": "usda",
+    "salvo_em": "2026-10-01",
+    "obs": "USDA FDC 171077 breast skinless boneless meat only raw 120|P22.5|C0|G2.6; Foundation FDC 2646170 ~P22.5|G1.9 (kcal não listado igual) — batem P; uso SR Legacy 171077. Peso cru."
   }
 }
