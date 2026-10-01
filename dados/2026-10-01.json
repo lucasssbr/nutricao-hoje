@@ -1,6 +1,6 @@
 {
   "data": "2026-10-01",
-  "atualizado": "2026-10-01T10:26:42-07:00",
+  "atualizado": "2026-10-01T10:26:56-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -8,7 +8,7 @@
     "c": 100,
     "g": 50
   },
-  "peso_kg": null,
+  "peso_kg": 88.0,
   "lancado": [],
   "sugestao_nota": "Plano padrão automático · ovos inteiros cedo; claras só à noite (até ~5) · acém 200 g cru · 2 Nurri · iogurte 2% (rótulo) · G acima da meta até o Lucas escolher o ajuste",
   "sugestao": [
@@ -189,6 +189,15 @@
           "fibra": 0
         }
       ]
+    }
+  ],
+  "eventos": [
+    {
+      "id_evento": "t122u:peso:1",
+      "tipo": "peso",
+      "em": "2026-10-01T10:26:56-07:00",
+      "resumo": "peso 88.0 kg",
+      "assinatura": "011a672fad0dcae2"
     }
   ]
 }
