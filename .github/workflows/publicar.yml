@@ -45,6 +45,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Navegadores de teste (Chromium + WebKit)
+        timeout-minutes: 15
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
           npx playwright install --with-deps chromium webkit
@@ -80,6 +81,8 @@ jobs:
           key: playwright-1.56.1-${{ runner.os }}
       - name: Navegadores de teste (Chromium + WebKit)
         if: steps.tipo.outputs.modo != 'rapida'
+        # instalação travada (já passou de 20 min) não pode segurar a fila por horas (padrão do job: 6 h)
+        timeout-minutes: 15
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
           npx playwright install --with-deps chromium webkit
