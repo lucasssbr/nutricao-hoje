@@ -43,7 +43,9 @@ def editar_dia_cru(clone, kcal_extra, msg):
     return d
 
 
-class Publicacao(unittest.TestCase):
+class BasePublicacao(unittest.TestCase):
+    """Remoto git local + dois clones (a, b) — sem testes, para outras suítes reaproveitarem."""
+
     def setUp(self):
         self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="nutri-pub-"))
         fonte = self.tmp / "fonte"
@@ -92,6 +94,9 @@ class Publicacao(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout)
         return c
 
+
+
+class Publicacao(BasePublicacao):
     def test_idempotente(self):
         self.publicar(self.a)
         n1 = git(self.a, "rev-list", "--count", "origin/main")

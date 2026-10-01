@@ -9,7 +9,10 @@
 #   PREPARO   comando a rodar antes dos derivados (ex.: "python3 scripts/fechar_dia.py")
 #   REMOTO    remoto git (padrão origin)          RAMO   ramo (padrão main)
 #   TENTATIVAS número de tentativas (padrão 4)    SEM_PAGINAS=1 pula o navegador (testes)
-#   GITHUB_OUTPUT  se existir, recebe sha=<commit publicado e verificado> e mudou=sim|nao
+#   GITHUB_OUTPUT  se existir, recebe sha=<commit publicado e verificado>, mudou=sim|nao e pular=sim|nao
+#   CODIGO_BASE  caminho RÁPIDO (sem navegadores, scripts/modo_verificacao.py): sha do commit no ar. Se o HEAD
+#             sincronizado tiver CÓDIGO (fora de dados/) diferente dele, esta execução NÃO publica (pular=sim):
+#             a execução do push do código (na fila) faz a verificação completa e publica.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REMOTO="${REMOTO:-origin}"
@@ -27,6 +30,12 @@ for tentativa in $(seq 1 "$TENTATIVAS"); do
   echo "base: $base"
   echo "::endgroup::"
 
+  if [ -n "${CODIGO_BASE:-}" ] && ! git diff --quiet "$CODIGO_BASE" HEAD -- . ':(exclude)dados'; then
+    echo "::notice::código novo no HEAD (diferente do que está no ar): o caminho rápido não publica código; a execução completa do push do código publica."
+    echo "sha=$base" >> "$SAIDA"; echo "mudou=nao" >> "$SAIDA"; echo "pular=sim" >> "$SAIDA"
+    exit 0
+  fi
+
   if [ -n "${PREPARO:-}" ]; then
     echo "== preparo: $PREPARO"
     bash -c "$PREPARO"
@@ -36,7 +45,7 @@ for tentativa in $(seq 1 "$TENTATIVAS"); do
 
   if [ -z "$(git status --porcelain)" ]; then
     echo "Nada a publicar: $base já está verificado e com derivados em dia."
-    echo "sha=$base" >> "$SAIDA"; echo "mudou=nao" >> "$SAIDA"
+    echo "sha=$base" >> "$SAIDA"; echo "mudou=nao" >> "$SAIDA"; echo "pular=nao" >> "$SAIDA"
     exit 0
   fi
   git add -A
@@ -50,12 +59,13 @@ print((d - datetime.timedelta(days=1)).strftime("%d/%m"))')
   else
     msg="auto: derivados atualizados (resumo/objetivo)"
   fi
+  if [ "${SEM_PAGINAS:-}" = "1" ]; then como="validar + testes; código idêntico ao já verificado nas páginas"; else como="validar + testes + páginas"; fi
   git -c user.name="${GIT_NOME:-publicacao-automatica}" -c user.email="${GIT_EMAIL:-publicacao-automatica@users.noreply.github.com}" \
-    commit --quiet -m "$msg" -m "Verificado sobre $base (validar + testes + páginas)."
+    commit --quiet -m "$msg" -m "Verificado sobre $base ($como)."
   if git push --quiet "$REMOTO" "HEAD:$RAMO"; then
     sha=$(git rev-parse HEAD)
     echo "Publicado $sha ($msg)"
-    echo "sha=$sha" >> "$SAIDA"; echo "mudou=sim" >> "$SAIDA"
+    echo "sha=$sha" >> "$SAIDA"; echo "mudou=sim" >> "$SAIDA"; echo "pular=nao" >> "$SAIDA"
     exit 0
   fi
   echo "::warning::push recusado (alguém enviou no meio). Regenerando sobre o HEAD novo…"

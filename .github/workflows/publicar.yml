@@ -2,8 +2,10 @@ name: Conferir e publicar
 
 # Um único fluxo para tudo que mexe no site:
 #  - pull request (e mudanças nos próprios workflows): só confere — derivados, dados, testes e páginas;
-#  - push na main (Grok/Claude/Lucas): regenera derivados sobre o HEAD mais novo, confere tudo e só então
-#    grava/publica;
+#  - push na main (Grok/Claude/Lucas): regenera derivados sobre o HEAD mais novo, confere e só então
+#    grava/publica. Push que só muda dados/ (log do Grok) usa o caminho RÁPIDO: validar + testes Python,
+#    sem navegadores — o código é idêntico ao que já está no ar e já passou pelas páginas (modo_verificacao.py).
+#    Código novo → verificação completa (Chromium + WebKit);
 #  - meia-noite de Los Angeles: fecha o dia (scripts/fechar_dia.py) e publica do mesmo jeito.
 # A publicação usa scripts/publicar.sh: nunca faz rebase de derivados; se alguém enviar no meio, regenera
 # e reconfere sobre o HEAD novo. O site publicado é exatamente o commit verificado (quando o Pages está
@@ -65,7 +67,19 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Tipo de verificação (rápida = só dados mudaram desde o que está no ar)
+        id: tipo
+        # push que só mexe em dados/ (log do Grok) → validar + testes Python, sem navegadores (~1–2 min no ar).
+        # Código novo, meia-noite, dispatch ou qualquer dúvida → completa (Chromium + WebKit).
+        run: python3 scripts/modo_verificacao.py
+      - name: Cache dos navegadores
+        if: steps.tipo.outputs.modo != 'rapida'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.56.1-${{ runner.os }}
       - name: Navegadores de teste (Chromium + WebKit)
+        if: steps.tipo.outputs.modo != 'rapida'
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
           npx playwright install --with-deps chromium webkit
@@ -75,7 +89,10 @@ jobs:
           # fechamento em TODA execução na main (idempotente: fora da virada não muda nada) — se um push
           # rodar no lugar do agendamento, ele mesmo fecha o dia
           PREPARO: python3 scripts/fechar_dia.py
-          EXIGIR_WEBKIT: "1"
+          EXIGIR_WEBKIT: ${{ steps.tipo.outputs.modo != 'rapida' && '1' || '' }}
+          SEM_PAGINAS: ${{ steps.tipo.outputs.modo == 'rapida' && '1' || '' }}
+          # caminho rápido: se aparecer código novo no HEAD durante a fila, esta execução não publica
+          CODIGO_BASE: ${{ steps.tipo.outputs.base }}
         run: bash scripts/publicar.sh
       - name: Modo do Pages
         id: modo
@@ -90,19 +107,19 @@ jobs:
             echo "::warning::O Pages está publicando direto do branch (build_type=legacy): pushes ainda vão ao ar antes da conferência. Para publicar só o que foi verificado: Settings → Pages → Source: GitHub Actions."
           fi
       - name: Montar o site verificado
-        if: steps.modo.outputs.tipo == 'workflow'
+        if: steps.modo.outputs.tipo == 'workflow' && steps.pub.outputs.pular != 'sim'
         run: |
           test "$(git rev-parse HEAD)" = "${{ steps.pub.outputs.sha }}"
           mkdir -p _site
           git archive "${{ steps.pub.outputs.sha }}" | tar -x -C _site
           rm -rf _site/tests _site/.github
-          printf '{"sha":"%s","verificado_em":"%s"}\n' "${{ steps.pub.outputs.sha }}" "$(date -u +%FT%TZ)" > _site/publicado.json
+          printf '{"sha":"%s","verificado_em":"%s","verificacao":"%s"}\n' "${{ steps.pub.outputs.sha }}" "$(date -u +%FT%TZ)" "${{ steps.tipo.outputs.modo }}" > _site/publicado.json
       - uses: actions/upload-pages-artifact@v3
-        if: steps.modo.outputs.tipo == 'workflow'
+        if: steps.modo.outputs.tipo == 'workflow' && steps.pub.outputs.pular != 'sim'
         with:
           path: _site
       - uses: actions/deploy-pages@v4
-        if: steps.modo.outputs.tipo == 'workflow'
+        if: steps.modo.outputs.tipo == 'workflow' && steps.pub.outputs.pular != 'sim'
       - name: Pedir publicação (Pages no modo branch)
         if: steps.modo.outputs.tipo == 'legacy' && steps.pub.outputs.mudou == 'sim'
         env:
