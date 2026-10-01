@@ -8,7 +8,7 @@ import sys
 import time
 import unittest
 
-from base import RAIZ, CopiaRepo
+from base import RAIZ, CopiaRepo, rodar_node
 from comum import hoje_la
 
 NODE = shutil.which("node")
@@ -16,7 +16,7 @@ TEM_PW = (RAIZ / "node_modules" / "playwright").exists()
 
 
 
-@unittest.skipUnless(NODE and TEM_PW, "node/playwright não instalados")
+@unittest.skipUnless((NODE and TEM_PW) or os.environ.get("TESTES_IMAGEM"), "node/playwright não instalados")
 class HistoricoComPlanoFuturo(CopiaRepo):
     def test_correcao_recente_com_plano_futuro(self):
         sys.path.insert(0, str(self.tmp / "scripts"))
@@ -63,8 +63,7 @@ class HistoricoComPlanoFuturo(CopiaRepo):
 const pw=require('playwright');(async()=>{{const b=await pw.chromium.launch();const p=await b.newPage();
 await p.goto('http://127.0.0.1:{porta}/historico.html',{{waitUntil:'networkidle'}});await p.waitForTimeout(300);
 const t=await p.locator('#histList a[href$="{ontem}"] .d').innerText();console.log(t);await b.close();}})();"""
-            env = dict(os.environ, NODE_PATH=str(RAIZ / "node_modules"))
-            out = subprocess.check_output([NODE, "-e", js], text=True, env=env, timeout=60).strip()
+            out = rodar_node(js)
         finally:
             serv.terminate()
         self.assertIn(f"{kcal_certo} kcal", out, f"Histórico mostrou {out!r}; esperado {kcal_certo} kcal (valor corrigido)")

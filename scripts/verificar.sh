@@ -15,7 +15,8 @@ else
   echo "== testes"
   # os testes rodam publicar.sh/verificar.sh/fechar_dia.py como subprocessos: as variáveis de CONTROLE desta
   # execução (caminho rápido, fechamento, data simulada…) não podem vazar para eles (falhou no run 26)
-  env -u CODIGO_BASE -u PAGINAS_IMAGEM -u SEM_PAGINAS -u SEM_TESTES -u PREPARO -u EXIGIR_WEBKIT -u NAVEGADORES -u PORTA \
+  # TESTES_IMAGEM: testes que abrem navegador (test_historico) usam a mesma imagem do Playwright
+  TESTES_IMAGEM="${PAGINAS_IMAGEM:-${TESTES_IMAGEM:-}}" env -u CODIGO_BASE -u PAGINAS_IMAGEM -u SEM_PAGINAS -u SEM_TESTES -u PREPARO -u EXIGIR_WEBKIT -u NAVEGADORES -u PORTA \
       -u HOJE -u AGORA_UTC -u GITHUB_OUTPUT -u REMOTO -u RAMO -u TENTATIVAS \
       python3 -m unittest discover -s tests -q
 fi

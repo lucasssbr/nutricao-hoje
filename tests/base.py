@@ -15,6 +15,23 @@ COPIAR = ["dados", "scripts"] + sorted(p.name for p in RAIZ.iterdir()
                                        if p.suffix in (".html", ".js", ".css", ".webmanifest", ".png"))
 
 
+def rodar_node(js, montar=(), timeout=60):
+    """Roda `node -e js` com o Playwright. Com TESTES_IMAGEM (o GitHub: verificar.sh repassa a imagem oficial do
+    Playwright), roda dentro da imagem — a máquina não tem navegadores instalados; senão, no node local."""
+    import os
+    nm = os.path.realpath(RAIZ / "node_modules")
+    imagem = os.environ.get("TESTES_IMAGEM")
+    if imagem:
+        vols = []
+        for d in {nm, *map(str, montar)}:
+            vols += ["-v", f"{d}:{d}"]
+        cmd = ["docker", "run", "--rm", "--network", "host", "--user", f"{os.getuid()}:{os.getgid()}",
+               "-e", "HOME=/tmp", "-e", f"NODE_PATH={nm}", *vols, imagem, "node", "-e", js]
+        return subprocess.check_output(cmd, text=True, timeout=timeout + 60).strip()
+    return subprocess.check_output(["node", "-e", js], text=True, timeout=timeout,
+                                   env=dict(os.environ, NODE_PATH=nm)).strip()
+
+
 class CopiaRepo(unittest.TestCase):
     def setUp(self):
         self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="nutri-teste-"))
