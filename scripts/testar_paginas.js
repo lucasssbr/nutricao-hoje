@@ -115,6 +115,34 @@ async function checarCsv(ctx) {
 }
 
 // aviso amarelo quando o dia aberto ficou para trás (fechamento da meia-noite atrasado): relógio simulado
+// cartão do objetivo: explicações recolhidas em "Ver detalhes" (fechado por padrão; abre no toque; lembra)
+async function checarDetalhesObjetivo(ctx) {
+  const page = await ctx.newPage();
+  const erros = [];
+  page.on('pageerror', (e) => erros.push(e.message));
+  try {
+    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.waitForSelector('#objetivo .obj-card', { timeout: 4000 });
+    const det = page.locator('#objDetalhes');
+    if (!(await det.count())) { erros.push('cartão do objetivo sem "Ver detalhes"'); }
+    else {
+      if (await det.evaluate((d) => d.open)) erros.push('"Ver detalhes" deveria começar fechado');
+      const visivel = await page.locator('#objetivo').innerText();
+      if (!/Meta da semana/.test(visivel)) erros.push('meta da semana não ficou à vista');
+      if (/Pelo déficit/.test(visivel)) erros.push('explicação do cálculo à vista com os detalhes fechados');
+      await page.locator('#objDetalhes > summary').click();
+      if (!/Pelo déficit/.test(await page.locator('#objetivo').innerText())) erros.push('abrir "Ver detalhes" não mostrou o cálculo');
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForSelector('#objDetalhes', { timeout: 4000 });
+      if (!(await page.locator('#objDetalhes').evaluate((d) => d.open))) erros.push('"Ver detalhes" não lembrou que estava aberto');
+    }
+  } catch (e) {
+    erros.push(e.message.split('\n')[0]);
+  }
+  await page.close();
+  return erros;
+}
+
 async function checarAvisoFechamento(ctx) {
   const erros = [];
   for (const [quando, deveAparecer] of [[hoje + 'T20:00:00Z', false], [somaDias(hoje, 1) + 'T20:00:00Z', true]]) {
@@ -150,7 +178,7 @@ async function checarAvisoFechamento(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -163,5 +191,5 @@ async function checarAvisoFechamento(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 3} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 4} checagens cada).`);
 })();

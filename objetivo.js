@@ -182,7 +182,9 @@
              medida: med, sim: sim, rit: rit };
   }
 
-  function marcosHtml(o, reais, medidas, hoje) {
+  // det (opcional): lista onde vão as linhas EXPLICATIVAS (o cartão do Hoje mostra em "Ver detalhes");
+  // sem det, tudo fica à vista. Avisos (obj-warn) ficam sempre à vista.
+  function marcosHtml(o, reais, medidas, hoje, det) {
     var e = estadoMarcos(o, reais, medidas, hoje);
     if (!e || !e.marcos.length) return '';
     var mf = e.mf, ref = e.ref, sim = e.sim, rit = e.rit;
@@ -192,6 +194,7 @@
     }
     var feitos = e.marcos.filter(function (x) { return x.ok; }).length;
     var h = '<div class="obj-marcos">';
+    function mais(linha) { if (det) det.push(linha); else h += linha; }
     h += '<div class="obj-line"><b>🏔 Marcos</b> · ' + feitos + ' de ' + e.marcos.length +
       (e.prox != null ? ' · próximo <b>' + kg(e.prox).replace(',0', '') + ' kg</b> (falta ' + kg(ref - e.prox) + ' kg' + prev(e.prox) + ')' : ' · todos!') + '</div>';
     h += '<div class="marcos-chips">' + e.marcos.map(function (x) {
@@ -202,9 +205,10 @@
     }).join('') + '</div>';
     var total = e.inicio - mf.peso_kg, feito = Math.max(0, Math.min(total, e.inicio - ref));
     h += '<div class="obj-bar marcos-bar"><div style="width:' + Math.round(100 * feito / total) + '%"></div></div>';
-    h += '<div class="obj-line obj-muted">Média 7 dias <b>' + kg(ref) + ' kg</b> (' + e.n + ' pesage' + (e.n > 1 ? 'ns' : 'm') +
+    var media = '<div class="obj-line obj-muted">Média 7 dias <b>' + kg(ref) + ' kg</b> (' + e.n + ' pesage' + (e.n > 1 ? 'ns' : 'm') +
       ' até ' + curta(e.ultData) + ')' + (e.confirma ? '' : ' — marcos só se confirmam com ' + MIN_CONFIRMAR + '+ pesagens na semana') +
       (e.semPesar > 7 ? ' · <span class="obj-warn">última pesagem há ' + e.semPesar + ' dias; a previsão parte dela</span>' : '') + '</div>';
+    if (e.semPesar > 7) h += media; else mais(media);
     h += '<div class="obj-line obj-muted">Meta final <b>' + mf.peso_kg + ' kg</b>' + (mf.gordura_pct ? ' (~' + mf.gordura_pct + '% de gordura' + (mf.gordura_inicial_pct ? ', saindo de ~' + mf.gordura_inicial_pct + '%' : '') + ')' : '') +
       (mf.satisfeito_kg ? ' · ⭐ ' + mf.satisfeito_kg + ' kg satisfeito' : '') + ' · faltam ' + kg(Math.max(0, ref - mf.peso_kg)) + ' kg' +
       prev(mf.peso_kg) + (mf.depois ? ' · depois: ' + esc(mf.depois) : '') + '</div>';
@@ -215,17 +219,25 @@
         ' anos (pararia em ~' + Math.round(sim.bfFim * 100) + '%). Previsão dos 10% indisponível.</div>';
     } else if (sim) {
       var r = mf.ritmo || {}, pct = r.pct_semana || [1.2, 1.0, 0.8];
-      h += '<div class="obj-line obj-muted">📉 Cenário ' + esc(sim.cenario) + ' (' + pct.map(function (x) { return kg(x).replace(',0', ''); }).join(' → ') +
+      mais('<div class="obj-line obj-muted">📉 Cenário ' + esc(sim.cenario) + ' (' + pct.map(function (x) { return kg(x).replace(',0', ''); }).join(' → ') +
         '% do peso/sem, desacelerando' + (r.pausa_semanas ? '; 1 sem de manutenção a cada ' + r.pausa_semanas[0] : '') + '): gordura hoje ~' +
         Math.round(sim.bfHoje * 100) + '% (base: ' + esc(sim.base.txt) + ') · <b>' + (mf.gordura_pct || 10) + '% ≈ ' + curta(sim.fim) + ' ' + sim.fim.slice(0, 4) + '</b> com ~' + kg(sim.pesoFim) +
         ' kg (~' + kg(sim.magraPerdida) + ' kg de massa magra perdida até lá)' + (e.desatualizada ? ' — previsão desatualizada (última pesagem há ' + e.semPesar + ' dias)' : '') +
-        '. Estimativa: fica mais certa a cada medida de gordura (foto, fita ou DEXA).</div>';
+        '. Estimativa: fica mais certa a cada medida de gordura (foto, fita ou DEXA).</div>');
     }
     if (rit && rit.fonte === 'ritmo atual') {
-      h += '<div class="obj-line obj-muted">Ritmo real das últimas 2 semanas: −' + kg(rit.kgDia * 7) + ' kg/sem.</div>';
+      mais('<div class="obj-line obj-muted">Ritmo real das últimas 2 semanas: −' + kg(rit.kgDia * 7) + ' kg/sem.</div>');
     }
     return h + '</div>';
   }
+
+  // "Ver detalhes" aberto/fechado: lembrado só neste navegador (conveniência; sem armazenamento, começa fechado)
+  var CHAVE_DET = 'nutri-obj-detalhes';
+  function lembrarDetalhes() { try { return window.localStorage.getItem(CHAVE_DET) === '1'; } catch (e) { return false; } }
+  if (typeof document !== 'undefined') document.addEventListener('toggle', function (ev) {
+    if (!ev.target || ev.target.id !== 'objDetalhes') return;
+    try { window.localStorage.setItem(CHAVE_DET, ev.target.open ? '1' : '0'); } catch (e) { /* sem armazenamento */ }
+  }, true);
 
   function cardHoje(o, hoje, pesoHoje, estimado, reais, medidas) {
     var c = calc(o, hoje);
@@ -248,29 +260,30 @@
     h += '<div class="obj-bar"><div style="width:' + pct + '%"></div></div>';
     h += '<div class="obj-line obj-muted">Dia ' + (c.passados + 1) + ' de ' + (c.tot + 1) + ' · semana ' + c.semana + '</div>';
     function mil(n) { return String(N.ri(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    var det = [];   // explicações do cálculo: ficam em "Ver detalhes" (os números principais continuam à vista)
     h += '<div class="obj-line"><b>Meta da semana ' + c.sem.n + '</b> (' + curta(c.sem.ini) + '–' + curta(c.sem.fim) + '): −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' na pesagem de ' + curta(c.sem.pesagem) + '</div>';
     if (o.calculo) {
       var fonte = o.calculo.gasto_fonte;
       var gastoTxt = fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado)
         : 'gasto estimado ~' + mil(o.calculo.gasto_estimado);
-      h += '<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
-        ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>';
+      det.push('<div class="obj-line obj-muted">Pelo déficit: ' + gastoTxt + ' − comendo ~' + mil(o.calculo.ingestao_media) +
+        ' = ~' + mil(o.calculo.deficit_dia) + ' kcal/dia</div>');
       // gasto INFERIDO pelos registros (não é medido): só informativo, não entra na meta
       var gi = o.calculo.gasto_inferido, gf = o.calculo.gasto_inferido_falta;
       if (gi) {
-        h += '<div class="obj-line obj-muted">Estimado pelos seus registros (' + gi.dias_completos + ' dias completos, ' + gi.pesagens + ' pesagens, cobertura ' + gi.cobertura_pct + '%): gasto ~' + mil(gi.kcal) + ' kcal/dia — só pra comparar, não muda a meta.</div>';
+        det.push('<div class="obj-line obj-muted">Estimado pelos seus registros (' + gi.dias_completos + ' dias completos, ' + gi.pesagens + ' pesagens, cobertura ' + gi.cobertura_pct + '%): gasto ~' + mil(gi.kcal) + ' kcal/dia — só pra comparar, não muda a meta.</div>');
       } else if (gf) {
-        h += '<div class="obj-line obj-muted">Gasto estimado pelos registros ainda não: ' + esc(typeof gf === 'string' ? gf : gf.falta) + '.</div>';
+        det.push('<div class="obj-line obj-muted">Gasto estimado pelos registros ainda não: ' + esc(typeof gf === 'string' ? gf : gf.falta) + '.</div>');
       }
       if (o.calculo.ingestao_fonte && o.calculo.dias_completos != null) {
-        h += '<div class="obj-line obj-muted">Ingestão usada: ' + esc(o.calculo.ingestao_fonte) + '.</div>';
+        det.push('<div class="obj-line obj-muted">Ingestão usada: ' + esc(o.calculo.ingestao_fonte) + '.</div>');
       }
       if (o.meta_modo === 'manual') {
-        h += '<div class="obj-line obj-muted">Meta semanal manual (escolhida por você); pelo cálculo seria −' + kg(o.calculo.meta_calculada_kg || 0) + ' kg/sem.</div>';
+        det.push('<div class="obj-line obj-muted">Meta semanal manual (escolhida por você); pelo cálculo seria −' + kg(o.calculo.meta_calculada_kg || 0) + ' kg/sem.</div>');
       }
     }
     if (c.passados < 7) {
-      h += '<div class="obj-line obj-muted">1ª semana: a balança costuma cair mais (água e glicogênio), não é tudo gordura.</div>';
+      det.push('<div class="obj-line obj-muted">1ª semana: a balança costuma cair mais (água e glicogênio), não é tudo gordura.</div>');
     }
     if (pesoHoje != null && estimado) {
       var st2 = status(pesoHoje, c.esperadoHoje);
@@ -282,9 +295,12 @@
       h += '<div class="obj-line obj-muted">Mande o peso de hoje pro Grok pra comparar com o esperado (' + peso(c.esperadoHoje) + ').</div>';
     }
     var nReais = (reais || []).length;
-    h += '<div class="obj-line obj-muted">Pesagens: ' + nReais + (nReais ? ' · última em ' + curta(reais[nReais - 1].data) : '') + ' (dias sem pesagem aparecem como estimativa e não contam como medida)</div>';
+    det.push('<div class="obj-line obj-muted">Pesagens: ' + nReais + (nReais ? ' · última em ' + curta(reais[nReais - 1].data) : '') + ' (dias sem pesagem aparecem como estimativa e não contam como medida)</div>');
     h += '<div class="obj-line obj-muted">Esperado em ' + curta(o.data_alvo) + ': ' + peso(c.esperadoAlvo) + ' · total ' + sinal(c.esperadoAlvo - o.peso_inicial_kg) + ' kg</div>';
-    h += marcosHtml(o, reais || [], medidas, hoje);
+    h += marcosHtml(o, reais || [], medidas, hoje, det);
+    if (det.length) {
+      h += '<details class="obj-mais" id="objDetalhes"' + (lembrarDetalhes() ? ' open' : '') + '><summary>Ver detalhes do cálculo</summary>' + det.join('') + '</details>';
+    }
     return h + '</section>';
   }
 

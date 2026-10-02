@@ -376,6 +376,14 @@
 
   /* marcos de peso (card do objetivo) */
   .obj-marcos { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  /* explicações do cálculo do objetivo: recolhidas por padrão (o essencial fica à vista) */
+  .obj-mais { margin-top: 8px; border-top: 1px solid var(--line); }
+  .obj-mais > summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 700; color: #64D2FF; list-style: none; }
+  .obj-mais > summary::-webkit-details-marker { display: none; }
+  .obj-mais > summary::before { content: '▸'; transition: transform .15s; }
+  .obj-mais[open] > summary::before { transform: rotate(90deg); }
+  .obj-mais[open] > summary { margin-bottom: 2px; }
   .marcos-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 8px; }
   .marco { font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 999px; color: var(--muted); background: rgba(255,255,255,0.05); border: 1px solid var(--line); }
   .marco.ok { color: #30D158; background: rgba(48,209,88,0.14); border-color: rgba(48,209,88,0.35); }
