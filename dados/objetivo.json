@@ -53,11 +53,11 @@
       "gasto_inferido": null,
       "gasto_inferido_falta": "sem pesagens depois de 2026-10-03 (os 4 primeiros dias são pulados)",
       "ingestao_media": 1570,
-      "ingestao_fonte": "meta de kcal — só 0 de 2 dia(s) fechados do objetivo têm registro completo confirmado (precisa 3)",
+      "ingestao_fonte": "meta de kcal — só 0 de 3 dia(s) fechados do objetivo têm registro completo confirmado (precisa 3)",
       "dias_completos": 0,
-      "dias_fechados": 2,
+      "dias_fechados": 3,
       "deficit_dia": 1327,
-      "atualizado": "2026-10-01",
+      "atualizado": "2026-10-02",
       "meta_calculada_kg": 1.21,
       "meta_origem": "automática (déficit)"
     }

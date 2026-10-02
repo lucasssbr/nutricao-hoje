@@ -1,12 +1,15 @@
 {
-  "_sobre": "DERIVADO (scripts/derivados.py) — não editar. Prévia da sugestão de amanhã; a oficial é montada à meia-noite (fechar_dia.py).",
-  "para": "2026-10-03",
+  "data": "2026-10-02",
+  "atualizado": "2026-10-02T00:23:05-07:00",
+  "fechado": false,
   "meta": {
     "kcal": 1570,
     "p": 180,
     "c": 100,
     "g": 50
   },
+  "peso_kg": null,
+  "lancado": [],
   "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 3 dias + Peito de frango sem pele (cru)",
   "sugestao": [
     {
