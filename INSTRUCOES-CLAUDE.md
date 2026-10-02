@@ -309,6 +309,7 @@ Curto e direto; detalhe técnico só se ajudar a decidir.
 
 ## Pendências conhecidas (não resolvidas nesta rodada)
 
+- **Sequência/"streak" (ex.: "N dias seguidos batendo a proteína"): NÃO fazer** — Lucas, 02/10: prefere sem. Não propor de novo sem ele pedir.
 - **App sem internet (service worker/cache offline): NÃO fazer** — Lucas, 02/10: não costuma abrir sem sinal; o risco de prender versão antiga no iPhone não compensa. Não propor de novo sem ele pedir.
 
 - **Modelo de gordura corporal/Forbes** (`objetivo.js: simular`) — revisar premissas separadamente (fração de Forbes, pausas, faixas).
