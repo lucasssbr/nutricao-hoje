@@ -294,6 +294,8 @@ Dois assistentes trabalham neste repo:
 
 Curto e direto; detalhe técnico só se ajudar a decidir.
 
+**Mensagens para o Grok ou o Codex** (pedido do Lucas, 02/10): sempre num **bloco de código** separado (```), uma mensagem por bloco, começando com `[CLAUDE → GROK] #NN` / `[CLAUDE → CODEX] #NN` — no iPhone o bloco tem botão de copiar e o texto sai inteiro, sem formatação. Nada de mensagem para colar escrita como citação (>) ou misturada com o texto da resposta.
+
 ## Como editar com segurança
 
 1. Alterar os arquivos dentro deste repositório (`/workspace/nutricao-hoje-pages/`), nunca uma cópia solta como fonte final.
