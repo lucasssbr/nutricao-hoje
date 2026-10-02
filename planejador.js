@@ -522,7 +522,7 @@
     tetosDoDia: tetosDoDia, consumo: consumo, grade: grade, custoMacros: custoMacros,
     hash: hash, baseDoDia: baseDoDia, partesDaBase: partesDaBase, rascunhoDaSugestao: rascunhoDaSugestao,
     novoRascunho: novoRascunho, calcular: calcular, revisar: revisar, aceitarBase: aceitarBase,
-    restantes: restantes, totalDoDia: totalDoDia, alternativasItem: alternativasItem,
+    restantes: restantes, totalDoDia: totalDoDia, alternativasItem: alternativasItem, porcao: porcao,
     ajustarRefeicao: ajustarRefeicao, alternativasRefeicao: alternativasRefeicao,
     armazem: armazem, chaveRascunho: chaveRascunho, limparAntigos: limparAntigos, textoGrok: textoGrok
   };

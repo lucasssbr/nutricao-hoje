@@ -380,3 +380,10 @@
   .marco.ok { color: #30D158; background: rgba(48,209,88,0.14); border-color: rgba(48,209,88,0.35); }
   .marco.prox { color: var(--text); border-color: #64D2FF; }
   .marcos-bar > div { background: #30D158; }
+
+  /* link do cartão de sugestão para o planejador */
+  .plan-link {
+    display: block; margin-top: 10px; min-height: 44px; line-height: 44px; text-align: center;
+    border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none;
+    color: #F3E8FF; background: rgba(191,90,242,0.22); border: 1px solid rgba(191,90,242,0.45);
+  }

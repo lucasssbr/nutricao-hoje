@@ -46,6 +46,7 @@ const PAGINAS = [
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
   ['Hoje · horário da atualização', '/', '#updateStamp', /^Atualizado \d{2}\/\d{2} · \d{2}:\d{2}$/],
+  ['Planejar', '/planejar.html', '#resumo', /Dia projetado/],
 ];
 // prévia de amanhã = sugestão automática (dados/previa.json, gerada pelo derivados.py)
 const previaArq = path.join(ROOT, 'dados', 'previa.json');

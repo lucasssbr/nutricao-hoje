@@ -307,6 +307,10 @@
       });
       html += '<div class="proj">Dia projetado: ' + ri(proj.kcal) + ' kcal · P' + ri(proj.p) + ' · C' + ri(proj.c) + ' · G' + ri(proj.g);
       html += '</div>';
+      if (!data.fechado && dia >= localISODate()) {
+        // planejador: experimentar trocas e quantidades num rascunho (não lança nada)
+        html += '<a class="plan-link" href="./planejar.html?d=' + esc(dia) + '">Planejar / trocar alimentos →</a>';
+      }
       html += '</section>';
     }
 

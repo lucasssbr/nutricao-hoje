@@ -65,7 +65,9 @@ if [ -n "${PAGINAS_IMAGEM:-}" ]; then
   docker run --rm "${EXTRA[@]}" --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -e PYTHONDONTWRITEBYTECODE=1 \
     -e NAVEGADORES="${NAVEGADORES:-chromium,webkit}" -e EXIGIR_WEBKIT="${EXIGIR_WEBKIT:-}" \
     -v "$RAIZ_ABS:$RAIZ_ABS" -w "$RAIZ_ABS" "$PAGINAS_IMAGEM" \
-    node scripts/testar_paginas.js "http://127.0.0.1:$PORTA_USADA"
+    sh -c 'node scripts/testar_paginas.js "$1" && node scripts/testar_planejador.js "$1"' _ "http://127.0.0.1:$PORTA_USADA"
 else
   NAVEGADORES="${NAVEGADORES:-chromium,webkit}" node scripts/testar_paginas.js "http://127.0.0.1:$PORTA_USADA"
+  # fluxos do planejador (editar, trocar, desfazer, rascunho, base mudou, sem armazenamento/clipboard)
+  NAVEGADORES="${NAVEGADORES:-chromium,webkit}" node scripts/testar_planejador.js "http://127.0.0.1:$PORTA_USADA"
 fi
