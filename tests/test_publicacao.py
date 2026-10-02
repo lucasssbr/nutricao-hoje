@@ -27,6 +27,7 @@ def dia_aberto(clone):
 def editar_dia_cru(clone, kcal_extra, msg):
     """Simula um envio 'cru' (sem regenerar derivados): acrescenta uma refeição válida ao dia aberto."""
     clone = pathlib.Path(clone)
+    git(clone, "pull", "-q", "--rebase", "origin", "main")   # outro clone pode ter publicado derivados antes
     sys.path.insert(0, str(clone / "scripts"))
     from item import esperado
     d = dia_aberto(clone)

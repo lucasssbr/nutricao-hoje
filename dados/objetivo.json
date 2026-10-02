@@ -51,7 +51,7 @@
       "gasto_fonte": "estimado",
       "gasto_formula": 2897,
       "gasto_inferido": null,
-      "gasto_inferido_falta": "sem pesagens depois de 2026-10-03 (os 4 primeiros dias são pulados)",
+      "gasto_inferido_falta": "sem pesagens a partir de 3 out (os 4 primeiros dias do objetivo não contam: água e glicogênio)",
       "ingestao_media": 1570,
       "ingestao_fonte": "meta de kcal — só 0 de 3 dia(s) fechados do objetivo têm registro completo confirmado (precisa 3)",
       "dias_completos": 0,

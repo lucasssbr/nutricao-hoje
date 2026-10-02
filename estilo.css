@@ -91,6 +91,7 @@
   .macro .nums { font-size: 12px; font-weight: 700; }
   .macro .nums span { color: var(--muted); font-weight: 500; }
   .macro .nums .excesso { font-style: normal; color: var(--over); font-weight: 800; }
+  .macro .nums .faltou { font-style: normal; color: var(--protein); font-weight: 800; }
   .alert {
     margin-top: 12px;
     background: rgba(255,159,10,0.12);

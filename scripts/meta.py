@@ -31,6 +31,12 @@ from comum import DADOS, arred, eh_numero, gravar_json, hoje_la, ler_json, regis
 KCAL_POR_KG = 7700
 MIN_DIAS = 3
 JANELA, PULA, MIN_SPAN, MIN_PESOS, MIN_DIAS_INF, MIN_COBERTURA = 21, 4, 10, 6, 7, 0.8
+MESES = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+
+
+def data_curta(d):
+    """2026-10-03 → '3 out' (texto que aparece no site)."""
+    return f"{d.day} {MESES[d.month - 1]}"
 
 
 def idade(nasc_ano_mes, hoje):
@@ -60,7 +66,7 @@ def gasto_inferido(pesos, kcal_completos, inicio):
     ini = max(fim - datetime.timedelta(days=JANELA - 1), inicio + datetime.timedelta(days=PULA))
     pts = [(d, kg) for d, kg in pesos if d >= ini]
     if not pts:
-        return None, f"sem pesagens depois de {ini.isoformat()} (os {PULA} primeiros dias são pulados)"
+        return None, f"sem pesagens a partir de {data_curta(ini)} (os {PULA} primeiros dias do objetivo não contam: água e glicogênio)"
     a = pts[0][0]
     span = (fim - a).days
     # a variação de peso de a até fim reflete o que foi comido de a até o dia anterior a fim

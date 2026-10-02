@@ -218,7 +218,9 @@
     // proteína é piso: passar da meta é bom; carbo/gordura acima da meta = listrado + "+N" (o carbo já é laranja)
     function acima(val, m, cls) { return cls !== 'p' && ri(val) > ri(m); }
     function macroNums(val, m, cls) {
-      return ri(val) + ' <span>/ ' + ri(m) + ' g</span>' + (acima(val, m, cls) ? ' <em class="excesso">+' + (ri(val) - ri(m)) + '</em>' : '');
+      // dia fechado: proteína abaixo do piso mostra quanto faltou (no dia aberto isso já está no "restante")
+      var faltou = data.fechado && cls === 'p' && ri(val) < ri(m) ? ' <em class="faltou">−' + (ri(m) - ri(val)) + '</em>' : '';
+      return ri(val) + ' <span>/ ' + ri(m) + ' g</span>' + (acima(val, m, cls) ? ' <em class="excesso">+' + (ri(val) - ri(m)) + '</em>' : '') + faltou;
     }
     function macroFill(val, m, cls) {
       var over = acima(val, m, cls);
