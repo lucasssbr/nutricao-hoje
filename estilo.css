@@ -315,6 +315,9 @@
   .pc-hit { fill: transparent; cursor: pointer; }
 
   .hist-summary-comp { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.4; }
+  .hist-summary-vsmeta { margin-top: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .hist-summary-vsmeta .hm-acima { color: var(--over); font-weight: 800; }
+  .hist-summary-vsmeta .hm-falta { color: var(--protein); font-weight: 800; }
 
   .hist-list .d span.over { color: var(--over); }
 

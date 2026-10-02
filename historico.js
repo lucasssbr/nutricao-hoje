@@ -155,8 +155,27 @@
         '<span><b>C' + ri(avg(cs)) + '</b></span>' +
         '<span><b>G' + ri(avg(gs)) + '</b></span>' +
       '</div>' +
+      vsMetaLinha(last7) +
       '<div class="hist-summary-meta">' + ok + ' de ' + last7.length + ' dias na meta</div>' +
       coberturaLinha(last7) + pesoLine + compLine;
+  }
+
+  // média dos dias × média das metas desses dias, com as mesmas cores do dia: carbo/gordura/kcal acima em
+  // laranja, proteína abaixo (piso) em azul; proteína acima da meta não é excesso
+  function vsMetaLinha(dias) {
+    var m = {}, c = {};
+    ['kcal', 'p', 'c', 'g'].forEach(function (k) {
+      c[k] = avg(dias.map(function (d) { return d.cons[k]; }));
+      m[k] = avg(dias.map(function (d) { return d.meta[k]; }));
+    });
+    var o = isOrange(c, m);
+    function parte(k, rot) {
+      var x = ri(c[k]) - ri(m[k]), txt = rot + ' ' + (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x);
+      var cls = k === 'p' ? (o.p ? 'hm-falta' : '') : (o[k] && x > 0 ? 'hm-acima' : '');
+      return cls ? '<span class="' + cls + '">' + txt + '</span>' : txt;
+    }
+    return '<div class="hist-summary-vsmeta">Média vs meta: ' + parte('kcal', 'kcal') + ' · ' + parte('p', 'P') + ' · ' +
+      parte('c', 'C') + ' · ' + parte('g', 'G') + '</div>';
   }
 
   // cobertura: completo = confirmado pelo Lucas ou automático no fechamento (dia com refeições, sem aviso de parcial)

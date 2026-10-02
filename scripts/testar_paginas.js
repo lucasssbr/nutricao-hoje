@@ -43,6 +43,7 @@ const PAGINAS = [
   ['Prévia de dia futuro', '/dia.html?d=' + futuro, '#meals', /Prévia do plano padrão/, 'dados/' + futuro + '.json'],
   ['Histórico', '/historico.html', '#histSummary', /./],
   ['Histórico · peso', '/historico.html', '#pesoCard', /peso/i],
+  ['Histórico · média vs meta', '/historico.html', '#histSummary', /Média vs meta: kcal [+−]?\d+ · P [+−]?\d+ · C [+−]?\d+ · G [+−]?\d+/],
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
   ['Hoje · horário da atualização', '/', '#updateStamp', /^Atualizado \d{2}\/\d{2} · \d{2}:\d{2}$/],
