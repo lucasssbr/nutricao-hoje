@@ -221,6 +221,26 @@ async function checarResumoSemana(ctx) {
   return erros;
 }
 
+// Alimentos: ordenar por proteína por 100 kcal (o 1º é o de maior densidade; a escolha é lembrada)
+async function checarOrdemProteina(ctx) {
+  const erros = [];
+  const ali = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', 'alimentos.json'), 'utf8'));
+  const ids = Object.keys(ali).filter((k) => k[0] !== '_' && ali[k].kcal > 0);
+  const melhor = ids.reduce((m, k) => (ali[k].p / ali[k].kcal > ali[m].p / ali[m].kcal ? k : m), ids[0]);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.goto(BASE + '/alimentos.html', { waitUntil: 'networkidle' });
+  await page.locator('[data-ordem="proteina"]').click();
+  const primeiro = (await page.locator('#biblioteca .ali-card b').first().innerText()).trim();
+  if (primeiro !== ali[melhor].nome) erros.push('1º por proteína/kcal deveria ser ' + ali[melhor].nome + ' (veio ' + primeiro + ')');
+  if (!/por 100\s?kcal/.test(await page.locator('#biblioteca .ali-dens').first().innerText())) erros.push('sem "proteína por 100 kcal"');
+  await page.reload({ waitUntil: 'networkidle' });
+  if ((await page.locator('[data-ordem="proteina"]').getAttribute('aria-pressed')) !== 'true') erros.push('ordem por proteína não foi lembrada');
+  await page.locator('[data-ordem="nome"]').click();   // volta ao normal para as outras checagens
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -240,7 +260,7 @@ async function checarResumoSemana(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -253,5 +273,5 @@ async function checarResumoSemana(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 6} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 7} checagens cada).`);
 })();

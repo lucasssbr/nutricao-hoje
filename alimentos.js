@@ -57,10 +57,23 @@
     el.innerHTML = html || '<div class="hist-empty">Nenhuma favorita ainda</div>';
   }
 
+  // proteína por 100 kcal: quanto de proteína cada caloria traz (ajuda a escolher quando falta proteína)
+  function densidade(a) { var k = Number(a.kcal), pr = Number(a.p); return k > 0 && isFinite(pr) ? pr / k * 100 : null; }
+  var CHAVE_ORDEM = 'nutri-ali-ordem';
+  function ordemSalva() { try { return window.localStorage.getItem(CHAVE_ORDEM) === 'proteina' ? 'proteina' : 'nome'; } catch (e) { return 'nome'; } }
+  var ordem = ordemSalva(), ALI = null;
+
   function renderBiblioteca(ali) {
+    ALI = ali;
     var el = document.getElementById('biblioteca');
     var ids = Object.keys(ali).filter(function (k) { return k.charAt(0) !== '_'; });
-    ids.sort(function (a, b) { return ali[a].nome.localeCompare(ali[b].nome, 'pt'); });
+    ids.sort(function (a, b) {
+      if (ordem === 'proteina') {
+        var da = densidade(ali[a]), db = densidade(ali[b]);
+        if (da !== db) return (db == null ? -1 : db) - (da == null ? -1 : da);
+      }
+      return ali[a].nome.localeCompare(ali[b].nome, 'pt');
+    });
     var estimados = 0;
     var html = ids.map(function (id) {
       var a = ali[id];
@@ -73,13 +86,23 @@
       return '<details class="ali-card"><summary class="ali-head"><b>' + esc(a.nome) + '</b>' +
         '<span class="ali-fonte ' + f.cls + '">' + esc(f.txt) + '</span>' +
         '<span class="ali-mac">' + esc(a.base) + ': ' + n1(a.kcal) + ' kcal · P' + n1(a.p) + ' · C' + n1(a.c) + ' · G' + n1(a.g) +
-        (a.fibra != null ? ' · fibra ' + n1(a.fibra) : '') + '</span></summary>' +
+        (a.fibra != null ? ' · fibra ' + n1(a.fibra) : '') + '</span>' +
+        (densidade(a) != null ? '<span class="ali-dens">Proteína: <span class="v">' + n1(densidade(a)) + '\u00a0g</span> por 100\u00a0kcal</span>' : '') + '</summary>' +
         (extra.length ? '<div class="ali-obs">' + esc(extra.join(' · ')) + '</div>' : '') +
         (a.apelidos && a.apelidos.length ? '<div class="ali-obs">Apelidos: ' + esc(a.apelidos.join(', ')) + '</div>' : '') +
         (a.obs ? '<div class="ali-obs">' + esc(a.obs) + '</div>' : '') +
         '</details>';
     }).join('');
-    el.innerHTML = html;
+    el.innerHTML = '<div class="ali-ordem" role="group" aria-label="Ordem da biblioteca">' +
+      '<button type="button" data-ordem="nome" aria-pressed="' + (ordem === 'nome') + '">A–Z</button>' +
+      '<button type="button" data-ordem="proteina" aria-pressed="' + (ordem === 'proteina') + '">Mais proteína por kcal</button></div>' + html;
+    el.querySelectorAll('[data-ordem]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        ordem = b.getAttribute('data-ordem');
+        try { window.localStorage.setItem(CHAVE_ORDEM, ordem); } catch (e) { /* sem armazenamento: vale só agora */ }
+        renderBiblioteca(ALI);
+      });
+    });
     document.getElementById('aliResumo').textContent = ids.length + ' alimentos' +
       (estimados ? ' · ' + estimados + ' estimado' + (estimados > 1 ? 's' : '') + ' (mande o rótulo)' : ' · todos com fonte');
   }
