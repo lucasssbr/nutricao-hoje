@@ -186,6 +186,31 @@ async function checarPlanejarAmanha(ctx) {
   return erros;
 }
 
+// Histórico: "Resumo da semana" gera o texto (médias = cartão, por dia, pontos de atenção) e copia
+async function checarResumoSemana(ctx) {
+  const erros = [];
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.addInitScript(() => {
+    window.__copiado = null;
+    Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t) => { window.__copiado = t; return Promise.resolve(); } }, configurable: true });
+  });
+  await page.goto(BASE + '/historico.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  await page.locator('#resumoBtn').click();
+  await page.locator('#resumoPainel [data-r="copiar"]').click();
+  await page.waitForTimeout(100);
+  const txt = await page.evaluate(() => window.__copiado) || '';
+  if (!/^RESUMO DA SEMANA/.test(txt)) erros.push('texto não começa com "RESUMO DA SEMANA"');
+  for (const trecho of ['Média por dia:', 'Diferença:', 'Por dia:', 'Pontos de atenção:']) if (!txt.includes(trecho)) erros.push('resumo sem "' + trecho + '"');
+  const media = (await page.locator('.hist-summary-avgs').innerText()).match(/\d+/);
+  if (media && !txt.includes('Média por dia: ' + media[0] + ' kcal')) erros.push('média do resumo ≠ cartão (' + media[0] + ' kcal)');
+  if (!/Copiado/.test(await page.locator('#resumoStatus').innerText())) erros.push('sem confirmação de cópia');
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -205,7 +230,7 @@ async function checarPlanejarAmanha(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -218,5 +243,5 @@ async function checarPlanejarAmanha(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 5} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 6} checagens cada).`);
 })();

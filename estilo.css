@@ -324,6 +324,15 @@
 
   .hist-summary-comp { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.4; }
   .hist-summary-vsmeta { margin-top: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  /* resumo da semana para compartilhar */
+  .btn-resumo { margin-top: 12px; }
+  .resumo-texto { width: 100%; box-sizing: border-box; min-height: 220px; margin-top: 10px; padding: 10px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); font: 12px/1.45 ui-monospace, Menlo, monospace; resize: vertical; }
+  .resumo-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .resumo-acoes .btn-csv { flex: 1 1 auto; margin-top: 0; }
+  .resumo-status { margin-top: 6px; font-size: 12px; color: var(--muted); min-height: 16px; }
+  #resumoPainel[hidden] { display: none; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .hist-summary-vsmeta .hm-acima { color: var(--over); font-weight: 800; }
   .hist-summary-vsmeta .hm-falta { color: var(--protein); font-weight: 800; }
 

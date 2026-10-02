@@ -157,7 +157,112 @@
       '</div>' +
       vsMetaLinha(last7) +
       '<div class="hist-summary-meta">' + ok + ' de ' + last7.length + ' dias na meta</div>' +
-      coberturaLinha(last7) + pesoLine + compLine;
+      coberturaLinha(last7) + pesoLine + compLine +
+      '<button type="button" class="btn-csv btn-resumo" id="resumoBtn">Resumo da semana · copiar / compartilhar</button>' +
+      '<div id="resumoPainel" hidden></div>';
+    RES.dias = last7;
+    document.getElementById('resumoBtn').addEventListener('click', abrirResumo);
+  }
+
+  // ---------- resumo da semana (texto pronto para o Grok, o Codex ou um nutricionista) ----------
+  var RES = { dias: [], pesos: [], obj: null };
+  function ddmm(iso) { var p = iso.split('-'); return p[2] + '/' + p[1]; }
+  function sinalN(x) { return x > 0 ? '+' + x : x < 0 ? '−' + Math.abs(x) : '0'; }
+
+  function textoResumo() {
+    var dias = RES.dias.slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+    var n = dias.length, l = [];
+    if (!n) return 'RESUMO DA SEMANA — Nutrição Hoje\nNenhum dia fechado ainda.';
+    var c = {}, m = {};
+    ['kcal', 'p', 'c', 'g'].forEach(function (k) {
+      c[k] = avg(dias.map(function (d) { return d.cons[k]; }));
+      m[k] = avg(dias.map(function (d) { return d.meta[k]; }));
+    });
+    var dif = {};
+    ['kcal', 'p', 'c', 'g'].forEach(function (k) { dif[k] = ri(c[k]) - ri(m[k]); });
+    var ok = dias.filter(function (d) { return naMeta(d.cons, d.meta); }).length;
+    var pOk = dias.filter(function (d) { return ri(d.cons.p) >= ri(d.meta.p); }).length;
+    var compl = dias.filter(function (d) { return d.registro === 'completo'; }).length;
+    l.push('RESUMO DA SEMANA — Nutrição Hoje');
+    l.push('Período: ' + ddmm(dias[0].data) + ' a ' + ddmm(dias[n - 1].data) + ' · ' + n + ' dia' + (n > 1 ? 's' : '') + ' fechado' + (n > 1 ? 's' : ''));
+    l.push('');
+    l.push('Média por dia: ' + ri(c.kcal) + ' kcal | P ' + ri(c.p) + ' | C ' + ri(c.c) + ' | G ' + ri(c.g));
+    l.push('Meta: ' + ri(m.kcal) + ' kcal | P ' + ri(m.p) + ' | C ' + ri(m.c) + ' | G ' + ri(m.g));
+    l.push('Diferença: kcal ' + sinalN(dif.kcal) + ' | P ' + sinalN(dif.p) + ' | C ' + sinalN(dif.c) + ' | G ' + sinalN(dif.g));
+    l.push('Dias na meta: ' + ok + ' de ' + n + ' · proteína batida: ' + pOk + ' de ' + n + ' · registro completo: ' + compl + ' de ' + n);
+    // peso: só pesagens REAIS do período (estimativas não contam)
+    var ini = dias[0].data, fim = dias[n - 1].data;
+    var ps = (RES.pesos || []).filter(function (p) { return p.data >= ini && p.data <= fim && p.kg != null && !isNaN(Number(p.kg)); })
+      .sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+    l.push('');
+    if (ps.length) {
+      var med = avg(ps.map(function (p) { return Number(p.kg); }));
+      var linha = 'Peso: média ' + kgStr(med) + ' kg (' + ps.length + ' pesage' + (ps.length > 1 ? 'ns' : 'm') + ')';
+      if (ps.length >= 2) {
+        var d = Number(ps[ps.length - 1].kg) - Number(ps[0].kg);
+        linha += ' · ' + kgStr(ps[0].kg) + ' (' + ddmm(ps[0].data) + ') → ' + kgStr(ps[ps.length - 1].kg) + ' kg (' + ddmm(ps[ps.length - 1].data) + '), ' +
+          (N.arred(d, 1) > 0 ? '+' : N.arred(d, 1) < 0 ? '−' : '') + kgStr(Math.abs(d)) + ' kg';
+      }
+      l.push(linha);
+      if (RES.obj && window.NutriObjetivo) {
+        var O = window.NutriObjetivo, ult = ps[ps.length - 1];
+        var esp = O.calc(RES.obj, ult.data).esperado(ult.data), st = O.status(Number(ult.kg), esp);
+        l.push('Objetivo (alvo ' + ddmm(RES.obj.data_alvo) + '): esperado em ' + ddmm(ult.data) + ' ' + kgStr(esp) + ' kg · ' + st.txt.replace('\u00a0', ' '));
+      }
+    } else {
+      l.push('Peso: sem pesagem no período.');
+    }
+    l.push('');
+    l.push('Por dia:');
+    dias.forEach(function (d) {
+      l.push('- ' + ddmm(d.data) + ': ' + ri(d.cons.kcal) + ' kcal (' + sinalN(ri(d.cons.kcal) - ri(d.meta.kcal)) + ') | P ' + ri(d.cons.p) + ' | C ' + ri(d.cons.c) + ' | G ' + ri(d.cons.g) +
+        (d.peso != null ? ' | peso ' + kgStr(Number(d.peso)) + ' kg' : '') + (d.registro !== 'completo' ? ' | registro ' + (d.registro === 'parcial' ? 'parcial' : 'não confirmado') : ''));
+    });
+    // pontos de atenção: só leitura dos números (mesmos limites do "dias na meta"), sem prescrever dieta
+    var o = isOrange(c, m), at = [];
+    if (o.kcal && dif.kcal > 0) at.push('Calorias acima da meta em média (' + sinalN(dif.kcal) + ' kcal/dia).');
+    if (o.kcal && dif.kcal < 0) at.push('Calorias bem abaixo da meta em média (' + sinalN(dif.kcal) + ' kcal/dia).');
+    if (o.p) at.push('Proteína abaixo da meta em média (' + sinalN(dif.p) + ' g/dia); batida em ' + pOk + ' de ' + n + ' dias.');
+    if (o.c) at.push('Carboidrato acima da meta em média (' + sinalN(dif.c) + ' g/dia).');
+    if (o.g) at.push('Gordura acima da meta em média (' + sinalN(dif.g) + ' g/dia).');
+    if (compl < n) at.push((n - compl) + ' dia(s) sem registro completo: as médias podem estar incompletas.');
+    l.push('');
+    l.push('Pontos de atenção:');
+    if (!at.length) at.push('Nenhum: médias dentro da meta.');
+    at.forEach(function (x) { l.push('- ' + x); });
+    return l.join('\n');
+  }
+
+  function abrirResumo() {
+    var painel = document.getElementById('resumoPainel');
+    if (!painel) return;
+    var podeShare = typeof navigator.share === 'function';
+    var podeCopiar = !!(navigator.clipboard && navigator.clipboard.writeText);
+    painel.innerHTML = '<label class="sr" for="resumoTexto">Resumo da semana</label>' +
+      '<textarea id="resumoTexto" class="resumo-texto" readonly>' + esc(textoResumo()) + '</textarea>' +
+      '<div class="resumo-acoes">' +
+      (podeShare ? '<button type="button" class="btn-csv" data-r="share">Compartilhar…</button>' : '') +
+      (podeCopiar ? '<button type="button" class="btn-csv" data-r="copiar">Copiar</button>' : '') +
+      '<button type="button" class="btn-csv" data-r="sel">Selecionar texto</button></div>' +
+      '<div class="resumo-status" id="resumoStatus" role="status">' + (podeShare || podeCopiar ? '' : 'Este navegador não copia sozinho: toque em "Selecionar texto" e depois em Copiar.') + '</div>';
+    painel.hidden = false;
+    var t = document.getElementById('resumoTexto'), st = document.getElementById('resumoStatus');
+    function selecionar() { t.focus(); t.setSelectionRange(0, t.value.length); try { t.select(); } catch (e) { /* nada */ } }
+    painel.querySelectorAll('[data-r]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var a = b.getAttribute('data-r');
+        if (a === 'share') {
+          navigator.share({ text: t.value }).then(function () { st.textContent = 'Pronto.'; })
+            .catch(function (e) { if (!e || e.name !== 'AbortError') st.textContent = 'Não deu para compartilhar: use Copiar ou Selecionar texto.'; });
+        } else if (a === 'copiar') {
+          navigator.clipboard.writeText(t.value).then(function () { st.textContent = 'Copiado. É só colar.'; })
+            .catch(function () { selecionar(); st.textContent = 'O navegador bloqueou a cópia: o texto está selecionado — toque em Copiar.'; });
+        } else {
+          selecionar(); st.textContent = 'Texto selecionado: toque em Copiar.';
+        }
+      });
+    });
+    t.style.height = Math.min(420, t.scrollHeight + 4) + 'px';
   }
 
   // média dos dias × média das metas desses dias, com as mesmas cores do dia: carbo/gordura/kcal acima em
@@ -266,6 +371,7 @@
   }
 
   function renderPeso(todos, obj) {
+    RES.pesos = todos || []; RES.obj = obj || null;
     var box = document.getElementById('pesoCard');
     if (!box) return;
     // preenche dias sem peso (média entre vizinhos / repete o último) — só na tela, nunca nos dados
