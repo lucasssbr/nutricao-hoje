@@ -134,13 +134,20 @@ def macros(al, q):
     return [al[k] * f for k in MACROS]
 
 
-def custo(tot, meta, por_horario, escolha, tipicos, freq):
+def custo_macros(tot, meta):
+    """Distância do total do dia [kcal, p, c, g] até a meta — a MESMA conta do planejador (planejador.js:
+    custoMacros, testado por paridade): proteína abaixo e gordura acima pesam muito; kcal e C perto."""
     kcal, p, c, g = tot
     f = ((kcal - meta["kcal"]) / 40) ** 2
     f += 6 * (max(0.0, meta["p"] - p) / 5) ** 2          # proteína abaixo pesa muito
     f += 0.3 * (max(0.0, p - meta["p"] - 15) / 10) ** 2   # muito acima: leve
     f += 6 * (max(0.0, g - meta["g"]) / 5) ** 2           # gordura acima pesa muito
     f += ((c - meta["c"]) / 10) ** 2
+    return f
+
+
+def custo(tot, meta, por_horario, escolha, tipicos, freq):
+    f = custo_macros(tot, meta)
     for h, ph in por_horario.items():                      # proteína distribuída
         if h != "Lanche":
             f += 0.5 * (max(0.0, 30 - ph) / 10) ** 2
