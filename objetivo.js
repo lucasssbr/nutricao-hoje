@@ -35,9 +35,9 @@
 
   function status(real, esperado) {
     var d = real - esperado;
-    if (d <= -0.3) return { cls: 'ok', txt: 'adiantado ' + kg(-d) + ' kg' };
+    if (d <= -0.3) return { cls: 'ok', txt: 'adiantado ' + kg(-d) + '\u00a0kg' };
     if (d < 0.3) return { cls: 'ok', txt: 'no ritmo' };
-    return { cls: 'warn', txt: 'atrás ' + kg(d) + ' kg' };
+    return { cls: 'warn', txt: 'atrás ' + kg(d) + '\u00a0kg' };
   }
 
   // Marcos de 1 kg até a meta final (estilo Happy Scale). Referência = média dos últimos 7 dias de peso
@@ -261,7 +261,7 @@
     h += '<div class="obj-line obj-muted">Dia ' + (c.passados + 1) + ' de ' + (c.tot + 1) + ' · semana ' + c.semana + '</div>';
     function mil(n) { return String(N.ri(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     var det = [];   // explicações do cálculo: ficam em "Ver detalhes" (os números principais continuam à vista)
-    h += '<div class="obj-line"><b>Meta da semana ' + c.sem.n + '</b> (' + curta(c.sem.ini) + '–' + curta(c.sem.fim) + '): −' + kg(o.meta_semanal_kg) + ' kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' na pesagem de ' + curta(c.sem.pesagem) + '</div>';
+    h += '<div class="obj-line"><b>Meta da semana ' + c.sem.n + '</b> (' + curta(c.sem.ini) + '–' + curta(c.sem.fim) + '): −' + kg(o.meta_semanal_kg) + '\u00a0kg (−' + lb(o.meta_semanal_kg) + ' lb) → ~' + peso(c.esperadoFimSemana) + ' na pesagem de ' + curta(c.sem.pesagem) + '</div>';
     if (o.calculo) {
       var fonte = o.calculo.gasto_fonte;
       var gastoTxt = fonte === 'informado' ? 'seu gasto ' + mil(o.calculo.gasto_estimado)
@@ -279,7 +279,7 @@
         det.push('<div class="obj-line obj-muted">Ingestão usada: ' + esc(o.calculo.ingestao_fonte) + '.</div>');
       }
       if (o.meta_modo === 'manual') {
-        det.push('<div class="obj-line obj-muted">Meta semanal manual (escolhida por você); pelo cálculo seria −' + kg(o.calculo.meta_calculada_kg || 0) + ' kg/sem.</div>');
+        det.push('<div class="obj-line obj-muted">Meta semanal manual (escolhida por você); pelo cálculo seria −' + kg(o.calculo.meta_calculada_kg || 0) + '\u00a0kg/sem.</div>');
       }
     }
     if (c.passados < 7) {
