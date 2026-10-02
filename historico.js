@@ -359,7 +359,8 @@
     box.innerHTML = '<div class="hist-summary-title">Calorias e proteína · últimos 14 dias</div>' +
       '<div class="pc-tip" id="bcTip">Toque numa barra pra ver o dia</div>' +
       grafico('kcal', function (d) { return d.cons.kcal - d.meta.kcal > 75; }, 'bc-kcal', 'Calorias por dia · {meta} · <span class="bc-k-over"></span> acima') +
-      grafico('p', function () { return false; }, 'bc-p', 'Proteína (g) por dia · {meta}');
+      grafico('p', function () { return false; }, 'bc-p', 'Proteína (g) por dia · {meta}') +
+      '<div id="protRefCard" class="pr-card" hidden></div>';
     var tip = document.getElementById('bcTip');
     box.querySelectorAll('.pc-hit').forEach(function (h) {
       h.addEventListener('click', function () {
@@ -367,6 +368,49 @@
         tip.textContent = labelDia(dt).replace(/ \d{4}$/, '') + ': ' + (d ? ri(d.cons.kcal) + ' kcal (' + difTxt(d.cons.kcal, d.meta.kcal) + ') · P' + ri(d.cons.p) + ' (' +
           difTxt(d.cons.p, d.meta.p) + ') · C' + ri(d.cons.c) + ' · G' + ri(d.cons.g) : 'sem dia fechado');
       });
+    });
+  }
+
+  // proteína média de cada refeição (Café/Almoço/Lanche/Jantar) nos últimos 7 dias fechados: mostra o padrão
+  // (qual refeição costuma ficar fraca). Horário pelo nome; senão pela hora de consumo (= sugerir.py:horario).
+  var HORARIOS = ['Café', 'Almoço', 'Lanche', 'Jantar'];
+  function horarioDe(r) {
+    var n = String(r.refeicao || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    var pares = [['cafe', 'Café'], ['almoc', 'Almoço'], ['jantar', 'Jantar'], ['ceia', 'Jantar'], ['lanche', 'Lanche'], ['doce', 'Lanche']];
+    for (var i = 0; i < pares.length; i++) if (n.indexOf(pares[i][0]) >= 0) return pares[i][1];
+    var c = String(r.consumido_em || '');
+    if (c.length >= 16 && c[13] === ':') { var hh = parseInt(c.slice(11, 13), 10); return hh < 11 ? 'Café' : hh < 15 ? 'Almoço' : hh < 19 ? 'Lanche' : 'Jantar'; }
+    return null;
+  }
+  function renderProtRefeicao(days) {
+    var box = document.getElementById('protRefCard');
+    if (!box || !days.length) return;
+    var ref = days[0].data;
+    var ult = days.filter(function (d) { return diasEntre(d.data, ref) < 7; });
+    Promise.all(ult.map(function (d) {
+      return fetch('dados/' + d.data + '.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    })).then(function (arqs) {
+      var porH = {}, n = 0;
+      arqs.forEach(function (dia) {
+        if (!dia || !dia.fechado) return;
+        n++;
+        var noDia = {};
+        (dia.lancado || []).forEach(function (r) {
+          var h = horarioDe(r);
+          if (!h) return;
+          noDia[h] = (noDia[h] || 0) + (r.itens || []).reduce(function (t, it) { return t + (Number(it.p) || 0); }, 0);
+        });
+        Object.keys(noDia).forEach(function (h) { (porH[h] = porH[h] || []).push(noDia[h]); });
+      });
+      if (!n || !Object.keys(porH).length) return;
+      var meds = HORARIOS.filter(function (h) { return porH[h]; }).map(function (h) { return { h: h, g: avg(porH[h]), dias: porH[h].length }; });
+      var maior = Math.max.apply(null, meds.map(function (m) { return m.g; })) || 1;
+      box.innerHTML = '<div class="bc-rot">Proteína por refeição · média dos dias em que ela aconteceu (' + n + ' dia' + (n > 1 ? 's' : '') + ')</div>' +
+        meds.map(function (m) {
+          return '<div class="pr-linha"><span class="pr-nome">' + m.h + '</span><span class="pr-trilho"><span class="pr-barra" style="width:' + (100 * m.g / maior).toFixed(1) + '%"></span></span>' +
+            '<span class="pr-val">' + ri(m.g) + '\u00a0g <i>' + m.dias + '/' + n + ' dias</i></span></div>';
+        }).join('');
+      box.hidden = false;
     });
   }
 
@@ -622,6 +666,7 @@
       ligarBotaoCsv(todos);
       renderSummary(closed);
       renderBarras(closed);
+      renderProtRefeicao(closed);
       renderList(closed);
     });
   }

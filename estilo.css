@@ -321,6 +321,15 @@
   .bc-k-over { width: 10px; height: 10px; border-radius: 3px; background: var(--over); display: inline-block; }
   .bc-k-meta { width: 14px; height: 0; border-top: 2px dashed #64D2FF; display: inline-block; opacity: .8; }
   #barrasCard[hidden] { display: none; }
+  /* proteína por refeição (Histórico) */
+  .pr-card[hidden] { display: none; }
+  .pr-card { margin-bottom: 4px; }
+  .pr-linha { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; }
+  .pr-nome { color: var(--muted); font-weight: 700; }
+  .pr-trilho { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+  .pr-barra { display: block; height: 100%; background: var(--protein); border-radius: 4px; }
+  .pr-val { font-weight: 800; color: var(--text); white-space: nowrap; }
+  .pr-val i { font-style: normal; color: var(--muted); font-weight: 600; margin-left: 4px; }
 
   .hist-summary-comp { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.4; }
   .hist-summary-vsmeta { margin-top: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }

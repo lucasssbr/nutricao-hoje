@@ -44,12 +44,22 @@ const PAGINAS = [
   ['Histórico', '/historico.html', '#histSummary', /./],
   ['Histórico · peso', '/historico.html', '#pesoCard', /peso/i],
   ['Histórico · calorias e proteína', '/historico.html', '#barrasCard', /Calorias e proteína · últimos 14 dias[\s\S]*Proteína \(g\) por dia/i],
+  ['Histórico · proteína por refeição', '/historico.html', '#protRefCard', /Proteína por refeição[\s\S]*(Café|Almoço|Lanche|Jantar)[\s\S]*\d+\s?g/i],
   ['Histórico · média vs meta', '/historico.html', '#histSummary', /Média vs meta: kcal [+−]?\d+ · P [+−]?\d+ · C [+−]?\d+ · G [+−]?\d+/],
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
   ['Hoje · horário da atualização', '/', '#updateStamp', /^Atualizado \d{2}\/\d{2} · \d{2}:\d{2}$/],
   ['Planejar', '/planejar.html', '#resumo', /Dia projetado/],
 ];
+// "Proteína faltam X g" só existe com sugestão pendente e proteína abaixo da meta (à noite, depois do jantar
+// lançado, não aparece — a checagem não pode travar a publicação dos registros)
+{
+  const d = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', hoje + '.json'), 'utf8'));
+  const pCons = (d.lancado || []).reduce((t, r) => t + (r.itens || []).reduce((u, i) => u + (Number(i.p) || 0), 0), 0);
+  if (!d.fechado && (d.sugestao || []).length && Math.round(pCons) < Math.round((d.meta || {}).p || 180)) {
+    PAGINAS.push(['Hoje · proteína que falta', '/', '#hero', /Proteína faltam \d+\s?g · (~\d+\s?g em cada uma das \d refeições que faltam|tudo na última refeição)/]);
+  }
+}
 // prévia de amanhã = sugestão automática (dados/previa.json, gerada pelo derivados.py)
 const previaArq = path.join(ROOT, 'dados', 'previa.json');
 if (fs.existsSync(previaArq)) {

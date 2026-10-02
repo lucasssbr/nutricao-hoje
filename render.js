@@ -94,6 +94,14 @@
       ' · ref. ~' + ref + '\u00a0g</div>';
   }
 
+  // proteína que falta dividida pelas refeições que ainda faltam (as da sugestão) — conta para a hora de comer
+  function proteinaHtml(rest, sugestao, data) {
+    var n = (sugestao || []).length, falta = ri(rest.p);
+    if (data.fechado || data.previa || !n || falta <= 0) return '';
+    return '<div class="fibra-linha" id="protFalta"><b>Proteína</b> faltam ' + falta + '\u00a0g · ' +
+      (n === 1 ? 'tudo na última refeição' : '~' + ri(rest.p / n) + '\u00a0g em cada uma das ' + n + ' refeições que faltam') + '</div>';
+  }
+
   function barPct(val, meta) {
     if (!meta || meta <= 0) return 0;
     return Math.min(100, (val / meta) * 100);
@@ -257,6 +265,7 @@
         '<div class="macro"><div class="name c">Carbo</div><div class="track">' + macroFill(cons.c, meta.c, 'c') + '</div><div class="nums">' + macroNums(cons.c, meta.c, 'c') + '</div></div>' +
         '<div class="macro"><div class="name f">Gordura</div><div class="track">' + macroFill(cons.g, meta.g, 'f') + '</div><div class="nums">' + macroNums(cons.g, meta.g, 'f') + '</div></div>' +
       '</div>' +
+      proteinaHtml(rest, sugestao, data) +
       fibraHtml(lancado, sugestao, meta, data) +
       alertHtml;
 
