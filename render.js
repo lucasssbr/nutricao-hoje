@@ -102,6 +102,29 @@
       (n === 1 ? 'tudo na última refeição' : '~' + ri(rest.p / n) + '\u00a0g em cada uma das ' + n + ' refeições que faltam') + '</div>';
   }
 
+  // "Onde foram as calorias": os alimentos que mais pesaram no que foi COMIDO (soma do mesmo alimento em
+  // refeições diferentes), em kcal e em gordura. Só leitura; aparece com 2+ alimentos diferentes.
+  function ondeForamHtml(lancado) {
+    var porAli = {}, tot = 0, totG = 0;
+    (lancado || []).forEach(function (m) {
+      (m.itens || []).forEach(function (it) {
+        var k = it.alimento || it.nome || '?';
+        var x = porAli[k] || (porAli[k] = { nome: String(it.nome || k).replace(/\s*\(.*?\)\s*/g, ' ').trim(), kcal: 0, g: 0 });
+        x.kcal += Number(it.kcal) || 0; x.g += Number(it.g) || 0;
+        tot += Number(it.kcal) || 0; totG += Number(it.g) || 0;
+      });
+    });
+    var lista = Object.keys(porAli).map(function (k) { return porAli[k]; });
+    if (lista.length < 2 || tot <= 0) return '';
+    function top(campo, total, un) {
+      return lista.slice().sort(function (a, b) { return b[campo] - a[campo]; }).slice(0, 3).filter(function (x) { return ri(x[campo]) > 0; })
+        .map(function (x) { return '<li><span>' + esc(x.nome) + '</span><b>' + ri(x[campo]) + (un ? '\u00a0' + un : '') + '</b><i>' + Math.round(100 * x[campo] / total) + '%</i></li>'; }).join('');
+    }
+    return '<section class="meal onde"><div class="meal-head"><h3>Onde foram as calorias</h3><div class="tot">' + ri(tot) + ' kcal comidas</div></div>' +
+      '<div class="onde-col"><div class="onde-t">Calorias</div><ol>' + top('kcal', tot, 'kcal') + '</ol></div>' +
+      (totG > 0 ? '<div class="onde-col"><div class="onde-t">Gordura</div><ol>' + top('g', totG, 'g') + '</ol></div>' : '') + '</section>';
+  }
+
   function barPct(val, meta) {
     if (!meta || meta <= 0) return 0;
     return Math.min(100, (val / meta) * 100);
@@ -293,6 +316,8 @@
       (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
       html += '</section>';
     });
+
+    html += ondeForamHtml(lancado);
 
     var notaSolta = (data.sugestao_nota && String(data.sugestao_nota).trim()) || '';
     if (!sugestao.length && notaSolta && !data.fechado) {

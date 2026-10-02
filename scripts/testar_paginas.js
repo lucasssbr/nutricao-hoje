@@ -60,6 +60,17 @@ const PAGINAS = [
     PAGINAS.push(['Hoje · proteína que falta', '/', '#hero', /Proteína faltam \d+\s?g · (~\d+\s?g em cada uma das \d refeições que faltam|tudo na última refeição)/]);
   }
 }
+// "Onde foram as calorias": no dia fechado mais recente com 2+ alimentos diferentes (se não houver, não checa)
+{
+  const comAlimentos = dias.slice().reverse().find((d) => {
+    const arq = path.join(ROOT, 'dados', d + '.json');
+    if (!fs.existsSync(arq)) return false;
+    const j = JSON.parse(fs.readFileSync(arq, 'utf8'));
+    const nomes = new Set((j.lancado || []).flatMap((r) => (r.itens || []).map((i) => i.alimento || i.nome)));
+    return j.fechado && nomes.size >= 2;
+  });
+  if (comAlimentos) PAGINAS.push(['Dia · onde foram as calorias', '/dia.html?d=' + comAlimentos, '#meals', /Onde foram as calorias[\s\S]*Calorias[\s\S]*\d+%/i]);
+}
 // prévia de amanhã = sugestão automática (dados/previa.json, gerada pelo derivados.py)
 const previaArq = path.join(ROOT, 'dados', 'previa.json');
 if (fs.existsSync(previaArq)) {
