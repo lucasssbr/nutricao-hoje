@@ -7,32 +7,21 @@
     "c": 100,
     "g": 50
   },
-  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 3 dias + Peito de frango sem pele (cru)",
+  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 4 dias + Peito de frango sem pele (cru)",
   "sugestao": [
     {
       "refeicao": "Almoço",
       "itens": [
         {
           "nome": "Batata inglesa (crua)",
-          "qtd": "280 g",
+          "qtd": "290 g",
           "alimento": "batata-inglesa",
-          "quantidade": 280,
-          "kcal": 215.6,
-          "p": 5.9,
-          "c": 49,
+          "quantidade": 290,
+          "kcal": 223.3,
+          "p": 6.1,
+          "c": 50.8,
           "g": 0.3,
-          "fibra": 5.9
-        },
-        {
-          "nome": "Castello Havarti (fatia)",
-          "qtd": "1 un",
-          "alimento": "castello-havarti",
-          "quantidade": 1,
-          "kcal": 110,
-          "p": 6,
-          "c": 0,
-          "g": 9,
-          "fibra": 0
+          "fibra": 6.1
         },
         {
           "nome": "Peito de frango sem pele (cru)",
@@ -68,13 +57,13 @@
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
-          "qtd": "90 g",
+          "qtd": "170 g",
           "alimento": "chuck-costco",
-          "quantidade": 90,
-          "kcal": 200.7,
-          "p": 18,
+          "quantidade": 170,
+          "kcal": 379.1,
+          "p": 34,
           "c": 0,
-          "g": 15.3,
+          "g": 28.9,
           "fibra": 0
         },
         {
@@ -101,13 +90,13 @@
         },
         {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "260 g",
+          "qtd": "190 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 260,
-          "kcal": 312,
-          "p": 58.5,
+          "quantidade": 190,
+          "kcal": 228,
+          "p": 42.8,
           "c": 0,
-          "g": 6.8,
+          "g": 4.9,
           "fibra": 0
         }
       ]

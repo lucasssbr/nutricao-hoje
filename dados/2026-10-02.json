@@ -1,6 +1,6 @@
 {
   "data": "2026-10-02",
-  "atualizado": "2026-10-02T13:45:48-07:00",
+  "atualizado": "2026-10-02T13:47:21-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -9,23 +9,59 @@
     "g": 50
   },
   "peso_kg": 88.0,
-  "lancado": [],
-  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 3 dias + Peito de frango sem pele (cru)",
-  "sugestao": [
+  "lancado": [
     {
       "refeicao": "Almoço",
+      "id_evento": "t138u:refeicao:1",
+      "consumido_em": "2026-10-02T13:47:00-07:00",
+      "registrado_em": "2026-10-02T13:47:21-07:00",
       "itens": [
         {
-          "nome": "Batata inglesa (crua)",
-          "qtd": "280 g",
-          "alimento": "batata-inglesa",
-          "quantidade": 280,
-          "kcal": 215.6,
-          "p": 5.9,
-          "c": 49,
-          "g": 0.3,
-          "fibra": 5.9
+          "nome": "Chuck steak Costco (cru)",
+          "qtd": "150 g",
+          "alimento": "chuck-costco",
+          "quantidade": 150,
+          "kcal": 334.5,
+          "p": 30,
+          "c": 0,
+          "g": 25.5,
+          "fibra": 0
         },
+        {
+          "nome": "Batata inglesa (crua)",
+          "qtd": "250 g",
+          "alimento": "batata-inglesa",
+          "quantidade": 250,
+          "kcal": 192.5,
+          "p": 5.3,
+          "c": 43.8,
+          "g": 0.3,
+          "fibra": 5.3
+        }
+      ]
+    }
+  ],
+  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 3 dias + Peito de frango sem pele (cru) · refaz o restante do dia a cada refeição lançada",
+  "sugestao": [
+    {
+      "refeicao": "Lanche",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "2 lata",
+          "alimento": "nurri-vanilla",
+          "quantidade": 2,
+          "kcal": 300,
+          "p": 60,
+          "c": 8,
+          "g": 5,
+          "fibra": 2
+        }
+      ]
+    },
+    {
+      "refeicao": "Jantar",
+      "itens": [
         {
           "nome": "Castello Havarti (fatia)",
           "qtd": "1 un",
@@ -35,49 +71,6 @@
           "p": 6,
           "c": 0,
           "g": 9,
-          "fibra": 0
-        },
-        {
-          "nome": "Peito de frango sem pele (cru)",
-          "qtd": "300 g",
-          "alimento": "frango-peito-cru",
-          "quantidade": 300,
-          "kcal": 360,
-          "p": 67.5,
-          "c": 0,
-          "g": 7.8,
-          "fibra": 0
-        }
-      ]
-    },
-    {
-      "refeicao": "Lanche",
-      "itens": [
-        {
-          "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "1 lata",
-          "alimento": "nurri-vanilla",
-          "quantidade": 1,
-          "kcal": 150,
-          "p": 30,
-          "c": 4,
-          "g": 2.5,
-          "fibra": 1
-        }
-      ]
-    },
-    {
-      "refeicao": "Jantar",
-      "itens": [
-        {
-          "nome": "Chuck steak Costco (cru)",
-          "qtd": "90 g",
-          "alimento": "chuck-costco",
-          "quantidade": 90,
-          "kcal": 200.7,
-          "p": 18,
-          "c": 0,
-          "g": 15.3,
           "fibra": 0
         },
         {
@@ -93,24 +86,24 @@
         },
         {
           "nome": "Melancia",
-          "qtd": "375 g",
+          "qtd": "475 g",
           "alimento": "melancia",
-          "quantidade": 375,
-          "kcal": 112.5,
-          "p": 2.3,
-          "c": 28.5,
-          "g": 0.8,
-          "fibra": 1.5
+          "quantidade": 475,
+          "kcal": 142.5,
+          "p": 2.9,
+          "c": 36.1,
+          "g": 1,
+          "fibra": 1.9
         },
         {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "260 g",
+          "qtd": "300 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 260,
-          "kcal": 312,
-          "p": 58.5,
+          "quantidade": 300,
+          "kcal": 360,
+          "p": 67.5,
           "c": 0,
-          "g": 6.8,
+          "g": 7.8,
           "fibra": 0
         }
       ]
@@ -123,6 +116,13 @@
       "em": "2026-10-02T13:45:48-07:00",
       "resumo": "peso 88.0 kg",
       "assinatura": "e31a9c853b8521db"
+    },
+    {
+      "id_evento": "t138u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-02T13:47:21-07:00",
+      "resumo": "Almoço: 527 kcal | P 35 | C 44 | G 26 (2 item(ns))",
+      "assinatura": "74a7f3ff32c68043"
     }
   ]
 }
