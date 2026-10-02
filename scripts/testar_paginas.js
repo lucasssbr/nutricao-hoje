@@ -164,6 +164,28 @@ async function checarAvisoFechamento(ctx) {
   return erros;
 }
 
+// sugestão do dia acabou (jantar lançado): o Hoje oferece "Planejar amanhã" (link com a data de amanhã)
+async function checarPlanejarAmanha(ctx) {
+  const erros = [];
+  const dia = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', hoje + '.json'), 'utf8'));
+  const item = { nome: 'Melancia', qtd: '300 g', alimento: 'melancia', quantidade: 300, kcal: 90, p: 1.8, c: 22.8, g: 0.6 };
+  const comJantar = Object.assign({}, dia, { lancado: [{ refeicao: 'Jantar', consumido_em: hoje + 'T20:00:00-07:00', itens: [item] }], sugestao: [], sugestao_nota: 'Dia completo — sem refeições a sugerir' });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.clock.setFixedTime(new Date(hoje + 'T20:00:00Z'));
+  await page.route('**/dados/' + hoje + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(comJantar) }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  const href = await page.locator('#planAmanha').getAttribute('href', { timeout: 3000 }).catch(() => null);
+  if (href !== './planejar.html?d=' + somaDias(hoje, 1)) erros.push('sem "Planejar amanhã" depois da última refeição (href ' + href + ')');
+  await page.unroute('**/dados/' + hoje + '.json');
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });   // dia normal, com sugestão: não aparece
+  await page.waitForTimeout(300);
+  if (dia.sugestao && dia.sugestao.length && await page.locator('#planAmanha').count()) erros.push('"Planejar amanhã" apareceu com sugestão ainda pendente');
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -183,7 +205,7 @@ async function checarAvisoFechamento(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -196,5 +218,5 @@ async function checarAvisoFechamento(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 4} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 5} checagens cada).`);
 })();

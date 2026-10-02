@@ -315,6 +315,10 @@
       }
       html += '</section>';
     }
+    // sugestão do dia acabou (já comeu tudo / jantar lançado): à noite o que interessa é o dia seguinte
+    if (isHoje && !data.fechado && !sugestao.length && hasCons && dia === localISODate()) {
+      html += '<a class="plan-link" id="planAmanha" href="./planejar.html?d=' + esc(window.Nutri.somaDias(dia, 1)) + '">Planejar amanhã →</a>';
+    }
 
     mealsEl.innerHTML = html;
 
