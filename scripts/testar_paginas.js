@@ -133,6 +133,9 @@ async function checarDetalhesObjetivo(ctx) {
       if (/Pelo déficit/.test(visivel)) erros.push('explicação do cálculo à vista com os detalhes fechados');
       await page.locator('#objDetalhes > summary').click();
       if (!/Pelo déficit/.test(await page.locator('#objetivo').innerText())) erros.push('abrir "Ver detalhes" não mostrou o cálculo');
+      // o evento "toggle" do <details> é assíncrono (chega depois do clique): espera gravar antes de recarregar
+      await page.waitForFunction(() => { try { return localStorage.getItem('nutri-obj-detalhes') === '1'; } catch (e) { return false; } }, null, { timeout: 2000 })
+        .catch(() => erros.push('"Ver detalhes" aberto não foi gravado'));
       await page.reload({ waitUntil: 'networkidle' });
       await page.waitForSelector('#objDetalhes', { timeout: 4000 });
       if (!(await page.locator('#objDetalhes').evaluate((d) => d.open))) erros.push('"Ver detalhes" não lembrou que estava aberto');
