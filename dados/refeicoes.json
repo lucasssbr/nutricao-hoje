@@ -18,7 +18,9 @@
       ]
     },
     "max_dia": {
-      "nurri-vanilla": 3
+      "nurri-vanilla": 3,
+      "clara-100g": 180,
+      "clara-un": 5
     },
     "so_jantar": [
       "clara-100g",
