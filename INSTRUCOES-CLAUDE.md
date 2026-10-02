@@ -305,8 +305,9 @@ Curto e direto; detalhe técnico só se ajudar a decidir.
 ## Pendências conhecidas (não resolvidas nesta rodada)
 
 - **Modelo de gordura corporal/Forbes** (`objetivo.js: simular`) — revisar premissas separadamente (fração de Forbes, pausas, faixas).
-- **Pages está no modo branch (confirmado no log de 30/09: `build_type=legacy`).** Enquanto for assim, um push vai ao ar antes da conferência terminar. O Lucas troca em Settings → Pages → Build and deployment → Source: **GitHub Actions** (1 clique); o workflow já está pronto para publicar só o commit verificado.
 - **Teste no iPhone real**: os testes usam Chromium e WebKit do Playwright; Safari/iOS real (tela cheia pelo ícone, compartilhar CSV) não é testado automaticamente.
+
+Resolvido: Pages publica por **GitHub Actions** desde 01/10 (Lucas trocou; 1º deploy verificado 52dffe8, caminho rápido provado no run 33 / 0b03c5b) — só vai ao ar o commit verificado; `publicado.json` traz o sha e o tipo de verificação.
 
 ## Estado atual
 
