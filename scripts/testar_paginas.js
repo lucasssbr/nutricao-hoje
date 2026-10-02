@@ -43,6 +43,7 @@ const PAGINAS = [
   ['Prévia de dia futuro', '/dia.html?d=' + futuro, '#meals', /Prévia do plano padrão/, 'dados/' + futuro + '.json'],
   ['Histórico', '/historico.html', '#histSummary', /./],
   ['Histórico · peso', '/historico.html', '#pesoCard', /peso/i],
+  ['Histórico · calorias e proteína', '/historico.html', '#barrasCard', /Calorias e proteína · últimos 14 dias[\s\S]*Proteína \(g\) por dia/i],
   ['Histórico · média vs meta', '/historico.html', '#histSummary', /Média vs meta: kcal [+−]?\d+ · P [+−]?\d+ · C [+−]?\d+ · G [+−]?\d+/],
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],

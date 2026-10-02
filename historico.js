@@ -213,6 +213,58 @@
     return { porDia: b, base: pts[0].data, a: my - b * mx };
   }
 
+  // Calorias e proteína dos últimos 14 dias fechados (dias corridos até o fechado mais recente): uma barra
+  // por dia, linha tracejada = meta. Dois gráficos (escalas diferentes, nunca dois eixos no mesmo).
+  // Laranja = kcal acima da meta (mesma regra do "dias na meta"). Toque numa barra: valores do dia.
+  function renderBarras(days) {
+    var box = document.getElementById('barrasCard');
+    if (!box) return;
+    if (!days.length) { box.hidden = true; return; }
+    box.hidden = false;
+    var ref = days[0].data, porData = {};
+    days.forEach(function (d) { porData[d.data] = d; });
+    var datas = [];
+    for (var k = 13; k >= 0; k--) datas.push(somaDias(ref, -k));
+    var W = 340, H = 104, L = 8, R = 8, T = 10, B = 18, slot = (W - L - R) / datas.length, bw = Math.max(6, slot * 0.62);
+    function grafico(campo, metaDe, classe, rotulo) {
+      var vals = datas.map(function (dt) { return porData[dt] ? porData[dt].cons[campo] : null; });
+      var metas = datas.map(function (dt) { return porData[dt] ? porData[dt].meta[campo] : null; }).filter(function (v) { return v != null; });
+      var meta = metas.length ? metas[metas.length - 1] : null;
+      var hi = Math.max.apply(null, vals.filter(function (v) { return v != null; }).concat(meta || 0)) * 1.12 || 1;
+      function y(v) { return T + (H - T - B) * (1 - v / hi); }
+      var base = y(0), svg = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + base.toFixed(1) + '" y2="' + base.toFixed(1) + '" class="pc-grid"/>';
+      vals.forEach(function (v, i) {
+        var x0 = L + slot * i + (slot - bw) / 2;
+        if (v != null && v > 0) {
+          var yt = y(v), r = Math.min(4, (base - yt) / 2), cls = classe + (metaDe(porData[datas[i]]) ? ' bc-over' : '');
+          svg += '<path class="' + cls + '" d="M' + x0.toFixed(1) + ',' + base.toFixed(1) + 'V' + (yt + r).toFixed(1) + 'Q' + x0.toFixed(1) + ',' + yt.toFixed(1) + ' ' + (x0 + r).toFixed(1) + ',' + yt.toFixed(1) +
+            'H' + (x0 + bw - r).toFixed(1) + 'Q' + (x0 + bw).toFixed(1) + ',' + yt.toFixed(1) + ' ' + (x0 + bw).toFixed(1) + ',' + (yt + r).toFixed(1) + 'V' + base.toFixed(1) + 'Z"/>';
+        }
+        svg += '<rect class="pc-hit" x="' + (L + slot * i).toFixed(1) + '" y="0" width="' + slot.toFixed(1) + '" height="' + H + '" data-i="' + i + '"/>';
+      });
+      if (meta != null) {
+        svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(meta).toFixed(1) + '" y2="' + y(meta).toFixed(1) + '" class="pc-meta"/>';
+      }
+      svg += '<text x="' + L + '" y="' + (H - 4) + '" class="pc-ax">' + esc(labelDia(datas[0]).replace(/ \d{4}$/, '')) + '</text>' +
+        '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(ref).replace(/ \d{4}$/, '')) + '</text>';
+      rotulo = rotulo.replace('{meta}', meta != null ? '<span class="bc-k-meta"></span> meta ' + ri(meta) : '');
+      return '<div class="bc-rot">' + rotulo + '</div><svg class="pc-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(rotulo) + ' nos últimos 14 dias">' + svg + '</svg>';
+    }
+    function difTxt(v, m) { var x = ri(v) - ri(m); return x === 0 ? 'na meta' : (x > 0 ? '+' : '−') + Math.abs(x); }
+    box.innerHTML = '<div class="hist-summary-title">Calorias e proteína · últimos 14 dias</div>' +
+      '<div class="pc-tip" id="bcTip">Toque numa barra pra ver o dia</div>' +
+      grafico('kcal', function (d) { return d.cons.kcal - d.meta.kcal > 75; }, 'bc-kcal', 'Calorias por dia · {meta} · <span class="bc-k-over"></span> acima') +
+      grafico('p', function () { return false; }, 'bc-p', 'Proteína (g) por dia · {meta}');
+    var tip = document.getElementById('bcTip');
+    box.querySelectorAll('.pc-hit').forEach(function (h) {
+      h.addEventListener('click', function () {
+        var dt = datas[Number(h.getAttribute('data-i'))], d = porData[dt];
+        tip.textContent = labelDia(dt).replace(/ \d{4}$/, '') + ': ' + (d ? ri(d.cons.kcal) + ' kcal (' + difTxt(d.cons.kcal, d.meta.kcal) + ') · P' + ri(d.cons.p) + ' (' +
+          difTxt(d.cons.p, d.meta.p) + ') · C' + ri(d.cons.c) + ' · G' + ri(d.cons.g) : 'sem dia fechado');
+      });
+    });
+  }
+
   function renderPeso(todos, obj) {
     var box = document.getElementById('pesoCard');
     if (!box) return;
@@ -463,6 +515,7 @@
       todos.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
       ligarBotaoCsv(todos);
       renderSummary(closed);
+      renderBarras(closed);
       renderList(closed);
     });
   }
