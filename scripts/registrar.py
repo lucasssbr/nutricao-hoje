@@ -38,7 +38,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from comum import (DADOS, MACROS, ROOT, agora_la, arred, carimbo, data_de_consumo, data_valida,  # noqa: E402
-                   eh_numero, gravar_json, ler_json, registro_do_dia, somar, texto_json)
+                   TravaOcupada, eh_numero, gravar_json, ler_json, registro_do_dia, somar, texto_json, trava_escrita)
 from item import carregar_alimentos, carregar_refeicoes, montar_item, montar_refeicao  # noqa: E402
 import re  # noqa: E402
 
@@ -298,23 +298,25 @@ def aplicar_evento(a, dados=DADOS, raiz=ROOT, agora=None):
         diff = "".join(difflib.unified_diff(original.splitlines(True), novo.splitlines(True),
                                             f"dados/{data}.json (antes)", f"dados/{data}.json (depois)"))
         return "dry-run", f"{diff}\n--dry-run: nada foi gravado.\n{txt}", data
-    # grava tudo e confere; se a validação falhar, desfaz TUDO em dados/: o dia e todos os derivados
-    # (resumo, objetivo, previa…), e apaga arquivo que não existia antes da tentativa
-    guardados = {q: q.read_bytes() for q in dados.iterdir() if q.is_file()}
+    # grava e confere; se a validação falhar, desfaz SÓ o que esta operação escreve (o dia + os derivados de
+    # derivados.ARQUIVOS) — nunca gravações alheias. Arquivo que não existia volta a não existir. A exclusão
+    # com outros escritores do mesmo checkout vem da trava_escrita, segurada pelo main() na transação inteira.
+    import derivados
+    escritos = [p] + [dados / n for n in derivados.ARQUIVOS]
+    guardados = {q: (q.read_bytes() if q.exists() else None) for q in escritos}
     try:
         gravar_json(p, dia)
-        import derivados
         derivados.gerar(dados=dados, silencioso=True)
         from validar import validar
         c = validar(raiz)
         if c.erros:
             raise Recusa("validação falhou, nada foi gravado:\n  " + "\n  ".join(c.erros))
     except BaseException:
-        for q in dados.iterdir():
-            if q.is_file() and q not in guardados:
-                q.unlink()
         for q, t in guardados.items():
-            if not q.exists() or q.read_bytes() != t:
+            q.with_name(q.name + ".tmp").unlink(missing_ok=True)   # temporário de derivados interrompido
+            if t is None:
+                q.unlink(missing_ok=True)
+            elif not q.exists() or q.read_bytes() != t:
                 q.write_bytes(t)
         raise
     return "ok", txt, data
@@ -374,7 +376,12 @@ def main(argv=None):
     ap.add_argument("--enviar", action="store_true")
     a = ap.parse_args(argv)
     try:
-        status, txt, _ = enviar(a) if a.enviar and not a.dry_run else aplicar_evento(a)
+        # trava durante TODA a operação (inclusive o git do --enviar): outro escritor no mesmo checkout espera
+        with trava_escrita(DADOS):
+            status, txt, _ = enviar(a) if a.enviar and not a.dry_run else aplicar_evento(a)
+    except TravaOcupada as e:
+        print(f"RECUSADO: {e} — tente de novo em instantes")
+        return 2
     except Recusa as e:
         print(f"RECUSADO: {e}")
         return 2

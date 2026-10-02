@@ -255,6 +255,12 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
         return montar_plano(alimentos, refs), refs.get("plano_padrao_nota", "Plano padrão automático")
     n_dias = len(uteis)
     horarios = [h for h in HORARIOS if len(dias_h[h]) >= max(1, n_dias / 3)]
+    # histórico disperso (ex.: só Café num dia, só Almoço no outro…): nenhum horário frequente o bastante.
+    # É histórico insuficiente — decidido ANTES de tirar os horários já comidos, para não virar "Dia completo"
+    if not horarios:
+        if lancado:
+            return [], "Histórico sem horários frequentes para sugerir o restante"
+        return montar_plano(alimentos, refs), refs.get("plano_padrao_nota", "Plano padrão automático")
     # já lançado hoje: planeja só os horários depois do último lançado
     if lancado:
         feitos = [HORARIOS.index(h) for h in (horario(r) for r in lancado) if h]
@@ -313,6 +319,14 @@ def main(argv=None):
     ap.add_argument("--dia", help="YYYY-MM-DD (padrão: hoje em Los Angeles)")
     ap.add_argument("--gravar", action="store_true", help="grava sugestao/sugestao_nota no JSON do dia")
     a = ap.parse_args(argv)
+    if a.gravar:
+        from comum import trava_escrita
+        with trava_escrita():   # ler → gravar o dia sem outro escritor no meio
+            return _main(a)
+    return _main(a)
+
+
+def _main(a):
     dia = a.dia or hoje_la().isoformat()
     p = DADOS / f"{dia}.json"
     dados_dia = ler_json(p) if p.exists() else {}

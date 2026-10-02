@@ -292,6 +292,82 @@ def git(cwd, *args):
     return r.stdout.strip()
 
 
+class Concorrencia(BaseRegistro):
+    """Auditoria Codex #7: dois registros no MESMO checkout. A falha na validação depois que B tentou gravar;
+    o rollback de A não pode apagar o que B confirmou (e B não pode gravar no meio da transação de A)."""
+
+    def injetar_falha_com_pausa(self):
+        # só na CÓPIA temporária: validar() de quem tiver TESTE_SINAL avisa que está dentro, espera liberação e falha
+        v = self.tmp / "scripts" / "validar.py"
+        v.write_text(v.read_text(encoding="utf-8") + '''
+
+_validar_original = validar
+
+
+def validar(raiz=ROOT):
+    import os, time
+    sinal = os.environ.get("TESTE_SINAL")
+    if not sinal:
+        return _validar_original(raiz)
+    pathlib.Path(sinal + ".dentro").write_text("1")
+    for _ in range(400):
+        if pathlib.Path(sinal + ".libera").exists():
+            break
+        time.sleep(0.05)
+    c = _validar_original(raiz)
+    c.erros.append("falha injetada no teste")
+    return c
+''', encoding="utf-8")
+
+    def popen(self, *args, **env):
+        return subprocess.Popen([sys.executable, str(self.tmp / "scripts" / "registrar.py"), *args], cwd=self.tmp,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=dict(os.environ, **env))
+
+    def test_rollback_de_um_nao_apaga_o_registro_do_outro(self):
+        import time
+        self.injetar_falha_com_pausa()
+        fechado = next(d for d in sorted(self.ler("dias.json")) if self.ler(f"{d}.json").get("fechado"))
+        aberto = self.dia_aberto()
+        self.assertNotEqual(fechado, aberto)
+        antes_fechado = (self.dados / f"{fechado}.json").read_bytes()
+        sinal = str(self.tmp / "sinal")
+        a = self.popen("completo", "--evento", "msg-a:completo:1", "--data", fechado, "--status", "completo",
+                       TESTE_SINAL=sinal)
+        for _ in range(400):                                    # A dentro da transação (depois dos derivados)
+            if os.path.exists(sinal + ".dentro") or a.poll() is not None:
+                break
+            time.sleep(0.05)
+        self.assertTrue(os.path.exists(sinal + ".dentro"), a.communicate()[0] if a.poll() is not None else "")
+        b = self.popen("peso", "--evento", "msg-b:peso:1", "--data", aberto, "--kg", "87.1")
+        time.sleep(1.0)                                         # B tenta gravar enquanto A está no meio
+        self.assertIsNone(b.poll(), "B gravou no meio da transação de A (sem exclusão entre escritores)")
+        pathlib.Path(sinal + ".libera").write_text("1")
+        out_a, _ = a.communicate(timeout=120)
+        out_b, err_b = b.communicate(timeout=120)
+        self.assertEqual(a.returncode, 2, out_a)
+        self.assertIn("falha injetada", out_a)
+        self.assertEqual(b.returncode, 0, out_b + err_b)
+        dia_b = self.ler(f"{aberto}.json")
+        self.assertEqual(dia_b["peso_kg"], 87.1, "o peso confirmado por B sumiu")
+        self.assertTrue(any(e.get("id_evento") == "msg-b:peso:1" for e in dia_b.get("eventos", [])), "evento de B sumiu")
+        self.assertEqual((self.dados / f"{fechado}.json").read_bytes(), antes_fechado, "A falhou: 30/09 tem de ficar como antes")
+        # derivados coerentes com o estado final (B regenerou depois do rollback de A)
+        from derivados import resumo_texto
+        self.assertEqual((self.dados / "resumo.json").read_text(encoding="utf-8"), resumo_texto(self.dados))
+
+    def test_trava_ocupada_recusa_sem_gravar(self):
+        from comum import trava_escrita
+        aberto = self.dia_aberto()
+        antes = (self.dados / f"{aberto}.json").read_bytes()
+        with trava_escrita(self.dados):                         # outro escritor segurando a trava
+            r = subprocess.run([sys.executable, str(self.tmp / "scripts" / "registrar.py"), "peso", "--evento",
+                                "msg-c:peso:1", "--data", aberto, "--kg", "86.9"], cwd=self.tmp, capture_output=True,
+                               text=True, env=dict(os.environ, TRAVA_ESPERA="0.5"))
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("outra gravação em dados/ em andamento", r.stdout)
+        self.assertEqual((self.dados / f"{aberto}.json").read_bytes(), antes)
+
+
 class Enviar(unittest.TestCase):
     def setUp(self):
         from test_publicacao import Publicacao

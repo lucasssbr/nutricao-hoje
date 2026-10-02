@@ -120,4 +120,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from comum import trava_escrita
+    with trava_escrita():   # exclusão com registrar.py/derivados.py no mesmo checkout
+        main()

@@ -20,6 +20,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from comum import DADOS, MACROS, arred, eh_numero, ler_json, registro_do_dia, somar, texto_json  # noqa: E402
 
 
+# tudo que gerar() pode escrever em dados/ (registrar.py desfaz exatamente estes, mais o dia, se a validação falhar)
+ARQUIVOS = ("resumo.json", "objetivo.json", "previa.json")
+
+
 def resumo_lista(dados=DADOS):
     dados = pathlib.Path(dados)
     dias = ler_json(dados / "dias.json")
@@ -122,7 +126,9 @@ def main():
         ok = arq.exists() and arq.read_text(encoding="utf-8") == resumo_texto()
         print("resumo.json em dia" if ok else "resumo.json DESATUALIZADO — rode python3 scripts/derivados.py")
         sys.exit(0 if ok else 1)
-    gerar()
+    from comum import trava_escrita
+    with trava_escrita():
+        gerar()
 
 
 if __name__ == "__main__":

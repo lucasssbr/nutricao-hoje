@@ -176,6 +176,29 @@ class Sugerir(unittest.TestCase):
         self.assertEqual(sug, [])
         self.assertIn("Sem histórico com horário", nota)
 
+    def test_historico_disperso_usa_plano_padrao(self):
+        """Codex #7: cada horário aparece só uma vez em 4 dias (abaixo de 4/3) → fallback, não "Dia completo"."""
+        dias = ["2026-09-26", "2026-09-27", "2026-09-28", "2026-09-29"]
+        so = [("Café", "08:00", ("banana", 1)), ("Almoço", "12:30", ("chuck-costco", 200)),
+              ("Lanche", "16:00", ("nurri-vanilla", 1)), ("Jantar", "20:00", ("melancia", 500))]
+        for d, (nome, hora, it) in zip(dias, so):
+            (self.tmp / f"{d}.json").write_text(json.dumps(
+                {"data": d, "fechado": True, "meta": META, "lancado": [ref(nome, hora, d, it)]}, ensure_ascii=False))
+        self.alvo = "2026-09-30"
+        self.salvar_dias(dias + [self.alvo])
+        sug, nota = self.rodar()
+        self.assertEqual([r.get("favorita") for r in sug], self.refs["plano_padrao"], nota)
+        self.assertNotIn("Dia completo", nota)
+        # com almoço lançado: sem horários confiáveis, não inventa o restante (e não diz "Dia completo")
+        sug, nota = self.rodar([ref("Almoço", "12:00", self.alvo, ("melancia", 300))])
+        self.assertEqual(sug, [])
+        self.assertNotIn("Dia completo", nota)
+        # depois do JANTAR lançado continua sem sugerir nada (histórico normal)
+        self.setUp()
+        sug, nota = self.rodar([ref("Jantar", "21:00", self.alvo, ("melancia", 500))])
+        self.assertEqual(sug, [])
+        self.assertIn("Dia completo", nota)
+
     def test_teto_decimal(self):
         """#4: max_dia 3.0 / 2.5 com porção típica de 2 latas não pode quebrar (range com float)."""
         for d in self.dias:

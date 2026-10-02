@@ -7,6 +7,7 @@ Política de precisão (vale para Python e para as páginas):
   - totais = soma dos valores guardados nos itens, arredondada só na hora de mostrar;
   - arredondamento "meio para longe do zero" (176,5 → 177; −0,5 → −1), igual em Python e JS.
 """
+import contextlib
 import datetime
 import json
 import math
@@ -14,6 +15,7 @@ import os
 import pathlib
 import re
 import tempfile
+import time
 import zoneinfo
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -164,3 +166,33 @@ def registro_do_dia(dia):
     """Completude do registro: 'completo' | 'parcial' | 'desconhecido' (sem confirmação)."""
     v = (dia.get("registro") or {}).get("status") if isinstance(dia.get("registro"), dict) else None
     return v if v in ("completo", "parcial") else "desconhecido"
+
+
+class TravaOcupada(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def trava_escrita(dados=None, espera=None):
+    """Exclusão entre ESCRITORES de dados/ no mesmo checkout (registrar, fechar_dia, derivados, sugerir --gravar).
+
+    flock exclusivo em <checkout>/.escrita-dados.lock (ignorado pelo git), segurado durante a transação INTEIRA
+    (ler → gravar → derivados → validar → desfazer se falhar). Outro escritor espera; passou de `espera`
+    segundos (padrão 120, TRAVA_ESPERA) → TravaOcupada. O sistema solta a trava se o processo morrer."""
+    import fcntl
+    dados = pathlib.Path(dados or DADOS).resolve()
+    espera = float(os.environ.get("TRAVA_ESPERA", "120")) if espera is None else espera
+    fd = os.open(dados.parent / ".escrita-dados.lock", os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        limite = time.monotonic() + espera
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= limite:
+                    raise TravaOcupada(f"outra gravação em dados/ em andamento há mais de {espera:.0f}s")
+                time.sleep(0.1)
+        yield
+    finally:
+        os.close(fd)   # fechar o descritor solta a trava
