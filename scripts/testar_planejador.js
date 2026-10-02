@@ -265,6 +265,57 @@ async function fluxoBaseMudou(ctx) {
   return erros.concat(e1);
 }
 
+// auditoria Codex #12: página aberta enquanto o Grok registra; virada do dia; toque direto após digitar
+async function fluxoPaginaAberta(ctx) {
+  const erros = [];
+  const almocoPrevia = previa.sugestao.find((r) => /almo/i.test(r.refeicao)) || previa.sugestao[0];
+  const registrado = { refeicao: almocoPrevia.refeicao, id_evento: 'aberta:refeicao:1', consumido_em: DIA + 'T12:30:00-07:00', itens: almocoPrevia.itens };
+  const resto = previa.sugestao.filter((r) => r !== almocoPrevia);
+  const servir = (page) => page.route('**/dados/' + DIA + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(diaOficial(resto, [registrado])) }));
+  const depois = (min) => new Date(AGORA.getTime() + min * 60000);
+  // 1) voltar para a página (visibilitychange) com registro novo no servidor: base revalidada sem recarregar
+  const { page, erros: e1 } = await abrir(ctx, '/planejar.html?d=' + DIA);
+  checar((await num(page, 1, 2)) === 0, 'começo: já registrado deveria ser 0', erros);
+  await servir(page);
+  await page.clock.setFixedTime(depois(2));
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForSelector('.pl-ref.suspeita', { timeout: 3000 }).catch(() => erros.push('voltar à página não revalidou a base (registro novo não apareceu)'));
+  checar((await num(page, 1, 2)) > 0, '"Já registrado" continuou 0 depois de voltar à página', erros);
+  // 2) virou o dia com a página aberta: só leitura + atalho para hoje
+  const amanhaLA = new Date(Date.parse(DIA + 'T00:00:00Z') + 86400000 + 15 * 3600000);   // dia seguinte, 08h em LA
+  await page.clock.setFixedTime(amanhaLA);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(() => /virou o dia/.test(document.getElementById('avisos').innerText), null, { timeout: 3000 })
+    .catch(() => erros.push('virada do dia com a página aberta não foi percebida'));
+  checar((await page.locator('.pl-qtd input').count()) === 0, 'depois da virada o rascunho continuou editável', erros);
+  checar(await page.locator('#linkHoje').isVisible(), 'sem atalho para planejar o dia de hoje', erros);
+  await page.close();
+  // 3) "Levar ao Grok" confere a base ANTES de montar o texto (sem nenhum evento de foco)
+  const { page: p2, erros: e2 } = await abrir(ctx, '/planejar.html?d=' + DIA, {
+    init: () => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); }
+  });
+  await servir(p2);
+  await p2.locator('[data-acao="grok"]').click();
+  await p2.waitForSelector('#textoGrok', { timeout: 3000 });
+  const txt = await p2.locator('#textoGrok').inputValue();
+  checar(/Já registrado hoje/.test(txt), 'texto ao Grok sem o registro novo (base não conferida antes de exportar)', erros);
+  checar(!txt.includes('• ' + almocoPrevia.refeicao + ' —'), 'refeição possivelmente registrada continuou no texto ao Grok', erros);
+  checar(/ficaram fora do texto/.test(await p2.locator('#folhaCorpo').innerText()), 'texto sem aviso das refeições deixadas de fora', erros);
+  await p2.close();
+  // 4) digitar uma quantidade e tocar DIRETO em "Levar ao Grok": o 1º toque não pode se perder
+  const { page: p3, erros: e3 } = await abrir(ctx, '/planejar.html?d=' + DIA, {
+    init: () => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); }
+  });
+  const inp = p3.locator('.pl-qtd input').first();
+  const k0 = await kcalRascunho(p3);
+  await inp.fill('3');
+  await p3.locator('[data-acao="grok"]').click();
+  await p3.waitForSelector('#folha:not([hidden]) #textoGrok', { timeout: 3000 }).catch(() => erros.push('1º toque em "Levar ao Grok" depois de digitar se perdeu'));
+  checar((await kcalRascunho(p3)) !== k0, 'a quantidade digitada não foi aplicada', erros);
+  await p3.close();
+  return erros.concat(e1, e2, e3);
+}
+
 async function fluxoSomenteLeitura(ctx) {
   const erros = [];
   const { page, erros: e } = await abrir(ctx, '/planejar.html?d=' + new Date(Date.parse(VESPERA + 'T00:00:00Z') - 86400000).toISOString().slice(0, 10));
@@ -295,7 +346,7 @@ async function fluxoSomenteLeitura(ctx) {
     rodou++;
     for (const [nome, fn] of [['Planejador · editar/trocar/desfazer/recarregar', fluxoEdicao], ['Planejador · levar ao Grok', fluxoGrok],
                               ['Planejador · sem armazenamento', fluxoArmazenamento], ['Planejador · base mudou', fluxoBaseMudou],
-                              ['Planejador · dia passado e acesso', fluxoSomenteLeitura]]) {
+                              ['Planejador · dia passado e acesso', fluxoSomenteLeitura], ['Planejador · página aberta', fluxoPaginaAberta]]) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
@@ -308,5 +359,5 @@ async function fluxoSomenteLeitura(ctx) {
   if (hashDados() !== antes) falhas.push('dados/ mudou durante os testes do planejador');
   if (!rodou) { console.log('::error::nenhum navegador disponível'); process.exit(1); }
   if (falhas.length) { console.log(`::error::Planejador com problema: ${falhas.join(', ')}`); process.exit(1); }
-  console.log(`Planejador OK (${rodou} navegador(es), 5 fluxos cada; dia ${DIA}).`);
+  console.log(`Planejador OK (${rodou} navegador(es), 6 fluxos cada; dia ${DIA}).`);
 })();

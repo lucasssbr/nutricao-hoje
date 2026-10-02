@@ -9,7 +9,7 @@
 
   var hoje = N.hojeLA();
   var params = new URLSearchParams(location.search);
-  var dia = params.get('d') || hoje;
+  var dia = params.get('d') || hoje;   // o dia do rascunho não muda com a página aberta (virada → só leitura)
   var S = { base: null, ali: null, refs: null, cfg: null, rasc: null, rev: null, desfazer: [], arm: null, somenteLeitura: '' };
 
   function esc(s) {
@@ -84,7 +84,9 @@
       h += '<div class="pl-acoes"><button type="button" class="pl-btn peq" data-acao="revisado"' + (rv.suspeitas.length ? ' disabled' : '') +
         '>Manter meu rascunho</button><button type="button" class="pl-btn peq" data-acao="usarNova">Usar a sugestão atual</button></div></div>';
     }
-    document.getElementById('avisos').innerHTML = h;
+    var el = document.getElementById('avisos');
+    if (el._ultimo !== h) el.innerHTML = h;   // igual: não recria os botões (um toque não se perde)
+    el._ultimo = h;
   }
 
   function linhaTab(rotulo, t, cls) {
@@ -94,11 +96,22 @@
 
   function calc() { return P.calcular(S.rasc, S.base, S.ali, S.rev ? S.rev.suspeitas : []); }
 
-  // quadro do topo (só números e botões — nada de caixa de texto, pode ser redesenhado à vontade)
+  // quadro do topo: números (redesenhados a cada mudança) + botões (só no render completo: um toque que
+  // chega logo depois de mudar uma quantidade não pode cair num botão que acabou de ser substituído)
   function resumoHtml(c) {
     var ro = !!S.somenteLeitura;
     var h = '<section class="hero pl-resumo" aria-labelledby="resumoTit"><h2 id="resumoTit" class="sr">Resumo do dia</h2>' +
-      '<table class="pl-tab" id="resumo"><thead><tr><th scope="col"></th><th scope="col">kcal</th><th scope="col">P</th><th scope="col">C</th><th scope="col">G</th><th scope="col">Fibra</th></tr></thead><tbody>';
+      '<div id="resumoNums">' + numerosHtml(c) + '</div>';
+    if (!ro) {
+      h += '<div class="pl-acoes pl-barra"><button type="button" class="pl-btn" data-acao="desfazer" id="btnDesfazer"' + (S.desfazer.length ? '' : ' disabled') + '>Desfazer</button>' +
+        '<button type="button" class="pl-btn" data-acao="restaurar">Restaurar sugestão</button>' +
+        '<button type="button" class="pl-btn prim" data-acao="grok">Levar ao Grok</button></div>';
+    }
+    return h + '</section>';
+  }
+
+  function numerosHtml(c) {
+    var h = '<table class="pl-tab" id="resumo"><thead><tr><th scope="col"></th><th scope="col">kcal</th><th scope="col">P</th><th scope="col">C</th><th scope="col">G</th><th scope="col">Fibra</th></tr></thead><tbody>';
     h += linhaTab('Já registrado', c.consumido);
     h += linhaTab('Rascunho <span class="badge pl-badge">NÃO LANÇADO</span>', c.planejado);
     h += linhaTab('Dia projetado', c.projetado, 'proj');
@@ -114,12 +127,7 @@
     var acima = ['kcal', 'p', 'c', 'g'].filter(function (k) { return ri(c.dif[k]) > 0 && k !== 'p'; });
     h += '<div class="pl-nota">' + (acima.length ? 'Acima da meta: ' + acima.map(function (k) { return (k === 'kcal' ? 'kcal ' : k.toUpperCase() + ' ') + '+' + ri(c.dif[k]); }).join(' · ') + '. ' : '') +
       'Fibra: referência ~' + c.fibraRef + ' g (14 g por 1000 kcal). Já registrado usa os valores guardados nos registros; o rascunho usa a biblioteca atual.</div>';
-    if (!ro) {
-      h += '<div class="pl-acoes pl-barra"><button type="button" class="pl-btn" data-acao="desfazer"' + (S.desfazer.length ? '' : ' disabled') + '>Desfazer</button>' +
-        '<button type="button" class="pl-btn" data-acao="restaurar">Restaurar sugestão</button>' +
-        '<button type="button" class="pl-btn prim" data-acao="grok">Levar ao Grok</button></div>';
-    }
-    return h + '</section>';
+    return h;
   }
 
   // depois de mudar uma QUANTIDADE: atualiza só números (quadro, total de cada refeição, linha do item) —
@@ -127,7 +135,9 @@
   function renderNumeros() {
     renderAvisos();
     var c = calc();
-    document.getElementById('resumoBox').innerHTML = resumoHtml(c);
+    document.getElementById('resumoNums').innerHTML = numerosHtml(c);
+    var bd = document.getElementById('btnDesfazer');
+    if (bd) bd.disabled = !S.desfazer.length;
     c.refeicoes.forEach(function (r, iR) {
       var t = document.getElementById('tot-' + iR);
       if (t) t.innerHTML = macros(r.total);
@@ -280,12 +290,22 @@
     });
   }
 
-  function abrirGrok() {
+  // antes de exportar: confere a base no servidor (o Grok pode ter registrado algo com a página aberta)
+  function levarAoGrok() {
+    atualizarBase(true).then(function (ok) {
+      if (S.somenteLeitura) return;   // virou o dia / fechou: nada a levar
+      abrirGrok(ok ? '' : 'Não consegui conferir os registros mais novos (sem conexão?): o texto usa o que a página já tinha.');
+    });
+  }
+
+  function abrirGrok(alerta) {
     var c = P.calcular(S.rasc, S.base, S.ali, S.rev ? S.rev.suspeitas : []);
     var txt = P.textoGrok(c, S.base);
     var podeShare = typeof navigator.share === 'function';
     var podeCopiar = !!(navigator.clipboard && navigator.clipboard.writeText);
-    var h = '<div class="pl-nota">Só prepara o texto: nada é enviado sozinho e nada é lançado. Cole no chat do Grok para ele revisar.</div>' +
+    var h = (alerta ? '<div class="pl-aviso">' + esc(alerta) + '</div>' : '') +
+      (S.rev && S.rev.suspeitas.length ? '<div class="pl-aviso">' + S.rev.suspeitas.length + ' refeição(ões) do rascunho podem já ter sido registradas e <b>ficaram fora do texto</b>. Decida na página (tirar ou manter) se quiser incluí-las.</div>' : '') +
+      '<div class="pl-nota">Só prepara o texto: nada é enviado sozinho e nada é lançado. Cole no chat do Grok para ele revisar.</div>' +
       '<label class="sr" for="textoGrok">Texto do plano</label><textarea id="textoGrok" class="pl-texto" readonly>' + esc(txt) + '</textarea>' +
       '<div class="pl-acoes pl-fim">' +
       (podeShare ? '<button type="button" class="pl-btn prim" data-acao="compartilhar" data-foco>Compartilhar…</button>' : '') +
@@ -311,13 +331,14 @@
       mudar(function (r) { var n = P.novoRascunho(S.base, S.ali); r.refeicoes = n.refeicoes; r.manter = []; P.aceitarBase(r, S.base, S.ali); });
       return anunciar('Sugestão original restaurada (dá para desfazer).');
     }
-    if (a === 'grok') return abrirGrok();
+    if (a === 'grok') return levarAoGrok();
     if (a === 'remover') return mudar(function (r) { r.refeicoes[iR].itens.splice(iI, 1); });
     if (a === 'trocar') return abrirTrocas(iR, iI);
     if (a === 'adicionar') return abrirBusca(iR);
     if (a === 'altRef') return abrirAltRef(iR);
     if (a === 'tirarRef') { mudar(function (r) { r.refeicoes.splice(iR, 1); }); return anunciar('Refeição tirada do rascunho.'); }
-    if (a === 'manterRef') return mudar(function (r) { var n = r.refeicoes[iR].refeicao; r.manter = (r.manter || []).concat([n]); });
+    // vale só para os registros vistos agora: se chegar outro, a refeição volta a ficar em dúvida
+    if (a === 'manterRef') return mudar(function (r) { P.manterRefeicao(r, r.refeicoes[iR].refeicao, S.rev ? S.rev.chaves : []); });
     if (a === 'novaRef') {
       var nome = btn.getAttribute('data-nome');
       return mudar(function (r) {
@@ -435,15 +456,10 @@
   // ---------------- carregar ----------------
   function erro(msg) { document.getElementById('plano').innerHTML = '<div class="load-error">' + esc(msg) + '</div>'; }
 
-  function iniciar() {
-    var storage = null;
-    try { storage = window.localStorage; } catch (e) { storage = null; }
-    S.arm = P.armazem(storage || { setItem: function () { throw new Error('sem armazenamento'); } });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return erro('Data inválida no endereço.');
-    document.getElementById('pageDate').textContent = rotuloDia(dia);
-    if (dia === N.somaDias(hoje, 1)) document.title = 'Planejar amanhã · Nutrição';
-
-    Promise.all([get('dados/alimentos.json'), get('dados/refeicoes.json'), get('dados/' + dia + '.json', true),
+  // lê os dados do servidor; na 1ª vez cria/abre o rascunho, depois só troca a BASE (o rascunho fica) e
+  // a revisão mostra o que mudou (registro novo → refeição em dúvida, fora do total)
+  function carregar() {
+    return Promise.all([get('dados/alimentos.json'), get('dados/refeicoes.json'), get('dados/' + dia + '.json', true),
                  get('dados/previa.json', true), get('dados/objetivo.json', true)]).then(function (res) {
       var ali = {};
       Object.keys(res[0]).forEach(function (k) { if (k.charAt(0) !== '_') ali[k] = res[0][k]; });
@@ -455,8 +471,8 @@
         return { refeicao: r.nome, itens: r.itens.filter(function (par) { return ali[par[0]]; }).map(function (par) { return P.item(ali, par[0], par[1]); }) };
       }) };
       S.base = P.baseDoDia(dia, res[2], res[3], padrao);
-      if (dia < hoje) S.somenteLeitura = 'Este dia já passou: o planejador mostra o rascunho só para consulta.';
-      else if (S.base.fechado) S.somenteLeitura = 'Este dia está fechado: nada a planejar.';
+      definirLeitura();
+      if (S.rasc) { S.rev = P.revisar(S.rasc, S.base, S.ali); return; }
       P.limparAntigos(S.arm, hoje);
       var salvo = S.arm.ler(P.chaveRascunho(dia)), r = null;
       if (salvo) { try { r = JSON.parse(salvo); } catch (e) { r = null; } }
@@ -464,12 +480,65 @@
       S.rasc = r;
       S.rev = P.revisar(S.rasc, S.base, S.ali);
       if (!salvo) salvar();
-      var nota = document.getElementById('footer');
-      nota.textContent = (S.base.fonte === 'dia' ? (S.base.lancado.length ? 'Base: o que falta de hoje (sugestão oficial do dia).' : 'Base: sugestão oficial do dia.')
-        : S.base.fonte === 'previa' ? 'Base: prévia da sugestão de amanhã (vira oficial à meia-noite).' : 'Base: plano padrão (ainda sem sugestão automática para este dia).') +
-        ' O rascunho fica só neste navegador (não sincroniza entre aparelhos) e nunca conta como consumo.';
+    });
+  }
+
+  function definirLeitura() {
+    hoje = N.hojeLA();
+    document.getElementById('pageDate').textContent = rotuloDia(dia);
+    if (dia < hoje) S.somenteLeitura = 'Este dia já passou' + (S.rasc ? ' (virou o dia com a página aberta)' : '') + ': o rascunho fica só para consulta.';
+    else if (S.base && S.base.fechado) S.somenteLeitura = 'Este dia está fechado: nada a planejar.';
+    else S.somenteLeitura = '';
+    var link = document.getElementById('linkHoje');
+    if (link) link.hidden = !(dia < hoje);
+  }
+
+  function rodape() {
+    document.getElementById('footer').textContent = (S.base.fonte === 'dia' ? (S.base.lancado.length ? 'Base: o que falta de hoje (sugestão oficial do dia).' : 'Base: sugestão oficial do dia.')
+      : S.base.fonte === 'previa' ? 'Base: prévia da sugestão de amanhã (vira oficial à meia-noite).' : 'Base: plano padrão (ainda sem sugestão automática para este dia).') +
+      ' O rascunho fica só neste navegador (não sincroniza entre aparelhos) e nunca conta como consumo.';
+  }
+
+  // estado que muda o que aparece: base (partes + fechado/fonte) e se é só leitura
+  function assinatura() {
+    return JSON.stringify([S.rev && S.rev.partes, S.rev && S.rev.suspeitas, S.base && S.base.fechado, S.base && S.base.fonte, S.somenteLeitura]);
+  }
+
+  // ao voltar para a página (aba/app de novo em primeiro plano) e antes de exportar: confere o servidor.
+  // Só redesenha se algo mudou. Resolve true se leu, false se falhou (a página segue com o que tinha).
+  var ultimaConferencia = 0, conferindo = null;
+  function atualizarBase(forcar) {
+    if (!S.rasc) return Promise.resolve(false);
+    if (conferindo) return conferindo;
+    if (!forcar && Date.now() - ultimaConferencia < 5000) return Promise.resolve(true);
+    var antes = assinatura();
+    conferindo = carregar().then(function () {
+      ultimaConferencia = Date.now();
+      if (assinatura() !== antes) { fecharFolha(); rodape(); render(); }
+      return true;
+    }, function () {
+      definirLeitura();                     // sem rede: a virada do dia ainda vale
+      if (assinatura() !== antes) { fecharFolha(); render(); }
+      return false;
+    }).then(function (ok) { conferindo = null; return ok; });
+    return conferindo;
+  }
+
+  function iniciar() {
+    var storage = null;
+    try { storage = window.localStorage; } catch (e) { storage = null; }
+    S.arm = P.armazem(storage || { setItem: function () { throw new Error('sem armazenamento'); } });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return erro('Data inválida no endereço.');
+    document.getElementById('pageDate').textContent = rotuloDia(dia);
+    if (dia === N.somaDias(hoje, 1)) document.title = 'Planejar amanhã · Nutrição';
+    carregar().then(function () {
+      ultimaConferencia = Date.now();
+      rodape();
       render();
     }).catch(function (e) { erro('Não consegui carregar os dados: ' + e.message); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') atualizarBase(false); });
+    window.addEventListener('focus', function () { atualizarBase(false); });
+    window.addEventListener('pageshow', function (ev) { if (ev.persisted) atualizarBase(true); });
   }
 
   iniciar();

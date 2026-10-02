@@ -95,3 +95,7 @@
 }
 .pl-status { font-size: 13px; font-weight: 700; color: #9CD3FF; margin-top: 8px; min-height: 18px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* virou o dia com a página aberta: atalho para o planejar de hoje */
+#linkHoje { margin: 0 0 12px; }
+#linkHoje[hidden] { display: none; }

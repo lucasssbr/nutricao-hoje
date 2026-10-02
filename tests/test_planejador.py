@@ -259,6 +259,92 @@ class Logica(unittest.TestCase):
             chuck = sum(i["quantidade"] for i in itens if i["alimento"] == "chuck-costco")
             self.assertLessEqual(chuck, 50, "teto 200 g − 150 g consumidos")
 
+    # ---- auditoria Codex #12 ----
+    def test_manter_vale_so_para_os_registros_vistos(self):
+        """Achado 2: 'Não foi registrada, manter' no 1º Almoço registrado não libera um 2º Almoço que chega depois."""
+        a1 = {"refeicao": "Almoço", "id_evento": "g1:refeicao:1", "consumido_em": "2026-10-02T12:30:00-07:00",
+              "itens": [self.it("frango-peito-cru", 200)]}
+        a2 = {"refeicao": "Almoço", "id_evento": "g2:refeicao:1", "consumido_em": "2026-10-02T13:10:00-07:00",
+              "itens": [self.it("batata-inglesa", 200)]}
+        r = rodar(self.PREP +
+                  "const d1=JSON.parse(JSON.stringify(D.dia)); d1.lancado.push(D.a1); const b1=P.baseDoDia('2026-10-02', d1, null, null);"
+                  "const rv1=P.revisar(rasc, b1, D.ali); P.manterRefeicao(rasc, 'Almoço', rv1.chaves);"
+                  "const rv1b=P.revisar(rasc, b1, D.ali);"
+                  "const salvo=JSON.parse(JSON.stringify(rasc));"          # recarregar = rascunho do armazenamento
+                  "const d2=JSON.parse(JSON.stringify(d1)); d2.lancado.push(D.a2); const b2=P.baseDoDia('2026-10-02', d2, null, null);"
+                  "const rv2=P.revisar(salvo, b2, D.ali);"
+                  "const velho=JSON.parse(JSON.stringify(salvo)); velho.manter=['Almoço'];"   # formato antigo (só o nome)
+                  "return {antes:rv1.suspeitas, mantido:rv1b.suspeitas, depois:rv2.suspeitas, velho:P.revisar(velho, b2, D.ali).suspeitas};",
+                  self.dados(a1=a1, a2=a2))
+        self.assertEqual(r["antes"], [0])
+        self.assertEqual(r["mantido"], [], "decidiu manter: sai da dúvida")
+        self.assertEqual(r["depois"], [0], "registro NOVO de Almoço depois da decisão: volta a ficar em dúvida")
+        self.assertEqual(r["velho"], [0], "manter no formato antigo não libera nada")
+
+    def test_qualquer_registro_sem_horario_marca_todas(self):
+        """Achado 3: 'Almoço' + 'Refeição 2' (sem consumido_em) → TODAS as refeições do rascunho ficam em dúvida."""
+        novos = [{"refeicao": "Almoço", "id_evento": "x:refeicao:1", "consumido_em": "2026-10-02T12:30:00-07:00",
+                  "itens": [self.it("frango-peito-cru", 200)]},
+                 {"refeicao": "Refeição 2", "id_evento": "x:refeicao:2", "itens": [self.it("clara-100g", 180)]}]
+        r = rodar(self.PREP + "const d2=JSON.parse(JSON.stringify(D.dia)); d2.lancado=D.novos;"
+                  "return P.revisar(rasc, P.baseDoDia('2026-10-02', d2, null, null), D.ali).suspeitas;",
+                  self.dados(novos=novos))
+        self.assertEqual(r, [0, 1, 2])
+
+    def _claras_jantar(self, comeu_claras=180):
+        comeu = [{"refeicao": "Almoço", "id_evento": "c:refeicao:1", "consumido_em": "2026-10-02T12:00:00-07:00",
+                  "itens": [self.it("clara-100g", comeu_claras)]}]
+        sug = [{"refeicao": "Almoço", "itens": [self.it("clara-100g", 100), self.it("batata-inglesa", 200)]},
+               {"refeicao": "Jantar", "itens": [self.it("clara-100g", 180), self.it("batata-inglesa", 200)]}]
+        return self.dia(comeu, sug)
+
+    def test_alternativas_da_refeicao_validam_a_refeicao_inteira(self):
+        """Achado 4: com 180 g de clara já consumidos, nenhuma versão do Jantar pode manter claras; nenhuma
+        versão do Almoço pode ter claras (só no jantar) nem alimento excluído."""
+        r = rodar(self.PREP + "rasc.excluidos=['batata-inglesa'];"
+                  "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const j=P.alternativasRefeicao(ctx,1,3), a=P.alternativasRefeicao(ctx,0,3);"
+                  "return {j:j.opcoes.map(o=>o.itens), a:a.opcoes.map(o=>o.itens), jc:j.conflitos, ac:a.conflitos};",
+                  self.dados(dia=self._claras_jantar()))
+        for itens in r["j"] + r["a"]:
+            nomes = [i["alimento"] for i in itens]
+            self.assertNotIn("clara-100g", nomes, itens)
+            self.assertNotIn("clara-un", nomes, itens)
+            self.assertNotIn("batata-inglesa", nomes, f"excluída pelo usuário: {itens}")
+        if not r["j"]:
+            self.assertTrue(r["jc"], "sem versão precisa explicar")
+
+    def test_ajuste_tira_o_que_nao_cabe_em_vez_de_manter(self):
+        """Achado 4 (causa): grade vazia devolvia a quantidade original — 'Ajustar as quantidades' mantinha 180 g."""
+        r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "return P.ajustarRefeicao(ctx,1);", self.dados(dia=self._claras_jantar()))
+        self.assertNotIn("clara-100g", [i["alimento"] for i in r])
+
+    def test_formas_equivalentes_dividem_o_teto(self):
+        """Achado 5: 180 g de clara-100g consumidos → clara-un não pode aparecer (mesmo alimento, outro cadastro)."""
+        comeu = [{"refeicao": "Almoço", "id_evento": "c:refeicao:1", "consumido_em": "2026-10-02T12:00:00-07:00",
+                  "itens": [self.it("clara-100g", 180), self.it("chuck-costco", 200), self.it("nurri-vanilla", 3),
+                            self.it("batata-inglesa", 700)]}]
+        sug = [{"refeicao": "Jantar", "itens": [self.it("melancia", 400)]}]
+        r = rodar(self.PREP + "rasc.excluidos=['frango-peito-cru','iogurte-grego-100g','iogurte-grego-430g'];"
+                  "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const a=P.alternativasItem(ctx,0,0,3); const eq=P.equivalentes(D.ali);"
+                  "const ctx2={base:P.baseDoDia('2026-10-02', D.d100, null, null), rasc, alimentos:D.ali, cfg};"
+                  "const b=P.alternativasItem(ctx2,0,0,50);"
+                  "return {op:a.opcoes.map(o=>o.alimento), c:a.conflitos, eq:eq, b:b.opcoes.map(o=>[o.alimento,o.quantidade])};",
+                  self.dados(dia=self.dia(comeu, sug),
+                             d100=self.dia([dict(comeu[0], itens=[self.it("clara-100g", 100)])], sug)))
+        self.assertIn(["clara-100g", "clara-un"], list(r["eq"].values()))
+        self.assertNotIn("clara-un", r["op"])
+        self.assertNotIn("clara-100g", r["op"])
+        self.assertTrue(any("formas equivalentes" in c for c in r["c"]), r["c"])
+        # com 100 g consumidos sobram 80 g: no máximo 2 claras (68 g) ou 80 g
+        for aid, q in r["b"]:
+            if aid == "clara-un":
+                self.assertLessEqual(q * 34, 80)
+            if aid == "clara-100g":
+                self.assertLessEqual(q, 80)
+
     def test_texto_para_o_grok(self):
         r = rodar(self.PREP + "return P.textoGrok(P.calcular(rasc, base, D.ali), base);", self.dados())
         linhas = r.split("\n")
