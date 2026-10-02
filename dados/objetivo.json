@@ -38,7 +38,7 @@
       "g": 50
     },
     "peso_inicial_kg": 88.9,
-    "meta_semanal_kg": 1.21,
+    "meta_semanal_kg": 0.94,
     "meta_modo": "auto",
     "calculo": {
       "peso_ref_kg": 88.0,
@@ -52,13 +52,13 @@
       "gasto_formula": 2897,
       "gasto_inferido": null,
       "gasto_inferido_falta": "sem pesagens a partir de 3 out (os 4 primeiros dias do objetivo não contam: água e glicogênio)",
-      "ingestao_media": 1570,
-      "ingestao_fonte": "meta de kcal — só 0 de 3 dia(s) fechados do objetivo têm registro completo confirmado (precisa 3)",
-      "dias_completos": 0,
+      "ingestao_media": 1863,
+      "ingestao_fonte": "média de 3 dia(s) fechados com registro completo",
+      "dias_completos": 3,
       "dias_fechados": 3,
-      "deficit_dia": 1327,
+      "deficit_dia": 1033,
       "atualizado": "2026-10-02",
-      "meta_calculada_kg": 1.21,
+      "meta_calculada_kg": 0.94,
       "meta_origem": "automática (déficit)"
     }
   },

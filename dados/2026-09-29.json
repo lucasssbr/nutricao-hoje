@@ -1,6 +1,6 @@
 {
   "data": "2026-09-29",
-  "atualizado": "2026-09-30T08:27:44-07:00",
+  "atualizado": "2026-10-02T07:43:46-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -164,5 +164,19 @@
       ]
     }
   ],
-  "sugestao_nota": "sem claras · 1 Nurri + 250 g de iogurte; fecha proteína possível sem passar da meta de kcal, mas carboidrato e gordura já estão acima da meta"
+  "sugestao_nota": "sem claras · 1 Nurri + 250 g de iogurte; fecha proteína possível sem passar da meta de kcal, mas carboidrato e gordura já estão acima da meta",
+  "registro": {
+    "status": "completo",
+    "em": "2026-10-02T07:43:46-07:00",
+    "obs": "Lucas confirmou ao Claude em 02/10: dias anteriores completos"
+  },
+  "eventos": [
+    {
+      "id_evento": "lucas-claude-20261002:completo:2",
+      "tipo": "completo",
+      "em": "2026-10-02T07:43:46-07:00",
+      "resumo": "registro do dia: completo",
+      "assinatura": "e63eedcfe619cf86"
+    }
+  ]
 }

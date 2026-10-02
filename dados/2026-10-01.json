@@ -1,6 +1,6 @@
 {
   "data": "2026-10-01",
-  "atualizado": "2026-10-02T00:23:05-07:00",
+  "atualizado": "2026-10-02T07:43:46-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -179,6 +179,18 @@
       "em": "2026-10-01T22:36:00-07:00",
       "resumo": "Jantar: 645 kcal | P 50 | C 22 | G 48 (3 item(ns))",
       "assinatura": "95ad2ce171520e0e"
+    },
+    {
+      "id_evento": "lucas-claude-20261002:completo:4",
+      "tipo": "completo",
+      "em": "2026-10-02T07:43:46-07:00",
+      "resumo": "registro do dia: completo",
+      "assinatura": "c50eb39070c15dbb"
     }
-  ]
+  ],
+  "registro": {
+    "status": "completo",
+    "em": "2026-10-02T07:43:46-07:00",
+    "obs": "Lucas confirmou ao Claude em 02/10: dias anteriores completos"
+  }
 }

@@ -1,6 +1,6 @@
 {
   "data": "2026-09-28",
-  "atualizado": "2026-09-29T11:00:00-07:00",
+  "atualizado": "2026-10-02T07:43:45-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -95,5 +95,19 @@
       ]
     }
   ],
-  "sugestao": []
+  "sugestao": [],
+  "registro": {
+    "status": "completo",
+    "em": "2026-10-02T07:43:45-07:00",
+    "obs": "Lucas confirmou ao Claude em 02/10: dias anteriores completos"
+  },
+  "eventos": [
+    {
+      "id_evento": "lucas-claude-20261002:completo:1",
+      "tipo": "completo",
+      "em": "2026-10-02T07:43:45-07:00",
+      "resumo": "registro do dia: completo",
+      "assinatura": "5d4ec8285d5ff68a"
+    }
+  ]
 }
