@@ -99,5 +99,188 @@ class Paridade(unittest.TestCase):
         self.assertIn("não está mais na biblioteca", v["erro"])
 
 
+def rodar(corpo, dados):
+    """Executa `corpo` (JS que termina com `return …`) com P=NutriPlano e D=dados; devolve o JSON."""
+    codigo = (
+        "const vm=require('vm'),fs=require('fs');"
+        "const ctx={window:{},Intl,Date,Math,Number,String,isFinite,JSON,console,Object,Array,parseFloat,parseInt,Error};"
+        "vm.createContext(ctx);"
+        f"for(const f of ['comum.js','planejador.js'])vm.runInContext(fs.readFileSync({json.dumps(str(RAIZ))}+'/'+f,'utf8'),ctx);"
+        f"const P=ctx.window.NutriPlano;const D={json.dumps(dados)};"
+        f"const r=(function(){{{corpo}}})();console.log(JSON.stringify(r));"
+    )
+    return json.loads(subprocess.check_output([NODE, "-"], input=codigo, text=True))
+
+
+META = {"kcal": 1570, "p": 180, "c": 100, "g": 50}
+
+
+@unittest.skipUnless(NODE, "node não instalado")
+class Logica(unittest.TestCase):
+    """Rascunho, revisão da base e trocas — cenários de dia vazio, parcial e acima da meta."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ali = {k: v for k, v in ler_json(RAIZ / "dados" / "alimentos.json").items() if not k.startswith("_")}
+        cls.refs = ler_json(RAIZ / "dados" / "refeicoes.json")
+
+    def it(self, aid, q):
+        from item import montar_item
+        return montar_item(self.ali, aid, str(q))
+
+    def dia(self, lancado=(), sugestao=None):
+        sug = sugestao if sugestao is not None else [
+            {"refeicao": "Almoço", "itens": [self.it("frango-peito-cru", 200), self.it("batata-inglesa", 200)]},
+            {"refeicao": "Lanche", "itens": [self.it("nurri-vanilla", 1)]},
+            {"refeicao": "Jantar", "itens": [self.it("chuck-costco", 150), self.it("melancia", 400)]}]
+        return {"data": "2026-10-02", "fechado": False, "meta": META, "lancado": list(lancado), "sugestao": sug}
+
+    def dados(self, **kw):
+        d = {"ali": self.ali, "refs": self.refs, "dia": self.dia()}
+        d.update(kw)
+        return d
+
+    PREP = ("const base=P.baseDoDia('2026-10-02', D.dia, D.previa||null, {meta:D.dia&&D.dia.meta, sugestao:[]});"
+            "const rasc=P.novoRascunho(base, D.ali);const cfg=P.config(D.refs);")
+
+    def test_base_dia_previa_padrao(self):
+        r = rodar("return [P.baseDoDia('2026-10-03', null, {para:'2026-10-03', meta:D.m, sugestao:[{refeicao:'Almoço',itens:[]}]}, {meta:D.m, sugestao:[]}).fonte,"
+                  " P.baseDoDia('2026-10-04', null, {para:'2026-10-03', meta:D.m, sugestao:[{refeicao:'Almoço',itens:[]}]}, {meta:D.m, sugestao:[]}).fonte,"
+                  " P.baseDoDia('2026-10-02', {meta:D.m, lancado:[], sugestao:[]}, null, null).fonte]", {"m": META})
+        self.assertEqual(r, ["previa", "padrao", "dia"])
+
+    def test_dia_vazio_totais_e_consumido_guardado(self):
+        r = rodar(self.PREP + "const c=P.calcular(rasc, base, D.ali); return [c.consumido.kcal, c.planejado, c.projetado.kcal];", self.dados())
+        sug = self.dia()["sugestao"]
+        self.assertEqual(r[0], 0)
+        self.assertAlmostEqual(r[2], sum(i["kcal"] for m in sug for i in m["itens"]), places=6)
+        # consumido vem dos valores GUARDADOS: mudar a biblioteca não muda o que já foi comido
+        almoco = {"refeicao": "Almoço", "id_evento": "e1:refeicao:1", "consumido_em": "2026-10-02T12:00:00-07:00",
+                  "itens": [self.it("chuck-costco", 200)]}
+        ali2 = json.loads(json.dumps(self.ali)); ali2["chuck-costco"]["kcal"] = 999
+        r = rodar(self.PREP + "return P.calcular(rasc, base, D.ali).consumido.kcal;", self.dados(dia=self.dia([almoco]), ali=ali2))
+        self.assertEqual(r, almoco["itens"][0]["kcal"])
+
+    def test_acima_da_meta_mostra_diferenca_positiva(self):
+        muito = [{"refeicao": "Almoço", "id_evento": "e:refeicao:1", "consumido_em": "2026-10-02T12:00:00-07:00",
+                  "itens": [self.it("chuck-costco", 600)]}]
+        r = rodar(self.PREP + "return P.calcular(rasc, base, D.ali).dif;", self.dados(dia=self.dia(muito)))
+        self.assertGreater(r["kcal"], 0)
+        self.assertGreater(r["g"], 0)
+
+    def test_registro_novo_marca_refeicao_e_nao_soma_duas_vezes(self):
+        r = rodar(self.PREP + "const d2=JSON.parse(JSON.stringify(D.dia)); d2.lancado.push(D.novo);"
+                  "const b2=P.baseDoDia('2026-10-02', d2, null, null); const rv=P.revisar(rasc, b2, D.ali);"
+                  "const c=P.calcular(rasc, b2, D.ali, rv.suspeitas);"
+                  "const ok=P.revisar(P.aceitarBase(rasc, b2, D.ali), b2, D.ali);"
+                  "return {mudou:rv.mudou, motivos:rv.motivos, susp:rv.suspeitas, proj:c.projetado.kcal, plan:c.planejado.kcal,"
+                  " cons:c.consumido.kcal, depois:ok.mudou, susp2:ok.suspeitas};",
+                  self.dados(novo={"refeicao": "Almoço", "id_evento": "g:refeicao:1", "consumido_em": "2026-10-02T12:30:00-07:00",
+                                   "itens": [self.it("frango-peito-cru", 200), self.it("batata-inglesa", 200)]}))
+        self.assertTrue(r["mudou"])
+        self.assertIn("o Grok registrou ou corrigiu refeições", r["motivos"])
+        self.assertEqual(r["susp"], [0], "o Almoço do rascunho pode ser o que o Grok registrou")
+        self.assertAlmostEqual(r["proj"], r["cons"] + r["plan"], places=6)
+        sug = self.dia()["sugestao"]
+        self.assertAlmostEqual(r["plan"], sum(i["kcal"] for m in sug[1:] for i in m["itens"]), places=6,
+                               msg="o almoço suspeito não pode entrar na projeção (contaria duas vezes)")
+        self.assertFalse(r["depois"])
+        self.assertEqual(r["susp2"], [])
+
+    def test_meta_e_biblioteca_mudaram(self):
+        ali2 = json.loads(json.dumps(self.ali)); ali2["melancia"]["kcal"] = 31
+        r = rodar(self.PREP + "const d2=JSON.parse(JSON.stringify(D.dia)); d2.meta={kcal:1600,p:180,c:100,g:50};"
+                  "return P.revisar(rasc, P.baseDoDia('2026-10-02', d2, null, null), D.ali2).motivos;", self.dados(ali2=ali2))
+        self.assertEqual(r, ["a meta do dia mudou", "a biblioteca de alimentos mudou"])
+
+    def test_alimento_removido_da_biblioteca(self):
+        ali2 = {k: v for k, v in self.ali.items() if k != "melancia"}
+        r = rodar(self.PREP + "const c=P.calcular(rasc, base, D.ali2); const rv=P.revisar(rasc, base, D.ali2);"
+                  "const it=c.refeicoes[2].itens.find(i=>i.alimento==='melancia');"
+                  "return {faltando:rv.faltando, marcado:!!it.faltando, kcal:it.kcal, texto:P.textoGrok(c, base)};",
+                  self.dados(ali2=ali2))
+        self.assertEqual(r["faltando"], ["melancia"])
+        self.assertTrue(r["marcado"])
+        self.assertEqual(r["kcal"], 0)
+        self.assertIn("melancia (fora da biblioteca)", r["texto"])
+
+    def test_trocas_respeitam_tetos_exclusoes_e_claras(self):
+        # já comeu 3 Nurri (max_dia 3): nenhuma troca pode sugerir Nurri; frango excluído pelo usuário
+        tres = [{"refeicao": "Café", "id_evento": "c:refeicao:1", "consumido_em": "2026-10-02T08:00:00-07:00",
+                 "itens": [self.it("nurri-vanilla", 3)]}]
+        sug = [{"refeicao": "Almoço", "itens": [self.it("chuck-costco", 150), self.it("batata-inglesa", 200)]},
+               {"refeicao": "Jantar", "itens": [self.it("melancia", 400)]}]
+        r = rodar(self.PREP + "rasc.excluidos=['frango-peito-cru'];"
+                  "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const a=P.alternativasItem(ctx,0,0); const j=P.alternativasItem(ctx,1,0,50);"
+                  "const a2=P.alternativasItem(ctx,0,0);"
+                  "return {almoco:a.opcoes.map(o=>o.alimento), n:a.opcoes.length, conflitos:a.conflitos,"
+                  " jantar:j.opcoes.map(o=>o.alimento), igual:JSON.stringify(a)===JSON.stringify(a2),"
+                  " efeito:a.opcoes.map(o=>[o.efeito.kcal, o.total.kcal-a.antes.kcal])};",
+                  self.dados(dia=self.dia(tres, sug)))
+        self.assertLessEqual(r["n"], 3)
+        self.assertNotIn("nurri-vanilla", r["almoco"] + r["jantar"])
+        self.assertNotIn("frango-peito-cru", r["almoco"] + r["jantar"])
+        for cl in ("clara-100g", "clara-un"):
+            self.assertNotIn(cl, r["almoco"], "claras só no jantar")
+        self.assertTrue(any("Nurri" in c and "teto" in c for c in r["conflitos"]), r["conflitos"])
+        self.assertTrue(any("excluído" in c for c in r["conflitos"]))
+        self.assertTrue(r["igual"], "determinístico")
+        for e, d in r["efeito"]:
+            self.assertAlmostEqual(e, d, places=6)
+
+    def test_teto_conta_o_planejado_nas_outras_refeicoes(self):
+        # 2 Nurri no café do rascunho + 1 no lanche: trocar o item do almoço não pode trazer Nurri (3/3)
+        sug = [{"refeicao": "Café", "itens": [self.it("nurri-vanilla", 2)]},
+               {"refeicao": "Almoço", "itens": [self.it("chuck-costco", 150)]},
+               {"refeicao": "Lanche", "itens": [self.it("nurri-vanilla", 1)]}]
+        r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "return P.alternativasItem(ctx,1,0,50).opcoes.map(o=>o.alimento);", self.dados(dia=self.dia([], sug)))
+        self.assertNotIn("nurri-vanilla", r)
+
+    def test_sem_alternativa_viavel_explica(self):
+        ali1 = {"nurri-vanilla": self.ali["nurri-vanilla"]}
+        sug = [{"refeicao": "Lanche", "itens": [self.it("nurri-vanilla", 1)]}]
+        r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const a=P.alternativasItem(ctx,0,0); const m=P.alternativasRefeicao(ctx,0);"
+                  "return {n:a.opcoes.length, c:a.conflitos, m:m.opcoes.map(o=>o.rotulo), mc:m.conflitos};",
+                  self.dados(ali=ali1, dia=self.dia([], sug)))
+        self.assertEqual(r["n"], 0)
+        self.assertTrue(r["c"], "sem opção precisa explicar por quê")
+
+    def test_ajuste_da_refeicao_respeita_teto(self):
+        comeu = [{"refeicao": "Almoço", "id_evento": "a:refeicao:1", "consumido_em": "2026-10-02T12:00:00-07:00",
+                  "itens": [self.it("chuck-costco", 150)]}]
+        sug = [{"refeicao": "Jantar", "itens": [self.it("chuck-costco", 50), self.it("melancia", 300)]}]
+        r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const m=P.alternativasRefeicao(ctx,0); return m.opcoes.map(o=>o.itens);", self.dados(dia=self.dia(comeu, sug)))
+        self.assertLessEqual(len(r), 3)
+        for itens in r:
+            chuck = sum(i["quantidade"] for i in itens if i["alimento"] == "chuck-costco")
+            self.assertLessEqual(chuck, 50, "teto 200 g − 150 g consumidos")
+
+    def test_texto_para_o_grok(self):
+        r = rodar(self.PREP + "return P.textoGrok(P.calcular(rasc, base, D.ali), base);", self.dados())
+        linhas = r.split("\n")
+        self.assertEqual(linhas[0], "PLANEJAMENTO — NÃO CONSUMIDO")
+        self.assertIn("Data: 02/10/2026 (sexta)", r)
+        self.assertIn("NÃO lance nada", r)
+        self.assertIn("Peito de frango", r)
+        self.assertIn("Dia projetado", r)
+
+    def test_armazenamento_indisponivel_e_limpeza(self):
+        r = rodar("const quebrado={setItem(){throw new Error('quota')},getItem(){throw new Error('x')},removeItem(){},length:0,key(){}};"
+                  "const a=P.armazem(quebrado); a.gravar('k','v');"
+                  "const mem={}; const st={setItem(k,v){mem[k]=String(v)},getItem(k){return k in mem?mem[k]:null},"
+                  " removeItem(k){delete mem[k]},get length(){return Object.keys(mem).length},key(i){return Object.keys(mem)[i]}};"
+                  "const b=P.armazem(st); b.gravar(P.chaveRascunho('2026-09-20'),'x'); b.gravar(P.chaveRascunho('2026-10-01'),'y');"
+                  "b.gravar(P.chaveRascunho('2026-10-03'),'z'); b.gravar('outra-coisa','w'); P.limparAntigos(b,'2026-10-02');"
+                  "return {disp:a.disponivel, leu:a.ler('k'), disp2:b.disponivel, chaves:Object.keys(mem).sort()};", {})
+        self.assertFalse(r["disp"])
+        self.assertEqual(r["leu"], "v", "sem armazenamento: funciona em memória (temporário)")
+        self.assertTrue(r["disp2"])
+        self.assertEqual(r["chaves"], ["nutri-plano:2026-10-01", "nutri-plano:2026-10-03", "outra-coisa"])
+
+
 if __name__ == "__main__":
     unittest.main()

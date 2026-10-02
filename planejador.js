@@ -30,8 +30,6 @@
     return q;
   }
 
-  function enxuto(x) { return Number.isInteger(x) ? x : x; }
-
   // valores para a quantidade, 1 casa (mesma conta do Python)
   function esperado(al, q) {
     var b = base(al), f = q / b.n, v = {};
@@ -151,9 +149,381 @@
     return f;
   }
 
+  // ---------------- base do dia e rascunho ----------------
+
+  function hash(str) {   // FNV-1a 32 bits — só para detectar mudança, não é segurança
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+
+  function chaveLancado(r, i) { return r.id_evento || ('#' + i + ':' + (r.refeicao || '') + ':' + (r.consumido_em || '')); }
+
+  // de onde vem o plano de um dia: arquivo do dia (hoje/criado) > prévia de amanhã > plano padrão
+  function baseDoDia(dia, arqDia, previa, padrao) {
+    if (arqDia) {
+      return { data: dia, fonte: 'dia', fechado: !!arqDia.fechado, meta: arqDia.meta, lancado: arqDia.lancado || [],
+               sugestao: arqDia.sugestao || [], nota: arqDia.sugestao_nota || '' };
+    }
+    if (previa && previa.para === dia && (previa.sugestao || []).length) {
+      return { data: dia, fonte: 'previa', fechado: false, meta: previa.meta, lancado: [], sugestao: previa.sugestao,
+               nota: previa.sugestao_nota || '' };
+    }
+    return { data: dia, fonte: 'padrao', fechado: false, meta: padrao.meta, lancado: [], sugestao: padrao.sugestao,
+             nota: 'Plano padrão (a sugestão automática deste dia ainda não existe)' };
+  }
+
+  // impressões digitais da base, por parte, para explicar O QUE mudou
+  function partesDaBase(base, alimentos) {
+    var usados = {};
+    (base.sugestao || []).forEach(function (r) { (r.itens || []).forEach(function (i) { usados[i.alimento] = 1; }); });
+    var bib = Object.keys(alimentos).sort().map(function (a) {
+      var x = alimentos[a];
+      return [a, x.base, x.kcal, x.p, x.c, x.g, x.fibra];
+    });
+    return {
+      lancado: hash(JSON.stringify((base.lancado || []).map(function (r, i) {
+        return [chaveLancado(r, i), (r.itens || []).map(function (it) { return [it.alimento, it.quantidade, it.kcal]; })];
+      }))),
+      meta: hash(JSON.stringify(base.meta || {})),
+      sugestao: hash(JSON.stringify((base.sugestao || []).map(function (r) {
+        return [r.refeicao, (r.itens || []).map(function (it) { return [it.alimento, it.quantidade]; })];
+      }))),
+      biblioteca: hash(JSON.stringify(bib))
+    };
+  }
+
+  function rascunhoDaSugestao(base) {
+    return (base.sugestao || []).map(function (r) {
+      return { refeicao: r.refeicao, itens: (r.itens || []).filter(function (i) { return i.alimento; })
+        .map(function (i) { return { alimento: i.alimento, quantidade: i.quantidade }; }) };
+    });
+  }
+
+  function novoRascunho(base, alimentos) {
+    return { v: 1, data: base.data, refeicoes: rascunhoDaSugestao(base), excluidos: [], manter: [],
+             base: partesDaBase(base, alimentos),
+             lancados: (base.lancado || []).map(chaveLancado) };
+  }
+
+  // valores do rascunho (biblioteca atual) + consumido (valores GUARDADOS) + projeção
+  function calcular(rasc, base, alimentos, suspeitas) {
+    suspeitas = suspeitas || [];
+    var refeicoes = rasc.refeicoes.map(function (r, iR) {
+      var itens = r.itens.map(function (it) {
+        try { return item(alimentos, it.alimento, it.quantidade); }
+        catch (e) { return { alimento: it.alimento, quantidade: it.quantidade, nome: it.alimento, faltando: true, erro: e.message,
+                             kcal: 0, p: 0, c: 0, g: 0 }; }
+      });
+      var t = somar([{ itens: itens }]);
+      return { refeicao: r.refeicao, itens: itens, total: t, suspeita: suspeitas.indexOf(iR) >= 0 };
+    });
+    var consumido = somar(base.lancado);
+    var contam = refeicoes.filter(function (r) { return !r.suspeita; });
+    var planejado = somar(contam.map(function (r) { return { itens: r.itens }; }));
+    var projetado = { temFibra: consumido.temFibra || planejado.temFibra };
+    ['kcal', 'p', 'c', 'g', 'fibra'].forEach(function (k) { projetado[k] = consumido[k] + planejado[k]; });
+    var meta = base.meta || { kcal: 1570, p: 180, c: 100, g: 50 };
+    var dif = {};
+    MACROS.forEach(function (k) { dif[k] = projetado[k] - meta[k]; });
+    return { refeicoes: refeicoes, consumido: consumido, planejado: planejado, projetado: projetado, meta: meta, dif: dif,
+             fibraRef: Math.round((meta.kcal || 1570) * 14 / 1000) };
+  }
+
+  // a base mudou desde o rascunho? O que mudou, e quais refeições do rascunho podem já ter sido registradas
+  function revisar(rasc, base, alimentos) {
+    var agora = partesDaBase(base, alimentos), motivos = [];
+    var nomes = { lancado: 'o Grok registrou ou corrigiu refeições', meta: 'a meta do dia mudou',
+                  sugestao: 'a sugestão oficial mudou', biblioteca: 'a biblioteca de alimentos mudou' };
+    Object.keys(nomes).forEach(function (k) { if (rasc.base[k] !== agora[k]) motivos.push(nomes[k]); });
+    var antes = {};
+    (rasc.lancados || []).forEach(function (c) { antes[c] = 1; });
+    var novos = (base.lancado || []).filter(function (r, i) { return !antes[chaveLancado(r, i)]; });
+    var ultimo = -1;
+    novos.forEach(function (r) { var h = horario(r); if (h) ultimo = Math.max(ultimo, HORARIOS.indexOf(h)); });
+    var manter = rasc.manter || [];
+    var suspeitas = [];
+    if (novos.length) {
+      rasc.refeicoes.forEach(function (r, i) {
+        var h = horario(r), ih = h ? HORARIOS.indexOf(h) : -1;
+        // sem horário reconhecível no registro novo: qualquer refeição do rascunho pode ser a mesma
+        var pode = ultimo < 0 ? true : (ih >= 0 && ih <= ultimo);
+        if (pode && r.itens.length && manter.indexOf(r.refeicao) < 0) suspeitas.push(i);
+      });
+    }
+    var faltando = [];
+    rasc.refeicoes.forEach(function (r) { r.itens.forEach(function (it) { if (!alimentos[it.alimento]) faltando.push(it.alimento); }); });
+    return { mudou: motivos.length > 0, motivos: motivos, novos: novos, suspeitas: suspeitas, faltando: faltando, partes: agora };
+  }
+
+  // o usuário revisou: a base atual passa a ser a referência do rascunho (suas edições continuam)
+  function aceitarBase(rasc, base, alimentos) {
+    rasc.base = partesDaBase(base, alimentos);
+    rasc.lancados = (base.lancado || []).map(chaveLancado);
+    rasc.manter = [];
+    return rasc;
+  }
+
+  // ---------------- trocas ----------------
+
+  // quanto ainda cabe no PLANEJAMENTO de cada alimento: teto − consumido − planejado nas outras posições
+  function restantes(ctx, ignorar) {
+    var tetos = tetosDoDia(ctx.alimentos, ctx.cfg), ja = consumo(ctx.base.lancado), r = {};
+    ctx.rasc.refeicoes.forEach(function (ref, iR) {
+      ref.itens.forEach(function (it, iI) {
+        if (ignorar && ignorar(iR, iI)) return;
+        ja[it.alimento] = (ja[it.alimento] || 0) + it.quantidade;
+      });
+    });
+    Object.keys(tetos).forEach(function (a) { r[a] = Math.max(0, tetos[a] - (ja[a] || 0)); });
+    return { resto: r, tetos: tetos, usado: ja };
+  }
+
+  function totalDoDia(ctx, trocarRef, novosItens) {
+    var t = somar(ctx.base.lancado);
+    ctx.rasc.refeicoes.forEach(function (ref, iR) {
+      if ((ctx.suspeitas || []).indexOf(iR) >= 0) return;
+      var itens = iR === trocarRef ? novosItens : ref.itens;
+      itens.forEach(function (it) {
+        var al = ctx.alimentos[it.alimento];
+        if (!al || !(it.quantidade > 0)) return;
+        var v = esperado(al, it.quantidade);
+        MACROS.forEach(function (k) { t[k] += v[k]; });
+        if (v.fibra != null) { t.fibra += v.fibra; t.temFibra = true; }
+      });
+    });
+    return t;
+  }
+
+  function efeito(antes, depois) {
+    var d = {};
+    MACROS.concat(['fibra']).forEach(function (k) { d[k] = (depois[k] || 0) - (antes[k] || 0); });
+    return d;
+  }
+
+  function nomeQtd(al, q) { return al.nome + ' ' + textoQtd(al, q); }
+
+  // porção de REFERÊNCIA de cada alimento: mediana do que aparece na sugestão do dia, no que já foi comido e
+  // nas refeições favoritas; sem nada, 1 unidade ou 100 g. As trocas variam em volta dela (mesma faixa do
+  // sugerir.py: grade), nunca "a quantidade que iguala as calorias" — isso dava 1,2 kg de tomate.
+  function porcoesReferencia(ctx) {
+    var q = {};
+    function add(aid, x) { if (aid && typeof x === 'number' && x > 0) (q[aid] = q[aid] || []).push(x); }
+    (ctx.base.sugestao || []).concat(ctx.base.lancado || []).forEach(function (r) {
+      (r.itens || []).forEach(function (i) { add(i.alimento, i.quantidade); });
+    });
+    var favs = (ctx.refs && ctx.refs.refeicoes) || {};
+    Object.keys(favs).forEach(function (k) { (favs[k].itens || []).forEach(function (par) { add(par[0], Number(par[1])); }); });
+    var med = {};
+    Object.keys(q).forEach(function (aid) {
+      var v = q[aid].slice().sort(function (a, b) { return a - b; }), n = v.length;
+      med[aid] = n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
+    });
+    return med;
+  }
+
+  function porcao(ctx, aid) {
+    var ref = ctx._porcoes || (ctx._porcoes = porcoesReferencia(ctx));
+    if (ref[aid]) return ref[aid];
+    var b = base(ctx.alimentos[aid]);
+    return b.unidade === 'un' ? 1 : 100;
+  }
+
+  // até `limite` alternativas para o item iI da refeição iR, ordenadas pela distância da meta do dia
+  // (mesma conta do sugerir.py). Devolve {opcoes, conflitos}: conflitos explica o que ficou de fora.
+  function alternativasItem(ctx, iR, iI, limite) {
+    limite = limite || 3;
+    var ref = ctx.rasc.refeicoes[iR], atual = ref.itens[iI];
+    var meta = ctx.base.meta, alAtual = ctx.alimentos[atual.alimento];
+    var antes = totalDoDia(ctx);
+    var custoAntes = custoMacros(antes, meta);
+    var lim = restantes(ctx, function (a, b) { return a === iR && b === iI; });
+    var soJantar = ctx.cfg.so_jantar || [], h = horario(ref);
+    var excl = ctx.rasc.excluidos || [], conflitos = [], semEspaco = [], opcoes = [];
+    var noPrato = {};
+    ref.itens.forEach(function (it, k) { if (k !== iI) noPrato[it.alimento] = 1; });
+    Object.keys(ctx.alimentos).sort().forEach(function (aid) {
+      var al = ctx.alimentos[aid];
+      if (aid === atual.alimento || noPrato[aid]) return;
+      if (excl.indexOf(aid) >= 0) return;
+      if (soJantar.indexOf(aid) >= 0 && h !== 'Jantar') return;
+      try { base(al); } catch (e) { return; }
+      var tipico = porcao(ctx, aid);
+      var teto = aid in lim.resto ? lim.resto[aid] : null;
+      var gr = grade(al, tipico, teto).filter(function (q) { return q > 0; });
+      if (!gr.length) { semEspaco.push(aid); return; }
+      var melhor = null;
+      gr.forEach(function (q) {
+        var novos = ref.itens.map(function (it, k) { return k === iI ? { alimento: aid, quantidade: q } : it; });
+        var t = totalDoDia(ctx, iR, novos), c = custoMacros(t, meta);
+        if (!melhor || c < melhor.custo - 1e-9) melhor = { alimento: aid, quantidade: q, custo: c, total: t };
+      });
+      opcoes.push(melhor);
+    });
+    opcoes.sort(function (a, b) { return a.custo - b.custo || (a.alimento < b.alimento ? -1 : 1); });
+    var nomes = {};   // mesmo alimento cadastrado duas vezes (ex.: iogurte por 100 g e por pote): uma opção só
+    opcoes = opcoes.filter(function (o) {
+      var n = norm(ctx.alimentos[o.alimento].nome);
+      if (nomes[n]) return false;
+      nomes[n] = 1;
+      return true;
+    });
+    opcoes = opcoes.slice(0, limite).map(function (o) {
+      var al = ctx.alimentos[o.alimento];
+      return { alimento: o.alimento, quantidade: o.quantidade, texto: nomeQtd(al, o.quantidade),
+               item: item(ctx.alimentos, o.alimento, o.quantidade), total: o.total, efeito: efeito(antes, o.total),
+               aproxima: o.custo < custoAntes - 1e-9 };
+    });
+    if (excl.length) conflitos.push(excl.length + ' alimento(s) excluído(s) por você neste rascunho');
+    semEspaco.forEach(function (aid) {
+      var al = ctx.alimentos[aid];
+      conflitos.push(al.nome + ': teto de planejamento do dia já usado (' + textoQtd(al, lim.tetos[aid]) + ' — ' +
+                     textoQtd(al, lim.usado[aid] || 0) + ' entre consumido e outras refeições)');
+    });
+    if (h !== 'Jantar') soJantar.forEach(function (aid) { if (ctx.alimentos[aid]) conflitos.push(ctx.alimentos[aid].nome + ': só no jantar'); });
+    if (!opcoes.length && !conflitos.length) conflitos.push('não há outro alimento na biblioteca para esta posição');
+    return { opcoes: opcoes, conflitos: conflitos, antes: antes };
+  }
+
+  // ajusta só as QUANTIDADES dos itens de uma refeição (busca local limitada, determinística)
+  function ajustarRefeicao(ctx, iR) {
+    var ref = ctx.rasc.refeicoes[iR], meta = ctx.base.meta;
+    var itens = ref.itens.map(function (it) { return { alimento: it.alimento, quantidade: it.quantidade }; });
+    var grades = itens.map(function (it, k) {
+      var al = ctx.alimentos[it.alimento];
+      if (!al) return [it.quantidade];
+      var lim = restantes(ctx, function (a, b) { return a === iR; });
+      // teto deste alimento nesta refeição = resto do dia − o que os OUTROS itens desta refeição já usam
+      var outros = 0;
+      itens.forEach(function (o, j) { if (j !== k && o.alimento === it.alimento) outros += o.quantidade; });
+      var teto = it.alimento in lim.resto ? Math.max(0, lim.resto[it.alimento] - outros) : null;
+      var g = grade(al, it.quantidade, teto).filter(function (q) { return q > 0; });
+      return g.length ? g : [it.quantidade];
+    });
+    var melhor = custoMacros(totalDoDia(ctx, iR, itens), meta);
+    for (var volta = 0; volta < 20; volta++) {
+      var mudou = false;
+      for (var k = 0; k < itens.length; k++) {
+        var atual = itens[k].quantidade;
+        for (var j = 0; j < grades[k].length; j++) {
+          var q = grades[k][j];
+          if (q === atual) continue;
+          itens[k].quantidade = q;
+          var c = custoMacros(totalDoDia(ctx, iR, itens), meta);
+          if (c < melhor - 1e-9) { melhor = c; atual = q; mudou = true; } else itens[k].quantidade = atual;
+        }
+        itens[k].quantidade = atual;
+      }
+      if (!mudou) break;
+    }
+    return itens;
+  }
+
+  // até `limite` versões da refeição: quantidades ajustadas e a melhor troca de cada item
+  function alternativasRefeicao(ctx, iR, limite) {
+    limite = limite || 3;
+    var ref = ctx.rasc.refeicoes[iR], meta = ctx.base.meta;
+    var antes = totalDoDia(ctx), custoAntes = custoMacros(antes, meta), cand = [], vistos = {};
+    function add(rotulo, itens) {
+      var chave = JSON.stringify(itens);
+      if (vistos[chave] || chave === JSON.stringify(ref.itens.map(function (i) { return { alimento: i.alimento, quantidade: i.quantidade }; }))) return;
+      vistos[chave] = 1;
+      var t = totalDoDia(ctx, iR, itens), c = custoMacros(t, meta);
+      cand.push({ rotulo: rotulo, itens: itens, total: t, custo: c, efeito: efeito(antes, t), aproxima: c < custoAntes - 1e-9 });
+    }
+    if (ref.itens.length) add('Ajustar as quantidades', ajustarRefeicao(ctx, iR));
+    ref.itens.forEach(function (it, iI) {
+      var alt = alternativasItem(ctx, iR, iI, 1).opcoes[0];
+      if (!alt) return;
+      var al = ctx.alimentos[it.alimento];
+      add('Trocar ' + (al ? al.nome : it.alimento) + ' por ' + alt.texto,
+          ref.itens.map(function (x, k) { return k === iI ? { alimento: alt.alimento, quantidade: alt.quantidade } : { alimento: x.alimento, quantidade: x.quantidade }; }));
+    });
+    cand.sort(function (a, b) { return a.custo - b.custo; });
+    return { opcoes: cand.slice(0, limite), antes: antes,
+             conflitos: cand.length ? [] : ['nenhuma versão diferente desta refeição cabe nas regras (tetos, exclusões, claras só no jantar)'] };
+  }
+
+  // ---------------- armazenamento local (por navegador; não sincroniza) ----------------
+
+  function armazem(storage) {
+    var ok = false, memoria = {};
+    try { var k = '__nutri_teste__'; storage.setItem(k, '1'); storage.removeItem(k); ok = true; } catch (e) { ok = false; }
+    return {
+      disponivel: ok,
+      ler: function (chave) {
+        if (!ok) return memoria[chave] || null;
+        try { return storage.getItem(chave); } catch (e) { return memoria[chave] || null; }
+      },
+      gravar: function (chave, valor) {
+        memoria[chave] = valor;
+        if (!ok) return false;
+        try { storage.setItem(chave, valor); return true; } catch (e) { return false; }
+      },
+      apagar: function (chave) {
+        delete memoria[chave];
+        if (ok) { try { storage.removeItem(chave); } catch (e) { /* nada */ } }
+      },
+      chaves: function () {
+        if (!ok) return Object.keys(memoria);
+        var out = [];
+        try { for (var i = 0; i < storage.length; i++) out.push(storage.key(i)); } catch (e) { /* nada */ }
+        return out;
+      }
+    };
+  }
+
+  var PREFIXO = 'nutri-plano:';
+  function chaveRascunho(dia) { return PREFIXO + dia; }
+  // rascunhos de dias que já passaram há mais de 7 dias são apagados (nunca o de hoje/futuro)
+  function limparAntigos(arm, hoje) {
+    var limite = N.somaDias(hoje, -7);
+    arm.chaves().forEach(function (k) {
+      if (k && k.indexOf(PREFIXO) === 0 && k.slice(PREFIXO.length) < limite) arm.apagar(k);
+    });
+  }
+
+  // ---------------- texto para o Grok ----------------
+
+  var DIAS_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  function linhaMacros(t) {
+    return N.ri(t.kcal) + ' kcal | P ' + N.ri(t.p) + ' | C ' + N.ri(t.c) + ' | G ' + N.ri(t.g) +
+      (t.temFibra || t.fibra ? ' | fibra ' + N.ri(t.fibra) + ' g' : '');
+  }
+  function textoGrok(calc, base) {
+    var p = base.data.split('-');
+    var dow = DIAS_SEMANA[new Date(Date.parse(base.data + 'T12:00:00Z')).getUTCDay()];
+    var l = ['PLANEJAMENTO — NÃO CONSUMIDO',
+             'Data: ' + p[2] + '/' + p[1] + '/' + p[0] + ' (' + dow + ')',
+             'Pedido: revise este plano. NÃO lance nada — só registre quando eu disser que comi.', ''];
+    if ((base.lancado || []).length) l.push('Já registrado hoje: ' + linhaMacros(calc.consumido), '');
+    l.push('Planejado (não consumido):');
+    var algum = false;
+    calc.refeicoes.forEach(function (r) {
+      if (r.suspeita || !r.itens.length) return;
+      algum = true;
+      l.push('• ' + r.refeicao + ' — ' + linhaMacros(r.total));
+      r.itens.forEach(function (i) {
+        l.push('   - ' + (i.faltando ? i.alimento + ' (fora da biblioteca)' : i.nome + ' — ' + i.qtd + ' — ' + N.ri(i.kcal) + ' kcal | P ' + N.ri(i.p) + ' | C ' + N.ri(i.c) + ' | G ' + N.ri(i.g)));
+      });
+    });
+    if (!algum) l.push('• (nenhuma refeição planejada)');
+    var m = calc.meta;
+    l.push('', 'Total planejado: ' + linhaMacros(calc.planejado),
+           'Dia projetado (registrado + planejado): ' + linhaMacros(calc.projetado),
+           'Meta: ' + m.kcal + ' kcal | P ' + m.p + ' | C ' + m.c + ' | G ' + m.g,
+           'Diferença: ' + MACROS.map(function (k) { var d = N.ri(calc.dif[k]); return (k === 'kcal' ? 'kcal ' : k.toUpperCase() + ' ') + (d > 0 ? '+' : '') + d; }).join(' | '));
+    return l.join('\n');
+  }
+
   window.NutriPlano = {
     MACROS: MACROS, HORARIOS: HORARIOS, base: base, lerQuantidade: lerQuantidade, esperado: esperado,
     textoQtd: textoQtd, item: item, somar: somar, norm: norm, horario: horario, config: config,
-    tetosDoDia: tetosDoDia, consumo: consumo, grade: grade, custoMacros: custoMacros, enxuto: enxuto
+    tetosDoDia: tetosDoDia, consumo: consumo, grade: grade, custoMacros: custoMacros,
+    hash: hash, baseDoDia: baseDoDia, partesDaBase: partesDaBase, rascunhoDaSugestao: rascunhoDaSugestao,
+    novoRascunho: novoRascunho, calcular: calcular, revisar: revisar, aceitarBase: aceitarBase,
+    restantes: restantes, totalDoDia: totalDoDia, alternativasItem: alternativasItem,
+    ajustarRefeicao: ajustarRefeicao, alternativasRefeicao: alternativasRefeicao,
+    armazem: armazem, chaveRascunho: chaveRascunho, limparAntigos: limparAntigos, textoGrok: textoGrok
   };
 })();
