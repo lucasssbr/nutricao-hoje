@@ -140,7 +140,7 @@ class Publicacao(BasePublicacao):
         c = self.conferir_remoto()
         self.assertTrue(json.loads((c / "dados" / f"{d}.json").read_text())["fechado"])
         self.assertIn(f'data-dia="{amanha}"', (c / "index.html").read_text())
-        # fechar não marca o registro como completo
+        # dia sem refeição: o fechamento não marca o registro como completo
         self.assertNotIn("registro", json.loads((c / "dados" / f"{d}.json").read_text()))
 
     def test_push_durante_o_dia_com_fechamento_nao_muda_nada(self):

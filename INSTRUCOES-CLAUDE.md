@@ -70,10 +70,12 @@ python3 scripts/registrar.py completo --evento msg-814:completo:1 --data 2026-09
 - O **recibo** traz: dia afetado, total da refeição, consumido/meta/restante, "Passou da meta" (se passou) e pendências. Copiar o recibo para o chat.
 - Consumo acima da meta é registrado normalmente — não existe limite.
 
-### Completude do registro (fechado ≠ completo)
+### Completude do registro (fechado = completo por padrão, desde 02/10)
 
-- Fechar à meia-noite **não** prova que tudo foi registrado. Cada dia tem `registro.status`: `completo` | `parcial`; sem o campo = **desconhecido** (dias antigos ficam assim — não migrar).
-- Quando o Lucas disser que registrou tudo do dia ("fechei tudo", "foi só isso hoje") → `registrar.py completo --status completo`. Se ele disser que faltou algo → `--status parcial`. Na dúvida, perguntar; **nunca** marcar completo por conta própria.
+- Cada dia tem `registro.status`: `completo` | `parcial`; sem o campo = **desconhecido**.
+- **Decisão do Lucas (02/10): à meia-noite o dia fecha como `completo`** (`obs`: "automático no fechamento"), a não ser que ele tenha avisado parcial. Proteção: dia **sem refeição** ou com **menos de 50% da meta de kcal** fica desconhecido (provável esquecimento) — o recibo/site mostram "registro não confirmado".
+- Lucas disse que faltou algo ("dia parcial", "esqueci de lançar e não lembro") → `registrar.py completo --status parcial` (vale antes ou depois de fechado, sem justificativa). Lembrou o que faltou → lançar a refeição no dia certo (`--consumido-em` com a data dele + `--justificativa "esqueceu de lançar"`); o dia continua completo.
+- 28/09–01/10 marcados completos a pedido do Lucas (02/10).
 - A meta automática e o gasto inferido usam **só dias fechados com registro completo**. O site mostra a cobertura (Histórico e check-in) e o status em cada dia.
 
 ### Calcular itens (consulta, planos e sugestões): com `scripts/item.py`
@@ -190,7 +192,7 @@ Título do card de sugestão: **"Sugestão do dia"** quando `lancado` está vazi
 4. Planos futuros: criar `dados/YYYY-MM-DD.json` e apontar o menu **Plano** para `dia.html?d=YYYY-MM-DD`. Arquivos `sugestao-*.html` antigos foram removidos; dia futuro sem arquivo mostra uma prévia do plano padrão em `dia.html?d=`.
 5. **Peso do dia** — no chat, mensagem tipo `peso 82,4` (vírgula ou ponto): `registrar.py peso --data <hoje> --kg 82.4 --enviar`. O Hoje/`dia.html` mostram "Peso 82,4 kg (181,7 lb)" sob a data; o Histórico usa o valor nos cards quando o dia está fechado.
 5b. **Gordura corporal** — o Lucas manda foto (frente/lado, luz boa, de manhã) ou o número ("gordura 18", "DEXA deu 17,5"). Foto → estimar a % com faixa (ex.: "~18% (16–20%)") e gravar o número do meio. Gravar no JSON do **dia** (mesmo lugar do peso): `"gordura_pct": 18` + `"gordura_fonte"`: `foto` · `fita` · `dexa` · `bioimpedancia` · `lucas`. `atualizado`, `validar.py`, commit `gordura DD/MM`. O card do Hoje usa a **medida mais confiável** (decisão do Lucas, 30/09): DEXA > fita > foto/informado > bioimpedância, entre as medidas dos últimos 30 dias; da fonte escolhida, média das leituras de 2 semanas. Bioimpedância só manda se não houver outra medida recente. Não sobrescrever uma medida de outra fonte no mesmo dia sem avisar (um campo por dia). Claude também pode estimar por foto se o Lucas mandar pra ele. Frequência sugerida: a cada 2–4 semanas (foto) ou quando fizer DEXA. **Foto é opcional (Lucas, 01/10): nunca cobrar nem listar como pendência.** Sem medida nova, o app segue com a última (e só marca "antiga" depois de 30 dias).
-6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/publicar.yml` → `scripts/publicar.sh` com `scripts/fechar_dia.py`) faz sozinho — e **fechar não marca o registro como completo**:
+6. **Fechar o dia — AUTOMÁTICO à meia-noite (Los Angeles)**. O GitHub Actions (`.github/workflows/publicar.yml` → `scripts/publicar.sh` com `scripts/fechar_dia.py`) faz sozinho — e marca o registro como **completo** (salvo aviso de parcial ou dia quase vazio; ver "Completude do registro"):
    1. `fechado: true` em todo dia passado ainda aberto;
    2. cria o JSON do novo dia se não existir, **já com o plano padrão como sugestão** (`dados/refeicoes.json`), e inclui em `dados/dias.json`;
    3. muda `data-dia` do `index.html` para o novo dia;

@@ -159,11 +159,11 @@
       coberturaLinha(last7) + pesoLine + compLine;
   }
 
-  // cobertura: fechar à meia-noite não prova que tudo foi registrado
+  // cobertura: completo = confirmado pelo Lucas ou automático no fechamento (dia com refeições, sem aviso de parcial)
   function coberturaLinha(dias) {
     var c = dias.filter(function (d) { return d.registro === 'completo'; }).length;
     var p = dias.filter(function (d) { return d.registro === 'parcial'; }).length;
-    return '<div class="hist-summary-comp">Registro confirmado completo: ' + c + ' de ' + dias.length + ' dia' + (dias.length > 1 ? 's' : '') +
+    return '<div class="hist-summary-comp">Registro completo: ' + c + ' de ' + dias.length + ' dia' + (dias.length > 1 ? 's' : '') +
       (p ? ' · ' + p + ' parcial' + (p > 1 ? 'is' : '') : '') + (dias.length - c - p ? ' · ' + (dias.length - c - p) + ' sem confirmação' : '') + '</div>';
   }
 

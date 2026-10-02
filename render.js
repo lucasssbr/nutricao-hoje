@@ -152,7 +152,7 @@
       document.getElementById('pageTitle').textContent = shortLabel;
     }
     var dateEl = document.getElementById('pageDate');
-    // fechar à meia-noite não prova que tudo foi registrado: mostra a completude confirmada
+    // completude do registro: completo (confirmado ou automático no fechamento), parcial ou não confirmado
     var reg = (data.registro && data.registro.status) || '';
     var regTxt = reg === 'completo' ? 'registro completo' : reg === 'parcial' ? 'registro parcial' : 'registro não confirmado';
     var passado = dia < localISODate();

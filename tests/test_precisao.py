@@ -78,7 +78,49 @@ class Fechamento(CopiaRepo):
         self.assertNotIn("fechado:", r2.stdout)          # repetido: nada muda
         self.assertNotIn("criado:", r2.stdout)
         self.assertSemErros()
-        self.assertNotIn("registro", self.ler(f"{d}.json"))   # fechar ≠ completo
+        self.assertNotIn("registro", self.ler(f"{d}.json"))   # dia sem refeição: não vira completo sozinho
+
+    def test_fechar_marca_completo_por_padrao(self):
+        """Decisão do Lucas (02/10): à meia-noite o dia vira 'completo', salvo aviso de parcial ou dia quase vazio."""
+        d = self.dia_aberto()
+        amanha = (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat()
+        x = self.ler(f"{d}.json")
+        meta = x["meta"]["kcal"]
+        from item import esperado as valores
+        banana = self.ler("alimentos.json")["banana"]
+
+        def com_kcal(kcal, registro=None):
+            y = json.loads(json.dumps(x))
+            y["lancado"] = []
+            if kcal is not None:
+                q = round(kcal / banana["kcal"], 2)
+                it = dict(nome="Banana", qtd=f"{q:g} un", alimento="banana", quantidade=q, **valores(banana, q))
+                y["lancado"] = [{"refeicao": "Almoço", "itens": [it]}]
+            y.pop("registro", None)
+            if registro:
+                y["registro"] = {"status": registro, "em": "2026-10-01T22:00:00-07:00"}
+            return y
+
+        casos = [(meta * 0.9, None, "completo"),          # dia lançado normal → completo automático
+                 (meta * 0.5, None, "completo"),          # no limite (50%) → completo
+                 (meta * 0.3, None, None),                # pouco lançado: provável esquecimento → desconhecido
+                 (None, None, None),                      # nenhuma refeição → desconhecido
+                 (meta * 0.9, "parcial", "parcial"),      # Lucas avisou parcial → respeita
+                 (meta * 0.3, "completo", "completo")]    # Lucas confirmou completo → respeita
+        for kcal, antes, esperado in casos:
+            with self.subTest(kcal=kcal, antes=antes):
+                self.gravar(f"{d}.json", com_kcal(kcal, antes))
+                (self.dados / f"{amanha}.json").unlink(missing_ok=True)
+                r = self.rodar("fechar_dia.py", env={"HOJE": amanha}, check=True)
+                self.assertIn(f"fechado: {d}", r.stdout)
+                reg = self.ler(f"{d}.json").get("registro")
+                self.assertEqual(reg and reg["status"], esperado, r.stdout)
+                if esperado and not antes:
+                    self.assertIn("automático", reg["obs"])
+                    self.assertIn("registro completo (automático)", r.stdout)
+                if esperado is None:
+                    self.assertIn("registro não confirmado", r.stdout)
+                self.assertSemErros()
 
     def test_agendamentos_na_troca_de_horario(self):
         """Execuções reais do GitHub (07:05, 08:05 e 08:35 UTC) na noite em que acaba o horário de verão

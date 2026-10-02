@@ -10,8 +10,10 @@ Idempotente: pode rodar várias vezes sem estragar nada.
 4. Botão "Plano" (index, dia, historico, alimentos) -> dia.html?d=<amanhã>.
 5. Derivados (scripts/derivados.py): dados/resumo.json e o cálculo do objetivo.
 
-Fechar NÃO quer dizer que o registro está completo: o campo "registro" do dia só muda quando o
-Lucas confirma (scripts/registrar.py completo). Dia sem confirmação fica "desconhecido".
+Registro completo por padrão (decisão do Lucas, 02/10): ao fechar, o dia sem confirmação vira
+"completo" (obs "automático no fechamento") — a não ser que o Lucas tenha avisado "dia parcial"
+(registrar.py completo --status parcial, que também vale depois de fechado). Proteção: dia sem refeição
+ou com menos de COMPLETO_MIN_PCT da meta de kcal fica "desconhecido" (provável esquecimento de lançar).
 """
 import datetime
 import os
@@ -20,9 +22,24 @@ import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from comum import DADOS, ROOT, agora_la, gravar_json, ler_json  # noqa: E402
+from comum import DADOS, ROOT, agora_la, gravar_json, ler_json, registro_do_dia, somar  # noqa: E402
 
 META_PADRAO = {"kcal": 1570, "p": 180, "c": 100, "g": 50}
+COMPLETO_MIN_PCT = 50   # abaixo disso (ou sem refeição) o fechamento não marca "completo" sozinho
+
+
+def completo_automatico(dia, meta, carimbo):
+    """Marca o registro como completo ao fechar, se o Lucas não confirmou nada e o dia parece lançado.
+    Devolve o texto do log (ou None se não mexeu)."""
+    if registro_do_dia(dia) != "desconhecido":
+        return None                                   # completo/parcial já informado: respeita
+    kcal = somar(dia.get("lancado")).get("kcal", 0)
+    alvo = float((dia.get("meta") or meta).get("kcal") or 0)
+    if not dia.get("lancado") or (alvo > 0 and kcal < alvo * COMPLETO_MIN_PCT / 100):
+        return f"registro não confirmado ({round(kcal)} kcal lançadas — menos de {COMPLETO_MIN_PCT}% da meta)"
+    dia["registro"] = {"status": "completo", "em": carimbo,
+                       "obs": "automático no fechamento (sem aviso de dia parcial)"}
+    return "registro completo (automático)"
 
 
 def carregar(p):
@@ -64,8 +81,9 @@ def main():
         if datetime.date.fromisoformat(d) < hoje and not dia.get("fechado"):
             dia["fechado"] = True
             dia["atualizado"] = carimbo
+            reg = completo_automatico(dia, meta, carimbo)
             salvar(p, dia)
-            print(f"fechado: {d}")
+            print(f"fechado: {d}" + (f" · {reg}" if reg else ""))
 
     # 2. garantir o JSON de hoje
     hoje_iso = hoje.isoformat()

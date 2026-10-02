@@ -256,8 +256,9 @@ def recibo(dia, resumo_evento, agora):
         linhas.append("Passou da meta: " + " · ".join(passou))
     pend = []
     reg = registro_do_dia(dia)
-    if reg != "completo":
-        pend.append(f"registro do dia: {reg} — quando o Lucas confirmar que lançou tudo: registrar.py completo")
+    # dia aberto fecha como completo à meia-noite (fechar_dia.py); só cobra no dia já fechado sem confirmação
+    if dia.get("fechado") and reg == "desconhecido":
+        pend.append("registro do dia: desconhecido — se o Lucas lançou tudo: registrar.py completo")
     if dia.get("peso_kg") is None:
         pend.append("sem pesagem neste dia (opcional)")
     linhas.append("Pendências: " + ("; ".join(pend) if pend else "nenhuma"))
