@@ -331,6 +331,17 @@ class Checagem:
         if "fibra" in it:
             ok &= self.numero(f"{onde}.fibra", it["fibra"], minimo=0)
         aid = it.get("alimento")
+        if it.get("manual") is not None:
+            # adição rápida (registrar.py --manual): valores do rótulo, sem alimento da biblioteca
+            if it.get("manual") is not True:
+                self.erro(f"{onde}.manual", "precisa ser true")
+            elif aid is not None or "quantidade" in it:
+                self.erro(onde, "item manual não leva alimento/quantidade (é a soma lida do rótulo)")
+            elif lista != "lancado":
+                self.erro(onde, "item manual só vale no que foi comido (lancado), não em sugestão")
+            elif ok and (it["kcal"] > 3000 or max(it["p"], it["c"], it["g"]) > 300):
+                self.erro(onde, "valores grandes demais para um item manual — confira")
+            return
         if aid is None:
             if dia_aberto_novo:
                 self.erro(f"{onde}.alimento", "faltando — gere o item com scripts/item.py ou scripts/registrar.py")

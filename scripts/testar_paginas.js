@@ -252,6 +252,40 @@ async function checarOrdemProteina(ctx) {
   return erros;
 }
 
+// Hoje: "+ Adicionar do rótulo" — conta (totais e por porção), recusa kcal incoerente e monta o comando do Grok
+async function checarAdicionarRotulo(ctx) {
+  const erros = [];
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  page.on('request', (r) => { if (r.method() !== 'GET') erros.push('escrita no servidor: ' + r.method()); });
+  await page.addInitScript(() => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); });
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.locator('#addCard > summary').click();
+  const preencher = async (vals) => { for (const [id, v] of Object.entries(vals)) await page.locator('#' + id).fill(v); };
+  // 1) totais, kcal em branco → 4/4/9
+  await preencher({ addNome: 'Barra Teste', addKcal: '', addP: '20', addC: '22', addG: '8', addF: '' });
+  const r1 = await page.locator('#addRes').innerText();
+  if (!/Vai lançar: 240 kcal \| P 20 \| C 22 \| G 8/.test(r1)) erros.push('totais: conta errada (' + r1 + ')');
+  // 2) kcal que não bate → aviso e botão desligado
+  await preencher({ addKcal: '500' });
+  if (!(await page.locator('#addEnviar').isDisabled())) erros.push('kcal incoerente não desligou "Enviar"');
+  if (!/não bate/.test(await page.locator('#addRes').innerText())) erros.push('kcal incoerente sem aviso');
+  // 3) por porção: 40 g = 200 kcal P20 C22 G8 fibra 14; comi 60 g → 1,5×
+  await page.locator('[data-modo="porcao"]').click();
+  await preencher({ addBase: '40 g', addQtd: '60 g', addKcal: '200', addP: '20', addC: '22', addG: '8', addF: '14' });
+  const r3 = await page.locator('#addRes').innerText();
+  if (!/Vai lançar: 300 kcal \| P 30 \| C 33 \| G 12 \| fibra 21 \(60 g\)/.test(r3)) erros.push('por porção: conta errada (' + r3 + ')');
+  await page.locator('#addSalvar').check();
+  await page.locator('#addEnviar').click();
+  const msg = await page.locator('#addMsg').inputValue();
+  if (!/^LANÇAR — ADIÇÃO RÁPIDA/.test(msg)) erros.push('mensagem sem cabeçalho');
+  if (!/--manual "Barra Teste \(60 g\)=300,30,33,12,21"/.test(msg)) erros.push('comando --manual errado: ' + (msg.match(/--manual "[^"]*"/) || ['?'])[0]);
+  if (!/--consumido-em \d{4}-\d{2}-\d{2}T\d{2}:\d{2} /.test(msg)) erros.push('sem --consumido-em');
+  if (!/SALVAR NA BIBLIOTECA.*base 40 g.*200 kcal \| P 20 \| C 22 \| G 8 \| fibra 14/.test(msg)) erros.push('sem pedido de salvar na biblioteca');
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -271,7 +305,7 @@ async function checarOrdemProteina(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -284,5 +318,5 @@ async function checarOrdemProteina(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 7} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 8} checagens cada).`);
 })();

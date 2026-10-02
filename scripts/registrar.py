@@ -10,6 +10,9 @@ Reusar o id com outro tipo ou outro conteúdo é RECUSADO (nunca vira sucesso si
   python3 scripts/registrar.py refeicao --evento msg-123 --nome Almoço --consumido-em 2026-09-30T12:40 \\
       --item chuck-costco=200g --item batata-inglesa=150g
   python3 scripts/registrar.py refeicao --evento msg-124 --favorita cafe-padrao --consumido-em 2026-09-30T08:10
+  # adição rápida (o Lucas leu o rótulo): nome=kcal,P,C,G[,fibra] — valores TOTAIS do que comeu, ponto decimal
+  python3 scripts/registrar.py refeicao --evento msg-128 --nome Lanche --consumido-em 2026-09-30T16:00 \\
+      --manual "Barra Quest (60 g)=300,30,33,12,21"
   # peso (kg) de um dia
   python3 scripts/registrar.py peso --evento msg-125 --data 2026-09-30 --kg 88.4
   # tirar uma refeição lançada por engano (pelo id do evento que a lançou)
@@ -133,6 +136,37 @@ def item_explicito(alimentos, texto):
         raise Recusa(str(e))
 
 
+MANUAL = re.compile(r"\s*(.+?)\s*=\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,"
+                    r"\s*(\d+(?:\.\d+)?)\s*(?:,\s*(\d+(?:\.\d+)?)\s*)?")
+
+
+def item_manual(texto, aceitar_kcal=False):
+    """Adição rápida (como o Quick Add do MyFitnessPal): o Lucas leu o rótulo e passou os TOTAIS do que comeu.
+    "Nome=kcal,P,C,G[,fibra]" → item sem alimento da biblioteca, marcado manual. Confere kcal × macros (4/4/9)."""
+    m = MANUAL.fullmatch(texto or "")
+    if not m:
+        raise Recusa(f"--manual {texto!r}: use \"Nome=kcal,P,C,G\" ou \"Nome=kcal,P,C,G,fibra\" (totais, ponto decimal), "
+                     f"ex.: \"Barra Quest (60 g)=300,30,33,12,21\"")
+    nome = m.group(1).strip()
+    kcal, p, c, g = (float(m.group(i)) for i in range(2, 6))
+    fibra = float(m.group(6)) if m.group(6) is not None else None
+    if not nome or len(nome) > 80:
+        raise Recusa("--manual: nome vazio ou longo demais (até 80 letras)")
+    if kcal > 3000 or max(p, c, g) > 300 or (fibra or 0) > 100:
+        raise Recusa(f"--manual {nome!r}: valores grandes demais para um item ({kcal:g} kcal, P{p:g} C{c:g} G{g:g}) — confira")
+    if kcal <= 0 and p + c + g <= 0:
+        raise Recusa(f"--manual {nome!r}: tudo zero")
+    est = 4 * p + 4 * c + 9 * g
+    if not aceitar_kcal and abs(kcal - est) > max(40, 0.25 * max(kcal, est)):
+        raise Recusa(f"--manual {nome!r}: {kcal:g} kcal não bate com os macros (4×P + 4×C + 9×G ≈ {est:.0f}). Confira o "
+                     f"rótulo; se estiver certo (ex.: álcool, polióis), repita com --aceitar-kcal")
+    it = {"nome": nome, "qtd": "adição rápida", "manual": True,
+          "kcal": arred(kcal, 1), "p": arred(p, 1), "c": arred(c, 1), "g": arred(g, 1)}
+    if fibra is not None:
+        it["fibra"] = arred(fibra, 1)
+    return it
+
+
 def cmd_refeicao(a, dados, agora):
     if not a.consumido_em:
         raise Recusa("--consumido-em é obrigatório (hora em que o Lucas comeu, fuso de Los Angeles)")
@@ -153,9 +187,12 @@ def cmd_refeicao(a, dados, agora):
             raise Recusa(str(e))
         itens, nome = ref["itens"], a.nome or ref["refeicao"]
     else:
-        if not a.item:
-            raise Recusa("passe --item id=quantidade (um ou mais) ou --favorita")
-        itens, nome = [item_explicito(alimentos, t) for t in a.item], a.nome
+        manual = getattr(a, "manual", None) or []   # chamadas internas/testes podem não ter as opções novas
+        if not (a.item or manual):
+            raise Recusa("passe --item id=quantidade (um ou mais), --manual \"Nome=kcal,P,C,G\" ou --favorita")
+        itens = [item_explicito(alimentos, t) for t in (a.item or [])] + \
+            [item_manual(t, getattr(a, "aceitar_kcal", False)) for t in manual]
+        nome = a.nome
         if not nome:
             raise Recusa("--nome é obrigatório (ex.: Almoço)")
     refeicao = {"refeicao": nome, "id_evento": a.evento, "consumido_em": consumido, "registrado_em": agora,
@@ -175,7 +212,8 @@ def cmd_refeicao(a, dados, agora):
         return (f"{nome}: {arred(t['kcal'])} kcal | P {arred(t['p'])} | C {arred(t['c'])} | G {arred(t['g'])}"
                 f" ({len(itens)} item(ns))")
     conteudo = {"tipo": "refeicao", "nome": nome.strip().lower(), "favorita": a.favorita,
-                "itens": [[it.get("alimento"), it.get("quantidade")] for it in itens],
+                "itens": [([it.get("alimento"), it.get("quantidade")] if not it.get("manual") else
+                           ["manual", it["nome"], it["kcal"], it["p"], it["c"], it["g"], it.get("fibra")]) for it in itens],
                 "consumido_utc": instante(consumido).isoformat(),
                 "remover_sugestao": (a.remover_sugestao or "").strip().lower() or None}
     return data.isoformat(), aplicar, conteudo
@@ -363,6 +401,9 @@ def main(argv=None):
     ap.add_argument("--nome")
     ap.add_argument("--item", action="append")
     ap.add_argument("--favorita")
+    ap.add_argument("--manual", action="append", metavar='"Nome=kcal,P,C,G[,fibra]"',
+                    help="adição rápida pelo rótulo (totais do que comeu); pode repetir e misturar com --item")
+    ap.add_argument("--aceitar-kcal", action="store_true", help="aceita kcal que não bate com 4/4/9 (álcool, polióis)")
     ap.add_argument("--consumido-em")
     ap.add_argument("--remover-sugestao", metavar="NOME", help="tira da sugestão a refeição com esse nome")
     ap.add_argument("--sem-replanejar", action="store_true",

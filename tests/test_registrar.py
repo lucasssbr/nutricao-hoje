@@ -37,6 +37,67 @@ class BaseRegistro(CopiaRepo):
         return sum(i["kcal"] for r in self.ler(f"{d}.json")["lancado"] for i in r["itens"])
 
 
+class AdicaoRapida(BaseRegistro):
+    """--manual: o Lucas leu o rótulo e passou os totais (Quick Add do MyFitnessPal)."""
+
+    def args(self, ev, *manual, extra=()):
+        a = ["refeicao", "--evento", ev, "--nome", "Lanche", "--consumido-em", self.hora_no_dia(self.d)]
+        for m in manual:
+            a += ["--manual", m]
+        return a + list(extra)
+
+    def test_lanca_soma_e_idempotente(self):
+        antes = self.total_lancado(self.d)
+        args = self.args("q-1:refeicao:1", "Barra Quest (60 g)=300,30,33,12,21", extra=["--item", "melancia=200g"])
+        self.reg(*args, check=True)
+        ref = self.ler(f"{self.d}.json")["lancado"][-1]
+        manual = [i for i in ref["itens"] if i.get("manual")]
+        self.assertEqual(len(manual), 1)
+        self.assertEqual({k: manual[0][k] for k in ("nome", "kcal", "p", "c", "g", "fibra")},
+                         {"nome": "Barra Quest (60 g)", "kcal": 300, "p": 30, "c": 33, "g": 12, "fibra": 21})
+        self.assertNotIn("alimento", manual[0])
+        self.assertAlmostEqual(self.total_lancado(self.d) - antes, 300 + 60, places=1)   # + melancia 200 g
+        self.assertSemErros()
+        resumo = {x["data"]: x for x in self.ler("resumo.json")}
+        self.assertAlmostEqual(resumo[self.d]["cons"]["kcal"], round(self.total_lancado(self.d), 1), places=1)
+        bytes1 = (self.dados / f"{self.d}.json").read_bytes()
+        self.assertIn("já registrado", self.reg(*args, check=True).stdout)           # retry não duplica
+        self.assertEqual((self.dados / f"{self.d}.json").read_bytes(), bytes1)
+        # mesmo evento com outros valores: RECUSADO (não vira sucesso silencioso)
+        self.reg(*self.args("q-1:refeicao:1", "Barra Quest (60 g)=310,30,33,12,21", extra=["--item", "melancia=200g"]), check=False)
+
+    def test_recusas(self):
+        antes = (self.dados / f"{self.d}.json").read_bytes()
+        for ruim in ("Coisa=500,10,10,5",          # kcal não bate com 4/4/9
+                     "Coisa=200,10,10",             # faltou gordura
+                     "=200,10,10,5",                # sem nome
+                     "Coisa=200,10,10,5,1,9",       # campo a mais
+                     "Coisa=9000,10,10,5",          # grande demais
+                     "Coisa=200;10;10;5",           # separador errado
+                     "Coisa=0,0,0,0"):              # vazio
+            with self.subTest(ruim=ruim):
+                r = self.reg(*self.args("r-" + str(abs(hash(ruim))) + ":refeicao:1", ruim), check=False)
+                self.assertIn("RECUSADO", r.stdout + r.stderr)
+        self.assertEqual((self.dados / f"{self.d}.json").read_bytes(), antes, "recusa não grava nada")
+        # álcool/polióis: kcal fora de 4/4/9 só com --aceitar-kcal
+        self.reg(*self.args("r-ok:refeicao:1", "Cerveja=150,1,13,0", extra=["--aceitar-kcal"]), check=True)
+        self.assertSemErros()
+
+    def test_validador(self):
+        d = self.ler(f"{self.d}.json")
+        man = {"nome": "X", "qtd": "adição rápida", "manual": True, "kcal": 100, "p": 10, "c": 10, "g": 2}
+        for erro, mudar in (("só vale no que foi comido", lambda x: x["sugestao"].append({"refeicao": "Jantar", "itens": [dict(man)]})),
+                            ("não leva alimento", lambda x: x["lancado"].append({"refeicao": "Lanche", "itens": [dict(man, alimento="melancia", quantidade=100)]})),
+                            ("precisa ser true", lambda x: x["lancado"].append({"refeicao": "Lanche", "itens": [dict(man, manual="sim")]}))):
+            with self.subTest(erro=erro):
+                y = __import__("json").loads(__import__("json").dumps(d))
+                mudar(y)
+                self.gravar(f"{self.d}.json", y)
+                self.assertErro(erro)
+        self.gravar(f"{self.d}.json", d)
+        self.assertSemErros()
+
+
 class Registrar(BaseRegistro):
     def test_refeicao_e_evento_repetido(self):
         antes = self.total_lancado(self.d)

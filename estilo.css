@@ -385,6 +385,34 @@
   .ali-obs { margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.4; }
   .ali-dens { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; }
   .ali-dens .v { color: var(--protein); font-weight: 800; }
+  /* + Adicionar do rótulo (Hoje) */
+  .add-card { margin: 4px 0 14px; border: 1px dashed rgba(100,210,255,0.35); border-radius: 18px; background: var(--surface); padding: 0 14px; }
+  .add-card > summary { min-height: 48px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; list-style: none;
+    font-weight: 800; color: #64D2FF; font-size: 15px; }
+  .add-card > summary::-webkit-details-marker { display: none; }
+  .add-card > summary span { font-weight: 600; color: var(--muted); font-size: 12px; }
+  .add-corpo { padding-bottom: 14px; }
+  .add-linha { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-campo { display: flex; flex-direction: column; gap: 4px; flex: 1 1 90px; margin-top: 8px; font-size: 11px; font-weight: 700; color: var(--muted); }
+  .add-nome { flex-basis: 100%; }
+  .add-campo input, .add-campo select { min-height: 44px; box-sizing: border-box; width: 100%; padding: 8px 10px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; font-weight: 600; }
+  .add-macros .add-campo { flex: 1 1 60px; }
+  .add-campo select { -webkit-appearance: none; appearance: none; padding-right: 30px;
+    background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238E9BB3' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center; }
+  .add-campo input[type="time"] { -webkit-appearance: none; appearance: none; }
+  .add-modo { display: flex; gap: 6px; margin-top: 10px; }
+  .add-modo button { flex: 1; min-height: 40px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .add-modo button[aria-pressed="true"] { color: #64D2FF; border-color: rgba(100,210,255,0.45); background: rgba(100,210,255,0.12); }
+  .add-dica { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .add-check { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--text); }
+  .add-check input { width: 20px; height: 20px; }
+  .add-check[hidden], #addPorcao[hidden], #addTexto[hidden] { display: none; }
+  .add-res { margin-top: 10px; font-size: 13px; font-weight: 700; min-height: 18px; }
+  .add-res.ok { color: var(--text); }
+  .add-res.erro { color: var(--over); }
+  .btn-csv:disabled { opacity: .45; cursor: default; }
   /* Onde foram as calorias (página do dia) */
   .onde-col { margin-top: 10px; }
   .onde-t { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }

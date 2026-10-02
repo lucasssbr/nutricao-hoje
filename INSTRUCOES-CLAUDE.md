@@ -56,11 +56,15 @@ Refeição, peso, correção e completude passam pelo CLI — ele calcula pela b
 python3 scripts/registrar.py refeicao --evento msg-812:refeicao:1 --nome Almoço --consumido-em 2026-09-30T12:40 \
     --item chuck-costco=200g --item batata-inglesa=150g [--remover-sugestao Almoço] --enviar
 python3 scripts/registrar.py refeicao --evento msg-812:refeicao:2 --favorita cafe-padrao --consumido-em 2026-09-30T08:10 --enviar
+# adição rápida (o Lucas leu o rótulo; botão "+ Adicionar do rótulo" no Hoje gera a mensagem pronta):
+python3 scripts/registrar.py refeicao --evento msg-815:refeicao:1 --nome Lanche --consumido-em 2026-09-30T16:00 \
+    --manual "Barra Quest (60 g)=300,30,33,12,21" --enviar          # Nome=kcal,P,C,G[,fibra] — TOTAIS, ponto decimal
 python3 scripts/registrar.py peso     --evento msg-812:peso:1 --data 2026-09-30 --kg 88.4 --enviar
 python3 scripts/registrar.py remover  --evento msg-813:remover:1 --data 2026-09-30 --alvo msg-812:refeicao:1 --justificativa "…" --enviar
 python3 scripts/registrar.py completo --evento msg-814:completo:1 --data 2026-09-30 --status completo|parcial --enviar
 ```
 
+- **Adição rápida (`--manual`, Lucas pediu em 02/10, como o Quick Add do MyFitnessPal):** mensagem que começa com `LANÇAR — ADIÇÃO RÁPIDA` → rodar o comando que vem nela (trocar `<id da mensagem>`). O item fica `"manual": true`, sem `alimento`/`quantidade` (são os totais do rótulo); conta no consumo como qualquer item. O registrar confere kcal × macros (4/4/9, tolerância 25% ou 40 kcal) e recusa se não bater — bebida alcoólica/polióis: `--aceitar-kcal`. Pode misturar com `--item` na mesma refeição. Se a mensagem trouxer `SALVAR NA BIBLIOTECA`, incluir o alimento em `alimentos.json` (fonte `rotulo`, base em g quando o rótulo tiver gramas) como de costume.
 - **`--evento` é obrigatório, estável e POR OPERAÇÃO**: `<id da mensagem>:<tipo>:<n>` (tipo = refeicao/peso/remover/completo; n = 1, 2… na ordem em que aparecem na mensagem). Mensagem com almoço + lanche + peso = `msg:refeicao:1`, `msg:refeicao:2`, `msg:peso:1`.
 - **Retry idêntico** (mesmo id, mesmo conteúdo) responde "já registrado" e **não duplica**. **Mesmo id com outro tipo ou outro conteúdo é RECUSADO** — nunca é tratado como sucesso: se é outra operação, use outro `n`; se é correção, `remover` + novo lançamento. O sufixo do id tem que bater com o comando. Eventos antigos (sem assinatura) continuam idempotentes pelo tipo.
 - **Troca de horário:** horário sem fuso que cai na hora repetida (1º domingo de novembro, 01:00–01:59) ou inexistente (2º domingo de março, 02:00–02:59) é recusado — passe com fuso (`2026-11-01T01:30-07:00` = antes da troca, `-08:00` = depois). A comparação com "agora" é por instante (UTC).
