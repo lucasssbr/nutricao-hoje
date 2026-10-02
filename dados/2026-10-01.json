@@ -1,6 +1,6 @@
 {
   "data": "2026-10-01",
-  "atualizado": "2026-10-01T19:14:41-07:00",
+  "atualizado": "2026-10-01T22:36:00-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -99,49 +99,51 @@
           "fibra": 1
         }
       ]
-    }
-  ],
-  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 2 dias + Peito de frango sem pele (cru) · refaz o restante do dia a cada refeição lançada",
-  "sugestao": [
+    },
     {
       "refeicao": "Jantar",
+      "id_evento": "t136u:refeicao:1",
+      "consumido_em": "2026-10-01T22:35:00-07:00",
+      "registrado_em": "2026-10-01T22:36:00-07:00",
       "itens": [
         {
-          "nome": "Chuck steak Costco (cru)",
-          "qtd": "100 g",
-          "alimento": "chuck-costco",
-          "quantidade": 100,
-          "kcal": 223,
-          "p": 20,
+          "nome": "Inked Timber Wolf Keto Seeds Bread",
+          "qtd": "2 un",
+          "alimento": "inked-timber-wolf",
+          "quantidade": 2,
+          "kcal": 90,
+          "p": 8,
+          "c": 22,
+          "g": 4,
+          "fibra": 20
+        },
+        {
+          "nome": "Castello Havarti (fatia)",
+          "qtd": "2 un",
+          "alimento": "castello-havarti",
+          "quantidade": 2,
+          "kcal": 220,
+          "p": 12,
           "c": 0,
-          "g": 17,
+          "g": 18,
           "fibra": 0
         },
         {
-          "nome": "Melancia",
-          "qtd": "375 g",
-          "alimento": "melancia",
-          "quantidade": 375,
-          "kcal": 112.5,
-          "p": 2.3,
-          "c": 28.5,
-          "g": 0.8,
-          "fibra": 1.5
-        },
-        {
-          "nome": "Peito de frango sem pele (cru)",
-          "qtd": "250 g",
-          "alimento": "frango-peito-cru",
-          "quantidade": 250,
-          "kcal": 300,
-          "p": 56.3,
+          "nome": "Chuck steak Costco (cru)",
+          "qtd": "150 g",
+          "alimento": "chuck-costco",
+          "quantidade": 150,
+          "kcal": 334.5,
+          "p": 30,
           "c": 0,
-          "g": 6.5,
+          "g": 25.5,
           "fibra": 0
         }
       ]
     }
   ],
+  "sugestao_nota": "Dia completo — sem refeições a sugerir",
+  "sugestao": [],
   "eventos": [
     {
       "id_evento": "t122u:peso:1",
@@ -170,6 +172,13 @@
       "em": "2026-10-01T19:14:41-07:00",
       "resumo": "Lanche: 285 kcal | P 33 | C 38 | G 3 (2 item(ns))",
       "assinatura": "4fb924943d08d34b"
+    },
+    {
+      "id_evento": "t136u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-01T22:36:00-07:00",
+      "resumo": "Jantar: 645 kcal | P 50 | C 22 | G 48 (3 item(ns))",
+      "assinatura": "95ad2ce171520e0e"
     }
   ]
 }

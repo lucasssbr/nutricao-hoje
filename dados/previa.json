@@ -14,14 +14,14 @@
       "itens": [
         {
           "nome": "Batata inglesa (crua)",
-          "qtd": "270 g",
+          "qtd": "280 g",
           "alimento": "batata-inglesa",
-          "quantidade": 270,
-          "kcal": 207.9,
-          "p": 5.7,
-          "c": 47.3,
+          "quantidade": 280,
+          "kcal": 215.6,
+          "p": 5.9,
+          "c": 49,
           "g": 0.3,
-          "fibra": 5.7
+          "fibra": 5.9
         },
         {
           "nome": "Castello Havarti (fatia)",
@@ -36,13 +36,13 @@
         },
         {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "170 g",
+          "qtd": "300 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 170,
-          "kcal": 204,
-          "p": 38.3,
+          "quantidade": 300,
+          "kcal": 360,
+          "p": 67.5,
           "c": 0,
-          "g": 4.4,
+          "g": 7.8,
           "fibra": 0
         }
       ]
@@ -52,14 +52,14 @@
       "itens": [
         {
           "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "2 lata",
+          "qtd": "1 lata",
           "alimento": "nurri-vanilla",
-          "quantidade": 2,
-          "kcal": 300,
-          "p": 60,
-          "c": 8,
-          "g": 5,
-          "fibra": 2
+          "quantidade": 1,
+          "kcal": 150,
+          "p": 30,
+          "c": 4,
+          "g": 2.5,
+          "fibra": 1
         }
       ]
     },
@@ -68,35 +68,46 @@
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
-          "qtd": "150 g",
+          "qtd": "90 g",
           "alimento": "chuck-costco",
-          "quantidade": 150,
-          "kcal": 334.5,
-          "p": 30,
+          "quantidade": 90,
+          "kcal": 200.7,
+          "p": 18,
           "c": 0,
-          "g": 25.5,
+          "g": 15.3,
           "fibra": 0
         },
         {
+          "nome": "Inked Timber Wolf Keto Seeds Bread",
+          "qtd": "2 un",
+          "alimento": "inked-timber-wolf",
+          "quantidade": 2,
+          "kcal": 90,
+          "p": 8,
+          "c": 22,
+          "g": 4,
+          "fibra": 20
+        },
+        {
           "nome": "Melancia",
-          "qtd": "600 g",
+          "qtd": "375 g",
           "alimento": "melancia",
-          "quantidade": 600,
-          "kcal": 180,
-          "p": 3.6,
-          "c": 45.6,
-          "g": 1.2,
-          "fibra": 2.4
+          "quantidade": 375,
+          "kcal": 112.5,
+          "p": 2.3,
+          "c": 28.5,
+          "g": 0.8,
+          "fibra": 1.5
         },
         {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "190 g",
+          "qtd": "260 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 190,
-          "kcal": 228,
-          "p": 42.8,
+          "quantidade": 260,
+          "kcal": 312,
+          "p": 58.5,
           "c": 0,
-          "g": 4.9,
+          "g": 6.8,
           "fibra": 0
         }
       ]
