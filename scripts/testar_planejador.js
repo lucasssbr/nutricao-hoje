@@ -83,6 +83,24 @@ async function fluxoEdicao(ctx) {
   await page.locator('#' + idg).fill('0');
   await page.locator('#' + idg).press('Enter');
   checar((await kcalRascunho(page)) === k1, 'quantidade zero foi aceita', erros);
+  // sequência vista no iPhone real (01/10): erro antigo + digitar valor válido → o aviso some ao digitar
+  await page.locator('#' + idg).fill('');
+  await page.locator('#' + idg).type('161');
+  checar((await page.locator('#erro-' + idg).innerText()).trim() === '', 'aviso antigo continuou depois de digitar um valor válido', erros);
+  // apagar tudo e sair da caixa: volta ao valor anterior, sem erro
+  await page.locator('#' + idg).fill('');
+  await page.locator('#' + idg).press('Tab');
+  checar((await page.locator('#' + idg).inputValue()) === '123,5', 'caixa vazia não voltou ao valor anterior', erros);
+  checar((await page.locator('#erro-' + idg).innerText()).trim() === '', 'caixa vazia mostrou erro', erros);
+  // aplicar a quantidade NÃO recria as caixas (iPhone: teclado e foco continuam): mesmo elemento, foco no próximo
+  await page.evaluate((id) => { document.getElementById(id).__marca = 1; }, idg);
+  await page.locator('#' + idg).fill('140');
+  await page.locator('#' + idg).press('Tab');
+  checar(await page.evaluate((id) => document.getElementById(id).__marca === 1, idg), 'aplicar a quantidade recriou a caixa (fecha o teclado no iPhone)', erros);
+  checar(await page.evaluate(() => document.activeElement && document.activeElement !== document.body), 'foco perdido depois de aplicar a quantidade', erros);
+  checar((await kcalRascunho(page)) !== k1, 'total não atualizou depois de aplicar 140', erros);
+  await page.locator('[data-acao="desfazer"]').click();
+  checar((await kcalRascunho(page)) === k1, 'desfazer não voltou a quantidade anterior', erros);
   // remover + desfazer
   const itens0 = await page.locator('.pl-item').count();
   await page.locator('[data-acao="remover"]').first().click();

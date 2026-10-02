@@ -92,9 +92,10 @@
       '</td><td>' + ri(t.g) + '</td><td>' + (t.fibra == null ? '—' : ri(t.fibra)) + '</td></tr>';
   }
 
-  function render() {
-    renderAvisos();
-    var c = P.calcular(S.rasc, S.base, S.ali, S.rev ? S.rev.suspeitas : []);
+  function calc() { return P.calcular(S.rasc, S.base, S.ali, S.rev ? S.rev.suspeitas : []); }
+
+  // quadro do topo (só números e botões — nada de caixa de texto, pode ser redesenhado à vontade)
+  function resumoHtml(c) {
     var ro = !!S.somenteLeitura;
     var h = '<section class="hero pl-resumo" aria-labelledby="resumoTit"><h2 id="resumoTit" class="sr">Resumo do dia</h2>' +
       '<table class="pl-tab" id="resumo"><thead><tr><th scope="col"></th><th scope="col">kcal</th><th scope="col">P</th><th scope="col">C</th><th scope="col">G</th><th scope="col">Fibra</th></tr></thead><tbody>';
@@ -118,11 +119,34 @@
         '<button type="button" class="pl-btn" data-acao="restaurar">Restaurar sugestão</button>' +
         '<button type="button" class="pl-btn prim" data-acao="grok">Levar ao Grok</button></div>';
     }
-    h += '</section>';
+    return h + '</section>';
+  }
+
+  // depois de mudar uma QUANTIDADE: atualiza só números (quadro, total de cada refeição, linha do item) —
+  // não recria as caixas de texto, então o teclado e o foco do iPhone continuam onde estavam
+  function renderNumeros() {
+    renderAvisos();
+    var c = calc();
+    document.getElementById('resumoBox').innerHTML = resumoHtml(c);
+    c.refeicoes.forEach(function (r, iR) {
+      var t = document.getElementById('tot-' + iR);
+      if (t) t.innerHTML = macros(r.total);
+      r.itens.forEach(function (it, iI) {
+        var m = document.getElementById('mac-' + iR + '-' + iI);
+        if (m && !it.faltando) m.innerHTML = macros(it);
+      });
+    });
+  }
+
+  function render() {
+    renderAvisos();
+    var c = calc();
+    var ro = !!S.somenteLeitura;
+    var h = '<div id="resumoBox">' + resumoHtml(c) + '</div>';
 
     c.refeicoes.forEach(function (r, iR) {
       h += '<section class="meal suggest pl-ref' + (r.suspeita ? ' suspeita' : '') + '" aria-label="' + esc(r.refeicao) + '">' +
-        '<div class="meal-head"><h3>' + esc(r.refeicao) + '</h3><div class="tot">' + macros(r.total) + '</div></div>';
+        '<div class="meal-head"><h3>' + esc(r.refeicao) + '</h3><div class="tot" id="tot-' + iR + '">' + macros(r.total) + '</div></div>';
       if (r.suspeita) {
         h += '<div class="pl-aviso">Pode já ter sido registrada pelo Grok — <b>fora do total</b> por enquanto.' +
           (ro ? '' : '<div class="pl-acoes"><button type="button" class="pl-btn peq" data-acao="tirarRef" data-r="' + iR + '">Tirar do rascunho</button>' +
@@ -146,7 +170,7 @@
           if (al) h += '<button type="button" class="pl-btn peq" data-acao="trocar" data-r="' + iR + '" data-i="' + iI + '">Trocar</button>';
           h += '<button type="button" class="pl-btn peq" data-acao="remover" data-r="' + iR + '" data-i="' + iI + '" aria-label="Remover ' + esc(it.nome) + '">Remover</button>';
         }
-        if (al) h += '<div class="pl-mac">' + macros(it) + '</div>';
+        if (al) h += '<div class="pl-mac" id="mac-' + iR + '-' + iI + '">' + macros(it) + '</div>';
         h += '<div class="pl-erro" id="erro-' + id + '" role="alert"></div></div></div>';
       });
       if (!ro) {
@@ -362,16 +386,24 @@
     var it = S.rasc.refeicoes[iR] && S.rasc.refeicoes[iR].itens[iI];
     if (!it) return;
     var al = S.ali[it.alimento], erro = document.getElementById('erro-' + inp.id);
+    if (!String(inp.value).trim()) {          // apagou tudo e saiu da caixa: volta ao valor de antes, sem erro
+      inp.value = num(it.quantidade);
+      inp.removeAttribute('aria-invalid');
+      if (erro) erro.textContent = '';
+      return;
+    }
     try {
       var q = P.lerQuantidade(inp.value, P.base(al).unidade);
       if (q > 100000) throw new Error('Quantidade grande demais');
       inp.removeAttribute('aria-invalid');
       if (erro) erro.textContent = '';
       if (q === it.quantidade) return;
-      var foco = inp.id;
-      mudar(function (r) { r.refeicoes[iR].itens[iI].quantidade = q; });
-      var el = document.getElementById(foco);
-      if (el && document.activeElement === document.body) el.focus();
+      S.desfazer.push(JSON.stringify(S.rasc));
+      if (S.desfazer.length > 50) S.desfazer.shift();
+      it.quantidade = q;
+      S.rev = P.revisar(S.rasc, S.base, S.ali);
+      salvar();
+      renderNumeros();
     } catch (e) {
       inp.setAttribute('aria-invalid', 'true');
       if (erro) erro.textContent = e.message + ' — mantive ' + num(it.quantidade) + '.';
@@ -383,6 +415,14 @@
     if (f) return fecharFolha();
     var b = ev.target.closest('[data-acao]');
     if (b && !b.disabled) acao(b);
+  });
+  // voltou a digitar: o aviso de erro anterior some (não fica "mantive 280" ao lado de um 161 válido)
+  document.addEventListener('input', function (ev) {
+    if (ev.target.matches && ev.target.matches('.pl-qtd input')) {
+      ev.target.removeAttribute('aria-invalid');
+      var e = document.getElementById('erro-' + ev.target.id);
+      if (e) e.textContent = '';
+    }
   });
   document.addEventListener('change', function (ev) {
     if (ev.target.matches && ev.target.matches('.pl-qtd input')) quantidade(ev.target);
