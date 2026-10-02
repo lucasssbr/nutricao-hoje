@@ -213,7 +213,7 @@
         '<button type="button" class="pl-btn peq prim" data-acao="aplicarTroca" data-r="' + iR + '" data-i="' + iI + '" data-a="' + esc(o.alimento) + '" data-q="' + o.quantidade + '"' + (k ? '' : ' data-foco') + '>Aplicar no rascunho</button></div>';
     });
     if (a.conflitos.length) {
-      h += '<div class="pl-nota"><b>Por que não há outras opções:</b><ul>' + a.conflitos.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+      h += '<div class="pl-nota"><b>' + (a.opcoes.length ? 'Fora desta lista' : 'Por que não há opção') + ':</b><ul>' + a.conflitos.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
     }
     h += '<div class="pl-acoes pl-fim"><button type="button" class="pl-btn peq" data-acao="excluir" data-a="' + esc(it.alimento) + '">Não sugerir ' + esc(al.nome) + ' neste rascunho</button></div>';
     abrirFolha('Trocar ' + al.nome, h);

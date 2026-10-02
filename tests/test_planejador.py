@@ -8,7 +8,7 @@ import subprocess
 import sys
 import unittest
 
-from base import RAIZ
+from base import RAIZ, CopiaRepo
 
 sys.path.insert(0, str(RAIZ / "scripts"))
 import sugerir  # noqa: E402
@@ -280,6 +280,19 @@ class Logica(unittest.TestCase):
         self.assertEqual(r["leu"], "v", "sem armazenamento: funciona em memória (temporário)")
         self.assertTrue(r["disp2"])
         self.assertEqual(r["chaves"], ["nutri-plano:2026-10-01", "nutri-plano:2026-10-03", "outra-coisa"])
+
+
+class Fechamento(CopiaRepo):
+    def test_fechamento_atualiza_o_link_plano_do_planejador(self):
+        import datetime
+        import re
+        d = self.dia_aberto()
+        amanha = (datetime.date.fromisoformat(d) + datetime.timedelta(days=1)).isoformat()
+        depois = (datetime.date.fromisoformat(amanha) + datetime.timedelta(days=1)).isoformat()
+        self.rodar("fechar_dia.py", check=True, env={"HOJE": amanha})
+        html = (self.tmp / "planejar.html").read_text(encoding="utf-8")
+        self.assertEqual(re.findall(r'dia\.html\?d=([\d-]+)">Plano<', html), [depois])
+        self.assertIn('href="./planejar.html">Planejar</a>', (self.tmp / "index.html").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
