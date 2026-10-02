@@ -94,6 +94,20 @@ class Paridade(unittest.TestCase):
         for t, v in zip(tots, js("P.custoMacros(c.t, c.m)", casos)):
             self.assertAlmostEqual(v, sugerir.custo_macros(t, meta), places=9)
 
+    def test_formas_equivalentes_iguais_ao_python(self):
+        """equivalentes()/gramas() do planejador = sugerir.py (o mesmo teto de claras nos dois lugares)."""
+        r = js("[P.equivalentes(c.ali), Object.keys(c.ali).sort().map(a=>{try{return P.gramas(c.ali[a], 3)}catch(e){return 'erro'}})]",
+               [{"ali": self.ali}])[0]
+        py = []
+        for a in sorted(self.ali):
+            try:
+                py.append(sugerir.gramas(self.ali[a], 3))
+            except ValueError:
+                py.append("erro")
+        self.assertEqual(r[0], sugerir.equivalentes(self.ali))
+        self.assertEqual(r[1], py)
+        self.assertIn(["clara-100g", "clara-un"], list(r[0].values()))
+
     def test_alimento_fora_da_biblioteca(self):
         v = js("P.item(c.ali, 'nao-existe', 100)", [{"ali": self.ali}])[0]
         self.assertIn("não está mais na biblioteca", v["erro"])
@@ -319,6 +333,15 @@ class Logica(unittest.TestCase):
         r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
                   "return P.ajustarRefeicao(ctx,1);", self.dados(dia=self._claras_jantar()))
         self.assertNotIn("clara-100g", [i["alimento"] for i in r])
+
+    def test_ajuste_parte_da_quantidade_atual_quando_cabe(self):
+        """Ajustar só sai da quantidade atual se melhorar a conta: 275 g dentro das regras não vira 270/280 à toa."""
+        sug = [{"refeicao": "Jantar", "itens": [self.it("melancia", 275)]}]
+        r = rodar(self.PREP + "const ctx={base, rasc, alimentos:D.ali, cfg};"
+                  "const m={kcal:1570,p:180,c:100,g:50}; const antes=P.custoMacros(P.totalDoDia(ctx), m);"
+                  "const it=P.ajustarRefeicao(ctx,0); const depois=P.custoMacros(P.totalDoDia(ctx,0,it), m);"
+                  "return {it, antes, depois};", self.dados(dia=self.dia([], sug)))
+        self.assertLessEqual(r["depois"], r["antes"] + 1e-9, "o ajuste nunca pode piorar uma refeição que já cabe")
 
     def test_formas_equivalentes_dividem_o_teto(self):
         """Achado 5: 180 g de clara-100g consumidos → clara-un não pode aparecer (mesmo alimento, outro cadastro)."""

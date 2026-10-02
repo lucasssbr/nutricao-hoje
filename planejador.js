@@ -495,7 +495,7 @@
     var ref = ctx.rasc.refeicoes[iR], meta = ctx.base.meta, h = horario(ref);
     var soJantar = ctx.cfg.so_jantar || [], excl = ctx.rasc.excluidos || [];
     var itens = ref.itens.map(function (it) { return { alimento: it.alimento, quantidade: it.quantidade }; });
-    var lim = restantes(ctx, function (a) { return a === iR; });
+    var lim = restantes(ctx, function (a) { return a === iR; }), tetos = [];
     var grades = itens.map(function (it, k) {
       var al = ctx.alimentos[it.alimento];
       if (!al) return [it.quantidade];
@@ -505,12 +505,14 @@
       var outros = 0;
       itens.forEach(function (o, j) { if (j !== k && o.alimento === it.alimento) outros += o.quantidade; });
       var teto = it.alimento in lim.resto ? Math.max(0, lim.resto[it.alimento] - outros) : null;
+      tetos[k] = teto;
       var g = grade(al, it.quantidade, teto).filter(function (q) { return q > 0; });
       return g.length ? g : [0];          // não cabe nada: tira (antes mantinha a quantidade original)
     });
-    // ponto de partida dentro da grade (a quantidade atual pode estar acima do teto)
+    // ponto de partida: a quantidade atual, a não ser que ela já quebre a regra (acima do teto / item a tirar)
     itens.forEach(function (it, k) {
-      if (grades[k].indexOf(it.quantidade) >= 0) return;
+      var quebra = (grades[k].length === 1 && grades[k][0] === 0) || (tetos[k] != null && it.quantidade > tetos[k] + 1e-9);
+      if (!quebra || grades[k].indexOf(it.quantidade) >= 0) return;
       it.quantidade = grades[k].reduce(function (m, q) { return Math.abs(q - it.quantidade) < Math.abs(m - it.quantidade) ? q : m; }, grades[k][0]);
     });
     var melhor = custoMacros(totalDoDia(ctx, iR, itens), meta);

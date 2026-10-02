@@ -271,7 +271,7 @@ async function fluxoPaginaAberta(ctx) {
   const almocoPrevia = previa.sugestao.find((r) => /almo/i.test(r.refeicao)) || previa.sugestao[0];
   const registrado = { refeicao: almocoPrevia.refeicao, id_evento: 'aberta:refeicao:1', consumido_em: DIA + 'T12:30:00-07:00', itens: almocoPrevia.itens };
   const resto = previa.sugestao.filter((r) => r !== almocoPrevia);
-  const servir = (page) => page.route('**/dados/' + DIA + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(diaOficial(resto, [registrado])) }));
+  const servir = (page, reg = registrado) => page.route('**/dados/' + DIA + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(diaOficial(resto, [reg])) }));
   const depois = (min) => new Date(AGORA.getTime() + min * 60000);
   // 1) voltar para a página (visibilitychange) com registro novo no servidor: base revalidada sem recarregar
   const { page, erros: e1 } = await abrir(ctx, '/planejar.html?d=' + DIA);
@@ -281,6 +281,15 @@ async function fluxoPaginaAberta(ctx) {
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await page.waitForSelector('.pl-ref.suspeita', { timeout: 3000 }).catch(() => erros.push('voltar à página não revalidou a base (registro novo não apareceu)'));
   checar((await num(page, 1, 2)) > 0, '"Já registrado" continuou 0 depois de voltar à página', erros);
+  // "Não foi registrada, manter" vale só para o registro visto: chega OUTRO almoço → volta a ficar em dúvida
+  await page.locator('.pl-ref.suspeita [data-acao="manterRef"]').first().click();
+  checar((await page.locator('.pl-ref.suspeita').count()) === 0, '"manter" não tirou a refeição da dúvida', erros);
+  const outro = Object.assign({}, registrado, { id_evento: 'aberta:refeicao:2', consumido_em: DIA + 'T13:10:00-07:00' });
+  await page.unroute('**/dados/' + DIA + '.json');
+  await page.route('**/dados/' + DIA + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(diaOficial(resto, [registrado, outro])) }));
+  await page.clock.setFixedTime(depois(4));
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForSelector('.pl-ref.suspeita', { timeout: 3000 }).catch(() => erros.push('registro novo depois de "manter" não voltou a marcar a refeição'));
   // 2) virou o dia com a página aberta: só leitura + atalho para hoje
   const amanhaLA = new Date(Date.parse(DIA + 'T00:00:00Z') + 86400000 + 15 * 3600000);   // dia seguinte, 08h em LA
   await page.clock.setFixedTime(amanhaLA);
@@ -294,7 +303,8 @@ async function fluxoPaginaAberta(ctx) {
   const { page: p2, erros: e2 } = await abrir(ctx, '/planejar.html?d=' + DIA, {
     init: () => { Object.defineProperty(navigator, 'share', { value: undefined, configurable: true }); }
   });
-  await servir(p2);
+  // registro que este rascunho ainda não viu (o passo 1 decidiu "manter" só para os registros dele)
+  await servir(p2, Object.assign({}, registrado, { id_evento: 'aberta:refeicao:3' }));
   await p2.locator('[data-acao="grok"]').click();
   await p2.waitForSelector('#textoGrok', { timeout: 3000 });
   const txt = await p2.locator('#textoGrok').inputValue();

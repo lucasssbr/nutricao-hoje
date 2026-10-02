@@ -213,6 +213,26 @@ class Sugerir(unittest.TestCase):
                                 if i["alimento"] == "nurri-vanilla"), "lata é sempre inteira")
 
 
+    def test_formas_equivalentes_dividem_o_teto(self):
+        """Claras por 100 g e por unidade são o MESMO alimento: o teto de 180 g vale somando as duas formas.
+        Histórico com as duas no jantar; já comeu 150 g de clara-100g → sobram 30 g no total (0 claras-un)."""
+        for d in self.dias:
+            dia = dia_hist(d)
+            dia["lancado"][2] = ref("Jantar", "20:30", d, ("melancia", 500), ("clara-100g", 120), ("clara-un", 3))
+            (self.tmp / f"{d}.json").write_text(json.dumps(dia, ensure_ascii=False))
+        self.config(max_dia={"clara-100g": 180, "clara-un": 5})
+
+        def claras_g(sug):
+            return sum(i["quantidade"] * (34 if i["alimento"] == "clara-un" else 1)
+                       for r in sug for i in r["itens"] if i["alimento"] in ("clara-100g", "clara-un"))
+
+        sug, _ = self.rodar()
+        self.assertLessEqual(claras_g(sug), 180 + 1e-6, sug)
+        sug, _ = self.rodar([ref("Almoço", "12:00", self.alvo, ("clara-100g", 150))])
+        self.assertLessEqual(claras_g(sug), 30 + 1e-6, sug)
+        self.assertNotIn("clara-un", {a for _, a in self.alimentos_em(sug)}, "1 clara (34 g) já passa dos 30 g")
+
+
 class Integracao(CopiaRepo):
     def test_fechamento_cria_dia_com_sugestao_automatica(self):
         import datetime

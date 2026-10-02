@@ -15,13 +15,15 @@ Como funciona (determinístico, sem dependências):
 4. Quantidades: busca local que aproxima o TOTAL DO DIA (lançado + sugerido) da meta — proteína no
    mínimo a meta, gordura no máximo a meta, kcal e carboidrato perto — preferindo porções parecidas
    com as que ele costuma comer. Respeita `plano_ate_g` (ex.: acém 200 g) e `max_dia` como teto de
-   PLANEJAMENTO (nunca limite do que ele come) e claras só no jantar.
+   PLANEJAMENTO (nunca limite do que ele come) e claras só no jantar. Formas do mesmo alimento (clara por
+   100 g e por unidade) dividem um teto só, em gramas (equivalentes()).
 5. Sem histórico suficiente → plano padrão (dados/refeicoes.json), como antes.
 Macros sempre pela biblioteca (item.montar_item). Sugestão nunca conta como consumo.
 """
 import argparse
 import datetime
 import math
+import re
 import statistics
 import sys
 import unicodedata
@@ -171,6 +173,62 @@ def tetos_do_dia(alimentos, cfg):
     return tetos
 
 
+def gramas(al, q):
+    """Gramas de uma quantidade: base em g, ou base em unidade com peso anotado ('1 un (~34 g)'); senão None.
+    = planejador.js:gramas"""
+    unidade, n = base_de(al)
+    if unidade == "g":
+        return q
+    m = re.search(r"\(\s*~?\s*(\d+(?:[.,]\d+)?)\s*g\s*\)", str(al.get("base", "")))
+    return q / n * float(m.group(1).replace(",", ".")) if m else None
+
+
+def equivalentes(alimentos):
+    """O MESMO alimento em formas diferentes (clara por 100 g e por unidade; iogurte por 100 g e por pote):
+    mesmos valores por grama (±2%). {chave: [ids]} só com 2+ formas. = planejador.js:equivalentes"""
+    ids = sorted(alimentos)
+    perfil = {}
+    for a in ids:
+        try:
+            g1 = gramas(alimentos[a], base_de(alimentos[a])[1])
+        except ValueError:
+            g1 = None
+        if g1 and g1 > 0:
+            perfil[a] = [float(alimentos[a].get(k) or 0) / g1 for k in MACROS]
+
+    def igual(x, y):
+        return all(abs(v - w) <= max(0.02 * max(abs(v), abs(w)), 0.002) for v, w in zip(x, y))
+
+    lista = [a for a in ids if a in perfil]
+    grupo = {}
+    for i, a in enumerate(lista):
+        for b in lista[:i]:
+            if igual(perfil[a], perfil[b]):
+                grupo[a] = grupo.get(b) or b
+                grupo[grupo[a]] = grupo[a]
+                break
+    out = {}
+    for a, k in grupo.items():
+        out.setdefault(k, [])
+        if a not in out[k]:
+            out[k].append(a)
+    return {k: sorted(v) for k, v in out.items()}
+
+
+def sobra_dos_grupos(alimentos, tetos, comido):
+    """Formas equivalentes dividem UM teto em gramas (o maior entre elas: 180 g de clara OU 5 un ≈ 170 g →
+    180 g somando as formas). Devolve [(membros, gramas que ainda cabem)] só para grupos com teto."""
+    out = []
+    for membros in equivalentes(alimentos).values():
+        tg = [gramas(alimentos[a], tetos[a]) for a in membros if a in tetos]
+        tg = [x for x in tg if x is not None]
+        if not tg:
+            continue
+        usado = sum(gramas(alimentos[a], comido.get(a, 0)) or 0 for a in membros)
+        out.append((membros, max(0.0, max(tg) - usado)))
+    return out
+
+
 def consumo_por_alimento(lancado):
     q = {}
     for r in lancado:
@@ -180,9 +238,10 @@ def consumo_por_alimento(lancado):
     return q
 
 
-def otimizar(variaveis, alimentos, meta, base_tot, tetos):
+def otimizar(variaveis, alimentos, meta, base_tot, tetos, grupos=()):
     """Busca local determinística. variaveis: [(horario, alimento, tipico, grade, freq)].
-    tetos = o que AINDA cabe na sugestão por alimento (teto do dia menos o já consumido)."""
+    tetos = o que AINDA cabe na sugestão por alimento (teto do dia menos o já consumido);
+    grupos = [(membros, gramas que ainda cabem)] das formas equivalentes (sobra_dos_grupos)."""
     tipicos = {(h, a): t for h, a, t, _, _ in variaveis}
     freq = {(h, a): fr for h, a, _, _, fr in variaveis}
 
@@ -201,6 +260,9 @@ def otimizar(variaveis, alimentos, meta, base_tot, tetos):
             ph.setdefault(h, 0)
         if any(q > tetos[a] + 1e-9 for a, q in por_alimento.items() if a in tetos):
             return float("inf"), tot
+        for membros, sobra in grupos:
+            if sum(gramas(alimentos[a], por_alimento.get(a, 0)) or 0 for a in membros) > sobra + 1e-6:
+                return float("inf"), tot
         return custo(tot, meta, ph, esc, tipicos, freq), tot
 
     def descer(esc):
@@ -278,7 +340,14 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
 
     # teto de planejamento MENOS o que já foi comido hoje (comeu 3 Nurri no almoço → nenhuma a mais na sugestão)
     comido = consumo_por_alimento(lancado)
-    restante = {a: max(0.0, t - comido.get(a, 0)) for a, t in tetos_do_dia(alimentos, cfg).items()}
+    tetos = tetos_do_dia(alimentos, cfg)
+    restante = {a: max(0.0, t - comido.get(a, 0)) for a, t in tetos.items()}
+    grupos = sobra_dos_grupos(alimentos, tetos, comido)
+    for membros, sobra in grupos:   # cada forma também não passa do que sobra do grupo (na unidade dela)
+        for a in membros:
+            por_q = gramas(alimentos[a], 1)
+            cabe = sobra / por_q if por_q else 0.0
+            restante[a] = min(restante[a], cabe) if a in restante else cabe
     variaveis = []
     so_jantar = set(cfg.get("so_jantar") or [])
     for h in horarios:
@@ -301,7 +370,7 @@ def sugerir(dia, dados_dia=None, dados=DADOS):
             variaveis.append((h, aid, tipico, grade(alimentos[aid], tipico, teto), freq))
 
     base_tot = [sum(i.get(k, 0) for r in lancado for i in r.get("itens", [])) for k in MACROS]
-    esc = otimizar(variaveis, alimentos, meta, base_tot, restante)
+    esc = otimizar(variaveis, alimentos, meta, base_tot, restante, grupos)
 
     sugestao = []
     for h in horarios:
