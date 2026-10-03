@@ -1,6 +1,6 @@
 {
   "data": "2026-10-02",
-  "atualizado": "2026-10-02T13:47:21-07:00",
+  "atualizado": "2026-10-02T17:47:01-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -39,61 +39,64 @@
           "fibra": 5.3
         }
       ]
+    },
+    {
+      "refeicao": "Lanche",
+      "id_evento": "t0u:refeicao:1",
+      "consumido_em": "2026-10-02T17:46:00-07:00",
+      "registrado_em": "2026-10-02T17:47:01-07:00",
+      "itens": [
+        {
+          "nome": "Nurri Vanilla Milk Shake",
+          "qtd": "1 lata",
+          "alimento": "nurri-vanilla",
+          "quantidade": 1,
+          "kcal": 150,
+          "p": 30,
+          "c": 4,
+          "g": 2.5,
+          "fibra": 1
+        }
+      ]
     }
   ],
   "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 3 dias + Peito de frango sem pele (cru) · refaz o restante do dia a cada refeição lançada",
   "sugestao": [
     {
-      "refeicao": "Lanche",
-      "itens": [
-        {
-          "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "2 lata",
-          "alimento": "nurri-vanilla",
-          "quantidade": 2,
-          "kcal": 300,
-          "p": 60,
-          "c": 8,
-          "g": 5,
-          "fibra": 2
-        }
-      ]
-    },
-    {
       "refeicao": "Jantar",
       "itens": [
         {
           "nome": "Castello Havarti (fatia)",
-          "qtd": "1 un",
+          "qtd": "2 un",
           "alimento": "castello-havarti",
-          "quantidade": 1,
-          "kcal": 110,
-          "p": 6,
+          "quantidade": 2,
+          "kcal": 220,
+          "p": 12,
           "c": 0,
-          "g": 9,
+          "g": 18,
           "fibra": 0
         },
         {
           "nome": "Inked Timber Wolf Keto Seeds Bread",
-          "qtd": "2 un",
+          "qtd": "3 un",
           "alimento": "inked-timber-wolf",
-          "quantidade": 2,
-          "kcal": 90,
-          "p": 8,
-          "c": 22,
-          "g": 4,
-          "fibra": 20
+          "quantidade": 3,
+          "kcal": 135,
+          "p": 12,
+          "c": 33,
+          "g": 6,
+          "fibra": 30
         },
         {
           "nome": "Melancia",
-          "qtd": "475 g",
+          "qtd": "625 g",
           "alimento": "melancia",
-          "quantidade": 475,
-          "kcal": 142.5,
-          "p": 2.9,
-          "c": 36.1,
-          "g": 1,
-          "fibra": 1.9
+          "quantidade": 625,
+          "kcal": 187.5,
+          "p": 3.8,
+          "c": 47.5,
+          "g": 1.3,
+          "fibra": 2.5
         },
         {
           "nome": "Peito de frango sem pele (cru)",
@@ -123,6 +126,13 @@
       "em": "2026-10-02T13:47:21-07:00",
       "resumo": "Almoço: 527 kcal | P 35 | C 44 | G 26 (2 item(ns))",
       "assinatura": "74a7f3ff32c68043"
+    },
+    {
+      "id_evento": "t0u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-02T17:47:01-07:00",
+      "resumo": "Lanche: 150 kcal | P 30 | C 4 | G 3 (1 item(ns))",
+      "assinatura": "a09baeb770ab653c"
     }
   ]
 }
