@@ -1,6 +1,6 @@
 {
   "data": "2026-10-03",
-  "atualizado": "2026-10-04T11:54:14-07:00",
+  "atualizado": "2026-10-04T11:54:17-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -160,12 +160,18 @@
       "em": "2026-10-04T11:54:14-07:00",
       "resumo": "Ceia: 967 kcal | P 50 | C 104 | G 54 (4 item(ns))",
       "assinatura": "5fc04d77616bf35d"
+    },
+    {
+      "id_evento": "t2u:completo:1",
+      "tipo": "completo",
+      "em": "2026-10-04T11:54:17-07:00",
+      "resumo": "registro do dia: completo",
+      "assinatura": "6efe20220233f12b"
     }
   ],
   "registro": {
     "status": "completo",
-    "em": "2026-10-04T08:03:21-07:00",
-    "obs": "automático no fechamento (sem aviso de dia parcial)"
+    "em": "2026-10-04T11:54:17-07:00"
   },
   "correcoes": [
     {
