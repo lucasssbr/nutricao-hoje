@@ -421,6 +421,8 @@
   .onde li:first-child { border-top: none; }
   .onde li b { font-weight: 800; white-space: nowrap; }
   .onde li i { font-style: normal; color: var(--muted); font-size: 12px; text-align: right; }
+  .onde li .st-dias { display: inline; font-size: 11px; text-align: left; margin-left: 4px; }
+  #semTopCard { margin-top: 12px; }
   .ali-ordem { display: flex; gap: 6px; margin: 0 0 10px; }
   .ali-ordem button { flex: 1; min-height: 40px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
     color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }

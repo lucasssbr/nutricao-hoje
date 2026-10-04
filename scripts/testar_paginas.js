@@ -45,6 +45,7 @@ const PAGINAS = [
   ['Histórico · peso', '/historico.html', '#pesoCard', /peso/i],
   ['Histórico · calorias e proteína', '/historico.html', '#barrasCard', /Calorias e proteína · últimos 14 dias[\s\S]*Proteína \(g\) por dia/i],
   ['Histórico · proteína por refeição', '/historico.html', '#protRefCard', /Proteína por refeição[\s\S]*(Café|Almoço|Lanche|Jantar)[\s\S]*\d+\s?g/i],
+  ['Histórico · onde foram as calorias (semana)', '/historico.html', '#semTopCard', /Onde foram as calorias[\s\S]*\d+%/i],
   ['Histórico · média vs meta', '/historico.html', '#histSummary', /Média vs meta: kcal [+−]?\d+ · P [+−]?\d+ · C [+−]?\d+ · G [+−]?\d+/],
   ['Alimentos', '/alimentos.html', '#biblioteca', /kcal/],
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
@@ -224,7 +225,7 @@ async function checarResumoSemana(ctx) {
   await page.waitForTimeout(100);
   const txt = await page.evaluate(() => window.__copiado) || '';
   if (!/^RESUMO DA SEMANA/.test(txt)) erros.push('texto não começa com "RESUMO DA SEMANA"');
-  for (const trecho of ['Média por dia:', 'Diferença:', 'Por dia:', 'Pontos de atenção:']) if (!txt.includes(trecho)) erros.push('resumo sem "' + trecho + '"');
+  for (const trecho of ['Média por dia:', 'Diferença:', 'Por dia:', 'Onde foram as calorias', 'Pontos de atenção:']) if (!txt.includes(trecho)) erros.push('resumo sem "' + trecho + '"');
   const media = (await page.locator('.hist-summary-avgs').innerText()).match(/\d+/);
   if (media && !txt.includes('Média por dia: ' + media[0] + ' kcal')) erros.push('média do resumo ≠ cartão (' + media[0] + ' kcal)');
   if (!/Copiado/.test(await page.locator('#resumoStatus').innerText())) erros.push('sem confirmação de cópia');

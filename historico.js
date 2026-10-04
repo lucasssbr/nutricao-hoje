@@ -165,7 +165,7 @@
   }
 
   // ---------- resumo da semana (texto pronto para o Grok, o Codex ou um nutricionista) ----------
-  var RES = { dias: [], pesos: [], obj: null };
+  var RES = { dias: [], pesos: [], obj: null, top: null };
   function ddmm(iso) { var p = iso.split('-'); return p[2] + '/' + p[1]; }
   function sinalN(x) { return x > 0 ? '+' + x : x < 0 ? '−' + Math.abs(x) : '0'; }
 
@@ -218,6 +218,12 @@
       l.push('- ' + ddmm(d.data) + ': ' + ri(d.cons.kcal) + ' kcal (' + sinalN(ri(d.cons.kcal) - ri(d.meta.kcal)) + ') | P ' + ri(d.cons.p) + ' | C ' + ri(d.cons.c) + ' | G ' + ri(d.cons.g) +
         (d.peso != null ? ' | peso ' + kgStr(Number(d.peso)) + ' kg' : '') + (d.registro !== 'completo' ? ' | registro ' + (d.registro === 'parcial' ? 'parcial' : 'não confirmado') : ''));
     });
+    if (RES.top && RES.top.kcal.length) {
+      l.push('');
+      l.push('Onde foram as calorias (' + RES.top.n + ' dias):');
+      RES.top.kcal.forEach(function (x) { l.push('- ' + x.nome + ': ' + ri(x.v) + ' kcal (' + x.pct + '%) · em ' + x.dias + ' dia' + (x.dias > 1 ? 's' : '')); });
+      if (RES.top.g.length) l.push('Mais gordura: ' + RES.top.g.map(function (x) { return x.nome + ' ' + ri(x.v) + ' g (' + x.pct + '%)'; }).join(' · '));
+    }
     // pontos de atenção: só leitura dos números (mesmos limites do "dias na meta"), sem prescrever dieta
     var o = isOrange(c, m), at = [];
     if (o.kcal && dif.kcal > 0) at.push('Calorias acima da meta em média (' + sinalN(dif.kcal) + ' kcal/dia).');
@@ -360,7 +366,8 @@
       '<div class="pc-tip" id="bcTip">Toque numa barra pra ver o dia</div>' +
       grafico('kcal', function (d) { return d.cons.kcal - d.meta.kcal > 75; }, 'bc-kcal', 'Calorias por dia · {meta} · <span class="bc-k-over"></span> acima') +
       grafico('p', function () { return false; }, 'bc-p', 'Proteína (g) por dia · {meta}') +
-      '<div id="protRefCard" class="pr-card" hidden></div>';
+      '<div id="protRefCard" class="pr-card" hidden></div>' +
+      '<div id="semTopCard" class="pr-card" hidden></div>';
     var tip = document.getElementById('bcTip');
     box.querySelectorAll('.pc-hit').forEach(function (h) {
       h.addEventListener('click', function () {
@@ -402,6 +409,7 @@
         });
         Object.keys(noDia).forEach(function (h) { (porH[h] = porH[h] || []).push(noDia[h]); });
       });
+      renderTopSemana(arqs);
       if (!n || !Object.keys(porH).length) return;
       var meds = HORARIOS.filter(function (h) { return porH[h]; }).map(function (h) { return { h: h, g: avg(porH[h]), dias: porH[h].length }; });
       var maior = Math.max.apply(null, meds.map(function (m) { return m.g; })) || 1;
@@ -412,6 +420,42 @@
         }).join('');
       box.hidden = false;
     });
+  }
+
+  // "Onde foram as calorias" da semana: alimentos que mais pesaram em kcal e em gordura nos dias fechados
+  // (soma do mesmo alimento em refeições/dias diferentes). Também entra no "Resumo da semana".
+  function renderTopSemana(arqs) {
+    var box = document.getElementById('semTopCard');
+    var porAli = {}, tot = 0, totG = 0, n = 0;
+    arqs.forEach(function (dia) {
+      if (!dia || !dia.fechado) return;
+      n++;
+      (dia.lancado || []).forEach(function (r) {
+        (r.itens || []).forEach(function (it) {
+          var k = it.alimento || it.nome || '?';
+          var x = porAli[k] || (porAli[k] = { nome: String(it.nome || k).replace(/\s*\(.*?\)\s*/g, ' ').trim(), kcal: 0, g: 0, dias: {} });
+          x.kcal += Number(it.kcal) || 0; x.g += Number(it.g) || 0; x.dias[dia.data] = 1;
+          tot += Number(it.kcal) || 0; totG += Number(it.g) || 0;
+        });
+      });
+    });
+    var lista = Object.keys(porAli).map(function (k) { return porAli[k]; });
+    if (!n || lista.length < 2 || tot <= 0) return;
+    function top(campo, total, quantos) {
+      return lista.slice().sort(function (a, b) { return b[campo] - a[campo]; }).slice(0, quantos)
+        .filter(function (x) { return ri(x[campo]) > 0; })
+        .map(function (x) { return { nome: x.nome, v: x[campo], pct: Math.round(100 * x[campo] / total), dias: Object.keys(x.dias).length }; });
+    }
+    RES.top = { kcal: top('kcal', tot, 5), g: totG > 0 ? top('g', totG, 3) : [], n: n };
+    if (!box) return;
+    function li(x, un) {
+      return '<li><span>' + esc(x.nome) + ' <i class="st-dias">' + x.dias + '/' + n + ' dias</i></span><b>' + ri(x.v) + '\u00a0' + un + '</b><i>' + x.pct + '%</i></li>';
+    }
+    box.innerHTML = '<div class="bc-rot">Onde foram as calorias · ' + n + ' dia' + (n > 1 ? 's' : '') + ' fechado' + (n > 1 ? 's' : '') + '</div>' +
+      '<div class="onde"><div class="onde-col"><div class="onde-t">Calorias (' + ri(tot) + ' kcal no total)</div><ol>' +
+      RES.top.kcal.map(function (x) { return li(x, 'kcal'); }).join('') + '</ol></div>' +
+      (RES.top.g.length ? '<div class="onde-col"><div class="onde-t">Gordura</div><ol>' + RES.top.g.map(function (x) { return li(x, 'g'); }).join('') + '</ol></div>' : '') + '</div>';
+    box.hidden = false;
   }
 
   function renderPeso(todos, obj) {
