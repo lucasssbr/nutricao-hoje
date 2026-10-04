@@ -298,5 +298,59 @@
     "fonte": "usda",
     "salvo_em": "2026-10-01",
     "obs": "USDA FDC 171077 breast skinless boneless meat only raw 120|P22.5|C0|G2.6; Foundation FDC 2646170 ~P22.5|G1.9 (kcal não listado igual) — batem P; uso SR Legacy 171077. Peso cru."
+  },
+  "innout-double-double": {
+    "nome": "In-N-Out Double-Double",
+    "apelidos": [
+      "in-n-out",
+      "innout",
+      "double double",
+      "double cheeseburger",
+      "hamburguer in-n-out"
+    ],
+    "base": "1 un",
+    "kcal": 610,
+    "p": 34,
+    "c": 42,
+    "g": 34,
+    "fibra": 2,
+    "fonte": "rotulo",
+    "salvo_em": "2026-10-03",
+    "obs": "in-n-out.com nutrition 2026-10-03: Double-Double w/ onion, 287g, 610 kcal, Fat 34g, Carb 42g (Fiber 2g), Protein 34g. Sem batata."
+  },
+  "quest-protein-chips": {
+    "nome": "Quest Protein Chips",
+    "apelidos": [
+      "quest chips",
+      "protein chips",
+      "quest protein chips"
+    ],
+    "base": "1 un",
+    "kcal": 140,
+    "p": 19,
+    "c": 5,
+    "g": 5,
+    "fibra": 1,
+    "fonte": "rotulo",
+    "salvo_em": "2026-10-03",
+    "obs": "questnutrition.com, 1 bag 32g (BBQ/Ranch/Taco/Pizza): 140 kcal, Fat 5g, Carb 5g (Fiber 1g), Protein 19g. Sabor não informado; macros iguais nesses sabores."
+  },
+  "kirkland-agua-coco": {
+    "nome": "Kirkland água de coco (garrafa 14 fl oz)",
+    "apelidos": [
+      "agua de coco",
+      "água de coco",
+      "coconut water",
+      "kirkland coco"
+    ],
+    "base": "1 un",
+    "kcal": 120,
+    "p": 0,
+    "c": 29,
+    "g": 0,
+    "fibra": 0,
+    "fonte": "estimado",
+    "salvo_em": "2026-10-03",
+    "obs": "Assumido Kirkland Signature Organic Coconut Water, garrafa 14 fl oz do Costco: 120 kcal, 0g protein, 29g carb, 0g fat. Marca não confirmada pelo Lucas."
   }
 }
