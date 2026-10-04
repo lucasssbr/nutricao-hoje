@@ -287,6 +287,36 @@ async function checarAdicionarRotulo(ctx) {
   return erros;
 }
 
+// "↻ Repetir hoje": no dia fechado mais recente com item da biblioteca, gera o comando com --item e a data de hoje
+async function checarRepetir(ctx) {
+  const erros = [];
+  const alvo = dias.slice().reverse().find((d) => {
+    const arq = path.join(ROOT, 'dados', d + '.json');
+    if (!fs.existsSync(arq)) return false;
+    const j = JSON.parse(fs.readFileSync(arq, 'utf8'));
+    return j.fechado && (j.lancado || []).some((r) => (r.itens || []).some((i) => i.alimento));
+  });
+  if (!alvo) return erros;
+  const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', alvo + '.json'), 'utf8'));
+  const iM = j.lancado.findIndex((r) => (r.itens || []).some((i) => i.alimento));
+  const it = j.lancado[iM].itens.find((i) => i.alimento);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  page.on('request', (r) => { if (r.method() !== 'GET') erros.push('escrita no servidor: ' + r.method()); });
+  await page.clock.setFixedTime(new Date(hoje + 'T20:00:00Z'));
+  await page.goto(BASE + '/dia.html?d=' + alvo, { waitUntil: 'networkidle' });
+  await page.locator('.rep-btn[data-rep="' + iM + '"]').click();
+  const msg = await page.locator('#rep-' + iM + ' .rep-msg').inputValue();
+  if (!/^LANÇAR — REPETIR REFEIÇÃO/.test(msg)) erros.push('mensagem sem cabeçalho');
+  if (!msg.includes('--consumido-em ' + hoje + 'T')) erros.push('não lança no dia de hoje (' + hoje + ')');
+  const unidade = (/(g|un|lata)\b/.exec(String(it.qtd).toLowerCase()) || [])[1];
+  if (!msg.includes('--item ' + it.alimento + '=' + Number(it.quantidade) + unidade)) erros.push('sem --item ' + it.alimento + '=' + it.quantidade + unidade);
+  await page.locator('#rep-' + iM + ' .rep-ref').selectOption('Jantar');
+  if (!/--nome Jantar /.test(await page.locator('#rep-' + iM + ' .rep-msg').inputValue())) erros.push('trocar a refeição não mudou o comando');
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -306,7 +336,7 @@ async function checarAdicionarRotulo(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -319,5 +349,5 @@ async function checarAdicionarRotulo(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 8} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 9} checagens cada).`);
 })();

@@ -309,11 +309,16 @@
     var mealsEl = document.getElementById('meals');
     var html = '';
 
-    lancado.forEach(function (meal) {
+    // "↻ Repetir hoje": repetir.js monta a mensagem pro Grok com os mesmos itens (window.NutriDiaAtual)
+    window.NutriDiaAtual = { data: data.data || dia, lancado: lancado };
+    lancado.forEach(function (meal, iM) {
       var t = sumItens(meal.itens);
       html += '<section class="meal">';
       html += '<div class="meal-head"><h3>' + esc(meal.refeicao || 'Refeição') + '</h3><div class="tot">' + totLabel(t) + '</div></div>';
       (meal.itens || []).forEach(function (it) { html += foodHtml(it); });
+      if ((meal.itens || []).length) {
+        html += '<div class="rep-acoes"><button type="button" class="rep-btn" data-rep="' + iM + '">↻ Repetir hoje</button></div><div class="rep-painel" id="rep-' + iM + '" hidden></div>';
+      }
       html += '</section>';
     });
 
