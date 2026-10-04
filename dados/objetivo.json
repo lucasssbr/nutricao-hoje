@@ -42,8 +42,8 @@
     "meta_modo": "auto",
     "calculo": {
       "peso_ref_kg": 88.0,
-      "pesagens_total": 4,
-      "ultima_pesagem": "2026-10-02",
+      "pesagens_total": 5,
+      "ultima_pesagem": "2026-10-03",
       "idade": 32,
       "bmr": 1869,
       "atividade": 1.55,
@@ -51,7 +51,15 @@
       "gasto_fonte": "estimado",
       "gasto_formula": 2897,
       "gasto_inferido": null,
-      "gasto_inferido_falta": "sem pesagens a partir de 3 out (os 4 primeiros dias do objetivo não contam: água e glicogênio)",
+      "gasto_inferido_falta": {
+        "falta": "faltam 5 pesagem(ns), 10 dia(s) de intervalo entre pesagens, 7 dia(s) fechados com registro completo",
+        "pesagens": 1,
+        "dias_completos": 0,
+        "dias_no_intervalo": 0,
+        "cobertura_pct": 0,
+        "de": "2026-10-03",
+        "ate": "2026-10-03"
+      },
       "ingestao_media": 1863,
       "ingestao_fonte": "média de 3 dia(s) fechados com registro completo",
       "dias_completos": 3,
