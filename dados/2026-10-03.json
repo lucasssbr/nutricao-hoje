@@ -1,7 +1,7 @@
 {
   "data": "2026-10-03",
-  "atualizado": "2026-10-03T22:14:45-07:00",
-  "fechado": false,
+  "atualizado": "2026-10-04T08:03:21-07:00",
+  "fechado": true,
   "meta": {
     "kcal": 1570,
     "p": 180,
@@ -102,5 +102,10 @@
       "resumo": "Dia: 1730 kcal | P 98 | C 181 | G 85 (6 item(ns))",
       "assinatura": "ae2bdc2fa24796a7"
     }
-  ]
+  ],
+  "registro": {
+    "status": "completo",
+    "em": "2026-10-04T08:03:21-07:00",
+    "obs": "automático no fechamento (sem aviso de dia parcial)"
+  }
 }
