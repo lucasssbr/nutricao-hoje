@@ -7,21 +7,21 @@
     "c": 100,
     "g": 50
   },
-  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 4 dias + Peito de frango sem pele (cru)",
+  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 5 dias + Peito de frango sem pele (cru)",
   "sugestao": [
     {
       "refeicao": "Almoço",
       "itens": [
         {
           "nome": "Batata inglesa (crua)",
-          "qtd": "290 g",
+          "qtd": "340 g",
           "alimento": "batata-inglesa",
-          "quantidade": 290,
-          "kcal": 223.3,
-          "p": 6.1,
-          "c": 50.8,
+          "quantidade": 340,
+          "kcal": 261.8,
+          "p": 7.1,
+          "c": 59.5,
           "g": 0.3,
-          "fibra": 6.1
+          "fibra": 7.1
         },
         {
           "nome": "Peito de frango sem pele (cru)",
@@ -57,46 +57,46 @@
       "itens": [
         {
           "nome": "Chuck steak Costco (cru)",
-          "qtd": "170 g",
+          "qtd": "150 g",
           "alimento": "chuck-costco",
-          "quantidade": 170,
-          "kcal": 379.1,
-          "p": 34,
+          "quantidade": 150,
+          "kcal": 334.5,
+          "p": 30,
           "c": 0,
-          "g": 28.9,
+          "g": 25.5,
           "fibra": 0
         },
         {
           "nome": "Inked Timber Wolf Keto Seeds Bread",
-          "qtd": "2 un",
+          "qtd": "1 un",
           "alimento": "inked-timber-wolf",
-          "quantidade": 2,
-          "kcal": 90,
-          "p": 8,
-          "c": 22,
-          "g": 4,
-          "fibra": 20
+          "quantidade": 1,
+          "kcal": 45,
+          "p": 4,
+          "c": 11,
+          "g": 2,
+          "fibra": 10
         },
         {
           "nome": "Melancia",
-          "qtd": "375 g",
+          "qtd": "400 g",
           "alimento": "melancia",
-          "quantidade": 375,
-          "kcal": 112.5,
-          "p": 2.3,
-          "c": 28.5,
+          "quantidade": 400,
+          "kcal": 120,
+          "p": 2.4,
+          "c": 30.4,
           "g": 0.8,
-          "fibra": 1.5
+          "fibra": 1.6
         },
         {
           "nome": "Peito de frango sem pele (cru)",
-          "qtd": "190 g",
+          "qtd": "230 g",
           "alimento": "frango-peito-cru",
-          "quantidade": 190,
-          "kcal": 228,
-          "p": 42.8,
+          "quantidade": 230,
+          "kcal": 276,
+          "p": 51.8,
           "c": 0,
-          "g": 4.9,
+          "g": 6,
           "fibra": 0
         }
       ]

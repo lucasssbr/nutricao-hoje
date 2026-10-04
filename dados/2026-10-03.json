@@ -1,6 +1,6 @@
 {
   "data": "2026-10-03",
-  "atualizado": "2026-10-03T22:14:43-07:00",
+  "atualizado": "2026-10-03T22:14:45-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -9,102 +9,84 @@
     "g": 50
   },
   "peso_kg": 88.0,
-  "lancado": [],
-  "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 4 dias + Peito de frango sem pele (cru)",
-  "sugestao": [
+  "lancado": [
     {
-      "refeicao": "Almoço",
+      "refeicao": "Dia",
+      "id_evento": "t1u:refeicao:1",
+      "consumido_em": "2026-10-03T22:12:00-07:00",
+      "registrado_em": "2026-10-03T22:14:45-07:00",
       "itens": [
         {
-          "nome": "Batata inglesa (crua)",
-          "qtd": "290 g",
-          "alimento": "batata-inglesa",
-          "quantidade": 290,
-          "kcal": 223.3,
-          "p": 6.1,
-          "c": 50.8,
-          "g": 0.3,
-          "fibra": 6.1
-        },
-        {
-          "nome": "Peito de frango sem pele (cru)",
-          "qtd": "300 g",
-          "alimento": "frango-peito-cru",
-          "quantidade": 300,
-          "kcal": 360,
-          "p": 67.5,
-          "c": 0,
-          "g": 7.8,
-          "fibra": 0
-        }
-      ]
-    },
-    {
-      "refeicao": "Lanche",
-      "itens": [
-        {
-          "nome": "Nurri Vanilla Milk Shake",
-          "qtd": "1 lata",
-          "alimento": "nurri-vanilla",
+          "nome": "In-N-Out Double-Double",
+          "qtd": "1 un",
+          "alimento": "innout-double-double",
           "quantidade": 1,
-          "kcal": 150,
-          "p": 30,
-          "c": 4,
-          "g": 2.5,
-          "fibra": 1
-        }
-      ]
-    },
-    {
-      "refeicao": "Jantar",
-      "itens": [
-        {
-          "nome": "Chuck steak Costco (cru)",
-          "qtd": "170 g",
-          "alimento": "chuck-costco",
-          "quantidade": 170,
-          "kcal": 379.1,
+          "kcal": 610,
           "p": 34,
-          "c": 0,
-          "g": 28.9,
-          "fibra": 0
+          "c": 42,
+          "g": 34,
+          "fibra": 2
         },
         {
           "nome": "Inked Timber Wolf Keto Seeds Bread",
-          "qtd": "2 un",
+          "qtd": "4 un",
           "alimento": "inked-timber-wolf",
-          "quantidade": 2,
-          "kcal": 90,
-          "p": 8,
-          "c": 22,
-          "g": 4,
-          "fibra": 20
+          "quantidade": 4,
+          "kcal": 180,
+          "p": 16,
+          "c": 44,
+          "g": 8,
+          "fibra": 40
+        },
+        {
+          "nome": "Castello Havarti (fatia)",
+          "qtd": "4 un",
+          "alimento": "castello-havarti",
+          "quantidade": 4,
+          "kcal": 440,
+          "p": 24,
+          "c": 0,
+          "g": 36,
+          "fibra": 0
+        },
+        {
+          "nome": "Quest Protein Chips",
+          "qtd": "1 un",
+          "alimento": "quest-protein-chips",
+          "quantidade": 1,
+          "kcal": 140,
+          "p": 19,
+          "c": 5,
+          "g": 5,
+          "fibra": 1
         },
         {
           "nome": "Melancia",
-          "qtd": "375 g",
+          "qtd": "800 g",
           "alimento": "melancia",
-          "quantidade": 375,
-          "kcal": 112.5,
-          "p": 2.3,
-          "c": 28.5,
-          "g": 0.8,
-          "fibra": 1.5
+          "quantidade": 800,
+          "kcal": 240,
+          "p": 4.8,
+          "c": 60.8,
+          "g": 1.6,
+          "fibra": 3.2
         },
         {
-          "nome": "Peito de frango sem pele (cru)",
-          "qtd": "190 g",
-          "alimento": "frango-peito-cru",
-          "quantidade": 190,
-          "kcal": 228,
-          "p": 42.8,
-          "c": 0,
-          "g": 4.9,
+          "nome": "Kirkland água de coco (garrafa 14 fl oz)",
+          "qtd": "1 un",
+          "alimento": "kirkland-agua-coco",
+          "quantidade": 1,
+          "kcal": 120,
+          "p": 0,
+          "c": 29,
+          "g": 0,
           "fibra": 0
         }
       ]
     }
   ],
+  "sugestao_nota": "Dia completo — sem refeições a sugerir",
+  "sugestao": [],
   "eventos": [
     {
       "id_evento": "t1u:peso:1",
@@ -112,6 +94,13 @@
       "em": "2026-10-03T22:14:43-07:00",
       "resumo": "peso 88.0 kg",
       "assinatura": "7f6a5485adeeaaac"
+    },
+    {
+      "id_evento": "t1u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-03T22:14:45-07:00",
+      "resumo": "Dia: 1730 kcal | P 98 | C 181 | G 85 (6 item(ns))",
+      "assinatura": "ae2bdc2fa24796a7"
     }
   ]
 }
