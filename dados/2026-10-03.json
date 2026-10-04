@@ -1,6 +1,6 @@
 {
   "data": "2026-10-03",
-  "atualizado": "2026-10-04T08:03:21-07:00",
+  "atualizado": "2026-10-04T11:54:14-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -83,6 +83,58 @@
           "fibra": 0
         }
       ]
+    },
+    {
+      "refeicao": "Ceia",
+      "id_evento": "t2u:refeicao:1",
+      "consumido_em": "2026-10-03T23:00:00-07:00",
+      "registrado_em": "2026-10-04T11:54:14-07:00",
+      "itens": [
+        {
+          "nome": "Inked Timber Wolf Keto Seeds Bread",
+          "qtd": "4 un",
+          "alimento": "inked-timber-wolf",
+          "quantidade": 4,
+          "kcal": 180,
+          "p": 16,
+          "c": 44,
+          "g": 8,
+          "fibra": 40
+        },
+        {
+          "nome": "Castello Havarti (fatia)",
+          "qtd": "5 un",
+          "alimento": "castello-havarti",
+          "quantidade": 5,
+          "kcal": 550,
+          "p": 30,
+          "c": 0,
+          "g": 45,
+          "fibra": 0
+        },
+        {
+          "nome": "Tomate",
+          "qtd": "150 g",
+          "alimento": "tomate",
+          "quantidade": 150,
+          "kcal": 27,
+          "p": 1.4,
+          "c": 5.9,
+          "g": 0.3,
+          "fibra": 1.8
+        },
+        {
+          "nome": "Banana média",
+          "qtd": "2 un",
+          "alimento": "banana",
+          "quantidade": 2,
+          "kcal": 210,
+          "p": 2.6,
+          "c": 54,
+          "g": 0.8,
+          "fibra": 6.2
+        }
+      ]
     }
   ],
   "sugestao_nota": "Dia completo — sem refeições a sugerir",
@@ -101,11 +153,26 @@
       "em": "2026-10-03T22:14:45-07:00",
       "resumo": "Dia: 1730 kcal | P 98 | C 181 | G 85 (6 item(ns))",
       "assinatura": "ae2bdc2fa24796a7"
+    },
+    {
+      "id_evento": "t2u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-04T11:54:14-07:00",
+      "resumo": "Ceia: 967 kcal | P 50 | C 104 | G 54 (4 item(ns))",
+      "assinatura": "5fc04d77616bf35d"
     }
   ],
   "registro": {
     "status": "completo",
     "em": "2026-10-04T08:03:21-07:00",
     "obs": "automático no fechamento (sem aviso de dia parcial)"
-  }
+  },
+  "correcoes": [
+    {
+      "id_evento": "t2u:refeicao:1",
+      "tipo": "refeicao",
+      "em": "2026-10-04T11:54:14-07:00",
+      "justificativa": "esqueceu de lançar a ceia antes do fechamento"
+    }
+  ]
 }

@@ -38,7 +38,7 @@
       "g": 50
     },
     "peso_inicial_kg": 88.9,
-    "meta_semanal_kg": 0.97,
+    "meta_semanal_kg": 0.75,
     "meta_modo": "auto",
     "calculo": {
       "peso_ref_kg": 88.0,
@@ -60,13 +60,13 @@
         "de": "2026-10-03",
         "ate": "2026-10-03"
       },
-      "ingestao_media": 1830,
+      "ingestao_media": 2072,
       "ingestao_fonte": "média de 4 dia(s) fechados com registro completo",
       "dias_completos": 4,
       "dias_fechados": 5,
-      "deficit_dia": 1067,
+      "deficit_dia": 825,
       "atualizado": "2026-10-04",
-      "meta_calculada_kg": 0.97,
+      "meta_calculada_kg": 0.75,
       "meta_origem": "automática (déficit)"
     }
   },
