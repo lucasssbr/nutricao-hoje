@@ -402,6 +402,8 @@ class Fechamento(CopiaRepo):
         html = (self.tmp / "planejar.html").read_text(encoding="utf-8")
         self.assertEqual(re.findall(r'dia\.html\?d=([\d-]+)">Plano<', html), [depois])
         self.assertIn('href="./planejar.html">Planejar</a>', (self.tmp / "index.html").read_text(encoding="utf-8"))
+        semana = (self.tmp / "semana.html").read_text(encoding="utf-8")
+        self.assertEqual(re.findall(r'dia\.html\?d=([\d-]+)">Plano<', semana), [depois])
 
 
 if __name__ == "__main__":

@@ -172,7 +172,8 @@
       (base.length < last7.length ? '<div class="hist-summary-comp">Médias de ' + base.length + ' dia' + (base.length > 1 ? 's' : '') + ' com registro completo</div>' + foraLinha(last7) : '') +
       coberturaLinha(last7) + pesoLine + compLine +
       '<button type="button" class="btn-csv btn-resumo" id="resumoBtn">Resumo da semana · copiar / compartilhar</button>' +
-      '<div id="resumoPainel" hidden></div>';
+      '<div id="resumoPainel" hidden></div>' +
+      '<a class="btn-csv" id="semanaLink" href="./semana.html">Relatório da semana · imprimir / PDF</a>';
     RES.dias = last7;
     document.getElementById('resumoBtn').addEventListener('click', abrirResumo);
   }

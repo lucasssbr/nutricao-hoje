@@ -121,7 +121,7 @@ def main():
         gravar_json(dias_path, dias, compacto=True)
 
     # 3 e 4. index e botão Plano
-    for nome in ("index.html", "dia.html", "historico.html", "alimentos.html", "planejar.html"):
+    for nome in ("index.html", "dia.html", "historico.html", "alimentos.html", "planejar.html", "semana.html"):
         f = ROOT / nome
         s = f.read_text(encoding="utf-8")
         novo = re.sub(r'dia\.html\?d=\d{4}-\d{2}-\d{2}(">Plano<)', rf"dia.html?d={amanha.isoformat()}\1", s)

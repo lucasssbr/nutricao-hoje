@@ -51,6 +51,8 @@ const PAGINAS = [
   ['Alimentos · favoritas', '/alimentos.html', '#favoritas', /kcal/],
   ['Hoje · horário da atualização', '/', '#updateStamp', /^Atualizado \d{2}\/\d{2} · \d{2}:\d{2}$/],
   ['Planejar', '/planejar.html', '#resumo', /Dia projetado/],
+  ['Histórico · link do relatório da semana', '/historico.html', '#histSummary', /Relatório da semana · imprimir \/ PDF/],
+  ['Semana · relatório', '/semana.html', '#relatorio', /Relatório da semana[\s\S]*Por dia[\s\S]*Peso/],
 ];
 // "Proteína faltam X g" só existe com sugestão pendente e proteína abaixo da meta (à noite, depois do jantar
 // lançado, não aparece — a checagem não pode travar a publicação dos registros)
@@ -342,6 +344,48 @@ async function checarSemRegistro(ctx) {
   return erros;
 }
 
+// Semana (relatório para imprimir): dados sintéticos de 7 dias fechados (5 completos, 1 parcial, 1 sem registro)
+// injetados por page.route — médias só dos completos, tabela com os 7, impressão em papel branco sem navegação
+async function checarSemana(ctx) {
+  const erros = [];
+  const datas = [7, 6, 5, 4, 3, 2, 1].map((k) => somaDias(hojeLA, -k));
+  const meta = { kcal: 1570, p: 180, c: 100, g: 50 };
+  const item = (nome, id, kcal, p, c, g) => ({ nome, qtd: '100 g', alimento: id, quantidade: 100, kcal, p, c, g });
+  const arqs = {};
+  datas.forEach((d, i) => {
+    const lancado = i === 6 ? [] : [{ refeicao: 'Almoço', consumido_em: d + 'T12:30:00-07:00', itens: [item('Frango (peito)', 'frango', 1000 + 100 * i, 150, 50, 30)] },
+      { refeicao: 'Jantar', consumido_em: d + 'T19:30:00-07:00', itens: [item('Arroz', 'arroz', 400, 10, 80, 2)] }];
+    arqs[d] = { data: d, fechado: true, meta, peso_kg: i === 0 ? 90 : i === 5 ? 89 : null, lancado,
+      registro: { status: i === 5 ? 'parcial' : i === 6 ? 'desconhecido' : 'completo' } };
+  });
+  // completos: i = 0..4 → kcal 1400..1800, média 1600; P 160
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.route('**/dados/dias.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(datas) }));
+  for (const d of datas) await page.route('**/dados/' + d + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(arqs[d]) }));
+  await page.goto(BASE + '/semana.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  const txt = await page.locator('#relatorio').innerText();
+  if (!/Calorias\s*1600\s*meta 1570 · \+30/i.test(txt)) erros.push('média de kcal não é a dos 5 dias completos (esperado 1600, +30)');
+  if (!/Proteína\s*160\s?g\s*meta 180 · −20/i.test(txt)) erros.push('média de proteína errada (esperado 160 g, −20)');
+  if (!/Registro completo: 5 de 7 dias · as médias usam só esses 5/.test(txt)) erros.push('sem a linha de cobertura 5 de 7');
+  const linhas = await page.locator('.sw-tab tbody tr:not(.sw-nota)').count();
+  if (linhas !== 7) erros.push('tabela "Por dia" com ' + linhas + ' linhas (esperado 7)');
+  if (!/registro parcial · fora das médias/.test(txt) || !/sem registro \(fora das médias\)/.test(txt)) erros.push('dias fora das médias não marcados na tabela');
+  if (!/Onde foram as calorias[\s\S]*Frango[\s\S]*Arroz/.test(txt)) erros.push('sem "onde foram as calorias" (Frango, Arroz)');
+  if (!/90,0 \(\d{2}\/\d{2}\) → 89,0\s?kg/.test(txt)) erros.push('peso da semana não mostra 90,0 → 89,0 kg');
+  if ((await page.locator('.sw-svg').count()) !== 2) erros.push('sem os 2 gráficos (calorias e proteína)');
+  const ant = await page.locator('#swNav a').first().getAttribute('href');
+  if (ant !== './semana.html?ate=' + somaDias(datas[6], -7)) erros.push('link "7 dias antes" errado (' + ant + ')');
+  await page.emulateMedia({ media: 'print' });
+  const imp = await page.evaluate(() => ({ nav: getComputedStyle(document.querySelector('.nav')).display, btn: document.getElementById('swImprimir').offsetParent !== null,
+    fundo: getComputedStyle(document.body).backgroundColor, card: getComputedStyle(document.querySelector('.sw-card')).backgroundColor }));
+  if (imp.nav !== 'none' || imp.btn) erros.push('na impressão a navegação/botão continuam visíveis');
+  if (imp.fundo !== 'rgb(255, 255, 255)' || imp.card !== 'rgb(255, 255, 255)') erros.push('na impressão o fundo não é branco (' + imp.fundo + ' / ' + imp.card + ')');
+  await page.close();
+  return erros;
+}
+
 // Alimentos: selo "novo" só nos cadastrados nos últimos 7 dias (relógio fixo: 3 dias depois de um cadastro)
 async function checarSeloNovo(ctx) {
   const erros = [];
@@ -417,7 +461,7 @@ async function checarFrequentes(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo], ['Hoje · frequentes e aviso da noite', checarFrequentes]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo], ['Hoje · frequentes e aviso da noite', checarFrequentes], ['Semana · relatório para imprimir', checarSemana]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -430,5 +474,5 @@ async function checarFrequentes(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 12} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 13} checagens cada).`);
 })();
