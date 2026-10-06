@@ -1,6 +1,6 @@
 {
   "data": "2026-10-06",
-  "atualizado": "2026-10-06T00:23:19-07:00",
+  "atualizado": "2026-10-06T11:00:23-07:00",
   "fechado": false,
   "meta": {
     "kcal": 1570,
@@ -8,7 +8,7 @@
     "c": 100,
     "g": 50
   },
-  "peso_kg": null,
+  "peso_kg": 88.0,
   "lancado": [],
   "sugestao_nota": "Sugestão automática · alimentos que você comeu nos últimos 5 dias + Peito de frango sem pele (cru)",
   "sugestao": [
@@ -103,6 +103,15 @@
           "fibra": 0
         }
       ]
+    }
+  ],
+  "eventos": [
+    {
+      "id_evento": "t4u:peso:1",
+      "tipo": "peso",
+      "em": "2026-10-06T11:00:23-07:00",
+      "resumo": "peso 88.0 kg",
+      "assinatura": "819445dbd1f06915"
     }
   ]
 }
