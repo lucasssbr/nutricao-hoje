@@ -27,7 +27,8 @@
     return '--manual "' + nome + '=' + v.join(',') + '"';
   }
 
-  function texto(meal, origem, ref, hora) {
+  // descricao (opcional): substitui a linha "Igual ao … de dd/mm" (ex.: refeição frequente)
+  function texto(meal, origem, ref, hora, descricao) {
     var hoje = N.hojeLA(), itens = meal.itens || [];
     var t = { kcal: 0, p: 0, c: 0, g: 0 };
     itens.forEach(function (it) { ['kcal', 'p', 'c', 'g'].forEach(function (k) { t[k] += Number(it[k]) || 0; }); });
@@ -40,7 +41,7 @@
     var lista = itens.map(function (it) { return String(it.nome || '').replace(/\s*\(.*?\)\s*/g, ' ').trim() + ' ' + (it.qtd || ''); }).join(' · ');
     return ['LANÇAR — REPETIR REFEIÇÃO (o Lucas comeu de novo)',
             'Dia: ' + ddmm(hoje) + ' · Refeição: ' + ref + ' · comi às ' + hora,
-            'Igual ao ' + (meal.refeicao || 'refeição') + ' de ' + ddmm(origem) + ': ' + lista,
+            (descricao || ('Igual ao ' + (meal.refeicao || 'refeição') + ' de ' + ddmm(origem))) + ': ' + lista,
             'Valores da vez anterior: ' + Math.round(t.kcal) + ' kcal | P ' + Math.round(t.p) + ' | C ' + Math.round(t.c) + ' | G ' + Math.round(t.g) +
               ' (o registrar recalcula pela biblioteca atual)',
             '',
@@ -62,6 +63,11 @@
     var dia = window.NutriDiaAtual, meal = dia && dia.lancado[iM], painel = document.getElementById('rep-' + iM);
     if (!meal || !painel) return;
     if (!painel.hidden) { painel.hidden = true; return; }
+    montar(painel, meal, dia.data);
+  }
+
+  // painel reaproveitável (frequentes.js): refeição de hoje + hora + mensagem pronta + compartilhar/copiar
+  function montar(painel, meal, origem, descricao) {
     var hora = horaAgoraLA(), ref = horarioDe(meal.refeicao, hora);
     painel.innerHTML = '<div class="add-linha"><label class="add-campo"><span>Refeição de hoje</span><select class="rep-ref">' +
       HOR.map(function (h) { return '<option' + (h === ref ? ' selected' : '') + '>' + h + '</option>'; }).join('') +
@@ -73,7 +79,7 @@
       '<button type="button" class="btn-csv" data-r="sel">Selecionar texto</button></div><div class="resumo-status" role="status"></div>';
     painel.hidden = false;
     var sel = painel.querySelector('.rep-ref'), hr = painel.querySelector('.rep-hora'), ta = painel.querySelector('.rep-msg'), st = painel.querySelector('.resumo-status');
-    function atualizar() { ta.value = texto(meal, dia.data, sel.value, hr.value || horaAgoraLA()); ta.style.height = Math.min(300, ta.scrollHeight + 4) + 'px'; }
+    function atualizar() { ta.value = texto(meal, origem, sel.value, hr.value || horaAgoraLA(), descricao); ta.style.height = Math.min(300, ta.scrollHeight + 4) + 'px'; }
     function selecionar() { ta.focus(); ta.setSelectionRange(0, ta.value.length); try { ta.select(); } catch (e) { /* nada */ } }
     sel.addEventListener('change', atualizar);
     hr.addEventListener('change', atualizar);
@@ -93,4 +99,6 @@
     var b = ev.target.closest && ev.target.closest('.rep-btn');
     if (b) abrir(parseInt(b.getAttribute('data-rep'), 10));
   });
+
+  window.NutriRepetir = { montar: montar, horarioDe: horarioDe };
 })();

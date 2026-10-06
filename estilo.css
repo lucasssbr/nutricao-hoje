@@ -416,6 +416,17 @@
   .add-res.ok { color: var(--text); }
   .add-res.erro { color: var(--over); }
   .btn-csv:disabled { opacity: .45; cursor: default; }
+  /* Refeições frequentes + aviso da noite (Hoje) */
+  .freq-aviso { margin: 4px 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(100,210,255,0.10);
+    border: 1px solid rgba(100,210,255,0.28); color: #BFEFFF; font-size: 13px; line-height: 1.45; }
+  .freq-card { margin: 4px 0 12px; padding: 12px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+  .freq-tit { font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .freq-tit span { font-weight: 600; color: var(--muted); font-size: 12px; }
+  .freq-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 48px; margin-top: 6px;
+    padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(100,210,255,0.28); background: var(--bg); color: var(--text);
+    font: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+  .freq-nome i { font-style: normal; color: var(--muted); font-weight: 600; }
+  .freq-meta { font-size: 12px; color: var(--muted); font-weight: 600; }
   /* ↻ Repetir hoje (refeições lançadas) */
   .rep-acoes { display: flex; justify-content: flex-end; margin-top: 8px; }
   .rep-btn { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(100,210,255,0.35); background: transparent;

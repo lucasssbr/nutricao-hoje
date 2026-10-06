@@ -362,6 +362,42 @@ async function checarSeloNovo(ctx) {
   return erros;
 }
 
+// Hoje: refeições frequentes (regra) + aviso suave depois das 21h com o dia vazio
+async function checarFrequentes(ctx) {
+  const erros = [];
+  const diaArq = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', hoje + '.json'), 'utf8'));
+  const vazio = Object.assign({}, diaArq, { lancado: [], fechado: false });
+  const it = (a, q, u, kcal) => ({ nome: a, qtd: q + ' ' + u, alimento: a, quantidade: q, kcal, p: 1, c: 1, g: 1 });
+  const sint = [
+    { data: '2026-01-01', lancado: [{ refeicao: 'Almoço', itens: [it('chuck', 200, 'g', 446), it('batata', 250, 'g', 193)] }, { refeicao: 'Lanche', itens: [it('nurri', 1, 'lata', 150)] }] },
+    { data: '2026-01-02', lancado: [{ refeicao: 'Almoço', itens: [it('chuck', 150, 'g', 335), it('batata', 200, 'g', 154), it('tomate', 100, 'g', 18)] }, { refeicao: 'Lanche', itens: [it('nurri', 1, 'lata', 150)] }] },
+    { data: '2026-01-03', lancado: [{ refeicao: 'Jantar', itens: [it('chuck', 180, 'g', 401), it('batata', 220, 'g', 170)] }, { refeicao: 'Lanche', itens: [it('nurri', 1, 'lata', 150), it('melancia', 300, 'g', 90)] }] },
+  ];
+  for (const [quando, deve] of [[somaDias(hoje, 1) + 'T04:30:00Z', true], [hoje + 'T22:00:00Z', false]]) {   // 21:30 e 15:00 em LA (verão)
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    await page.clock.setFixedTime(new Date(quando));
+    await page.route('**/dados/' + hoje + '.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(vazio) }));
+    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    const tem = await page.locator('.freq-aviso').count();
+    if (!!tem !== deve) erros.push('aviso da noite ' + (tem ? 'apareceu' : 'não apareceu') + ' com relógio em ' + quando);
+    if (deve) {
+      const r = await page.evaluate((d) => window.NutriFrequentes.frequentes(d).map((c) => c.ids.join('+') + ':' + c.n + ':' + c.ult.itens.map((i) => i.quantidade).join('/')), sint);
+      const esperado = ['batata+chuck:3:220/180', 'nurri:2:1'];
+      if (JSON.stringify(r) !== JSON.stringify(esperado)) erros.push('frequentes ' + JSON.stringify(r) + ' ≠ ' + JSON.stringify(esperado));
+      const btn = page.locator('.freq-btn').first();
+      if (await btn.count()) {
+        await btn.click();
+        const msg = await page.locator('#freq-0 .rep-msg').inputValue();
+        if (!/^LANÇAR — REPETIR REFEIÇÃO/.test(msg) || !/Refeição frequente \(em \d+ dias/.test(msg) || !/--item \S+=\d/.test(msg)) erros.push('mensagem da frequente incompleta');
+      }
+    }
+    await page.close();
+  }
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -381,7 +417,7 @@ async function checarSeloNovo(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo], ['Hoje · frequentes e aviso da noite', checarFrequentes]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -394,5 +430,5 @@ async function checarSeloNovo(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 11} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 12} checagens cada).`);
 })();
