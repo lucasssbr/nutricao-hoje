@@ -1,6 +1,6 @@
 {
   "data": "2026-10-05",
-  "atualizado": "2026-10-06T00:23:19-07:00",
+  "atualizado": "2026-10-06T11:00:25-07:00",
   "fechado": true,
   "meta": {
     "kcal": 1570,
@@ -103,6 +103,20 @@
           "fibra": 0
         }
       ]
+    }
+  ],
+  "registro": {
+    "status": "parcial",
+    "em": "2026-10-06T11:00:25-07:00",
+    "obs": "Furou a dieta; não sabe quanto comeu"
+  },
+  "eventos": [
+    {
+      "id_evento": "t4u:completo:1",
+      "tipo": "completo",
+      "em": "2026-10-06T11:00:25-07:00",
+      "resumo": "registro do dia: parcial",
+      "assinatura": "666ba28722d7007e"
     }
   ]
 }
