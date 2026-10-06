@@ -342,6 +342,26 @@ async function checarSemRegistro(ctx) {
   return erros;
 }
 
+// Alimentos: selo "novo" só nos cadastrados nos últimos 7 dias (relógio fixo: 3 dias depois de um cadastro)
+async function checarSeloNovo(ctx) {
+  const erros = [];
+  const ali = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', 'alimentos.json'), 'utf8'));
+  const ids = Object.keys(ali).filter((k) => k[0] !== '_' && /^\d{4}-\d{2}-\d{2}$/.test(ali[k].salvo_em || ''));
+  if (!ids.length) return erros;
+  const ref = ids.map((k) => ali[k].salvo_em).sort().pop();
+  const hojeTeste = somaDias(ref, 3);
+  const esperados = ids.filter((k) => { const d = (Date.parse(hojeTeste) - Date.parse(ali[k].salvo_em)) / 864e5; return d >= 0 && d < 7; })
+    .map((k) => ali[k].nome).sort();
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.clock.setFixedTime(new Date(hojeTeste + 'T20:00:00Z'));
+  await page.goto(BASE + '/alimentos.html', { waitUntil: 'networkidle' });
+  const com = (await page.locator('#biblioteca .ali-card').evaluateAll((cs) => cs.filter((c) => c.querySelector('.ali-fonte.novo')).map((c) => c.querySelector('b').textContent))).sort();
+  if (JSON.stringify(com) !== JSON.stringify(esperados)) erros.push('selo "novo" em ' + JSON.stringify(com) + ', esperado ' + JSON.stringify(esperados));
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -361,7 +381,7 @@ async function checarSemRegistro(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -374,5 +394,5 @@ async function checarSemRegistro(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 10} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 11} checagens cada).`);
 })();

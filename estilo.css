@@ -381,6 +381,7 @@
   .ali-fonte.ok { color: #30D158; background: rgba(48,209,88,0.14); }
   .ali-fonte.mid { color: #64D2FF; background: rgba(100,210,255,0.14); }
   .ali-fonte.warn { color: var(--over); background: rgba(255,159,10,0.16); }
+  .ali-fonte.novo { color: #E9D5FF; background: rgba(191,90,242,0.28); }
   .ali-tag { color: #E9D5FF; background: rgba(191,90,242,0.28); }
   .ali-itens { margin-top: 8px; font-size: 13px; line-height: 1.45; }
   .ali-itens span { color: var(--muted); }

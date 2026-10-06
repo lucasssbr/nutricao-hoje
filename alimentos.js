@@ -57,6 +57,13 @@
     el.innerHTML = html || '<div class="hist-empty">Nenhuma favorita ainda</div>';
   }
 
+  // selo "novo": cadastrado nos últimos 7 dias (fuso de LA) — mostra o que o Grok acabou de incluir
+  function seloNovo(a) {
+    if (!a.salvo_em || !/^\d{4}-\d{2}-\d{2}$/.test(a.salvo_em)) return '';
+    var dias = window.Nutri.diasEntre(a.salvo_em, window.Nutri.hojeLA());
+    return dias >= 0 && dias < 7 ? '<span class="ali-fonte novo">novo</span>' : '';
+  }
+
   // proteína por 100 kcal: quanto de proteína cada caloria traz (ajuda a escolher quando falta proteína)
   function densidade(a) { var k = Number(a.kcal), pr = Number(a.p); return k > 0 && isFinite(pr) ? pr / k * 100 : null; }
   var CHAVE_ORDEM = 'nutri-ali-ordem';
@@ -84,7 +91,7 @@
       if (a.salvo_em) extra.push('salvo ' + data(a.salvo_em));
       if (a.atualizado_em) extra.push('atualizado ' + data(a.atualizado_em));
       return '<details class="ali-card"><summary class="ali-head"><b>' + esc(a.nome) + '</b>' +
-        '<span class="ali-fonte ' + f.cls + '">' + esc(f.txt) + '</span>' +
+        '<span class="ali-fonte ' + f.cls + '">' + esc(f.txt) + '</span>' + seloNovo(a) +
         '<span class="ali-mac">' + esc(a.base) + ': ' + n1(a.kcal) + ' kcal · P' + n1(a.p) + ' · C' + n1(a.c) + ' · G' + n1(a.g) +
         (a.fibra != null ? ' · fibra ' + n1(a.fibra) : '') + '</span>' +
         (densidade(a) != null ? '<span class="ali-dens">Proteína: <span class="v">' + n1(densidade(a)) + '\u00a0g</span> por 100\u00a0kcal</span>' : '') + '</summary>' +
