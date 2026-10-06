@@ -87,6 +87,17 @@
     };
   }
 
+  // médias e "dias na meta" só com dias de REGISTRO COMPLETO (mesma regra do objetivo/previsão): dia sem nada
+  // lançado (04/10) ou parcial não é "comi 0" — puxava a média de 2072 para 1281 kcal (06/10)
+  function contaMedia(d) { return d.registro === 'completo' && d.refeicoes !== 0; }
+  function foraLinha(dias) {
+    var fora = dias.filter(function (d) { return !contaMedia(d); });
+    if (!fora.length) return '';
+    return '<div class="hist-summary-comp">Fora das médias: ' + fora.map(function (d) {
+      return labelDia(d.data).replace(/ \d{4}$/, '') + ' (' + (d.refeicoes === 0 ? 'sem registro' : d.registro === 'parcial' ? 'parcial' : 'não confirmado') + ')';
+    }).join(' · ') + '</div>';
+  }
+
   function naMeta(cons, meta) {
     var o = isOrange(cons, meta);
     return !o.kcal && !o.p && !o.c && !o.g;
@@ -120,13 +131,13 @@
       return;
     }
     var kcals = [], ps = [], cs = [], gs = [], pesos = [];
-    var ok = 0;
-    last7.forEach(function (d) {
+    var ok = 0, base = last7.filter(contaMedia);
+    last7.forEach(function (d) { if (d.peso != null && !isNaN(Number(d.peso))) pesos.push(Number(d.peso)); });
+    base.forEach(function (d) {
       kcals.push(d.cons.kcal);
       ps.push(d.cons.p);
       cs.push(d.cons.c);
       gs.push(d.cons.g);
-      if (d.peso != null && !isNaN(Number(d.peso))) pesos.push(Number(d.peso));
       if (naMeta(d.cons, d.meta)) ok++;
     });
     var pesoLine = '';
@@ -138,9 +149,9 @@
     var ant = days.filter(function (d) {
       var k = Math.round((Date.parse(ref) - Date.parse(d.data)) / 86400000);
       return k >= 7 && k < 14;
-    });
+    }).filter(contaMedia);
     var compLine = '';
-    if (ant.length) {
+    if (ant.length && base.length) {
       var aK = avg(ant.map(function (d) { return d.cons.kcal; })), aP = avg(ant.map(function (d) { return d.cons.p; }));
       var nK = avg(kcals), nP = avg(ps);
       function dif(n, a) { var x = ri(n) - ri(a); return x === 0 ? '0' : (x > 0 ? '+' : '−') + Math.abs(x); }
@@ -149,14 +160,16 @@
     }
     box.innerHTML =
       '<div class="hist-summary-title">Últimos 7 dias</div>' +
-      '<div class="hist-summary-avgs">' +
+      (base.length ? '<div class="hist-summary-avgs">' +
         '<span><b>' + ri(avg(kcals)) + '</b> kcal</span>' +
         '<span><b>P' + ri(avg(ps)) + '</b></span>' +
         '<span><b>C' + ri(avg(cs)) + '</b></span>' +
         '<span><b>G' + ri(avg(gs)) + '</b></span>' +
       '</div>' +
-      vsMetaLinha(last7) +
-      '<div class="hist-summary-meta">' + ok + ' de ' + last7.length + ' dias na meta</div>' +
+      vsMetaLinha(base) +
+      '<div class="hist-summary-meta">' + ok + ' de ' + base.length + ' dia' + (base.length > 1 ? 's' : '') + ' na meta</div>'
+        : '<div class="hist-summary-empty">Nenhum dia com registro completo nestes 7 dias — sem médias.</div>') +
+      (base.length < last7.length ? '<div class="hist-summary-comp">Médias de ' + base.length + ' dia' + (base.length > 1 ? 's' : '') + ' com registro completo</div>' + foraLinha(last7) : '') +
       coberturaLinha(last7) + pesoLine + compLine +
       '<button type="button" class="btn-csv btn-resumo" id="resumoBtn">Resumo da semana · copiar / compartilhar</button>' +
       '<div id="resumoPainel" hidden></div>';
@@ -170,9 +183,11 @@
   function sinalN(x) { return x > 0 ? '+' + x : x < 0 ? '−' + Math.abs(x) : '0'; }
 
   function textoResumo() {
-    var dias = RES.dias.slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+    var todos = RES.dias.slice().sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+    var dias = todos.filter(contaMedia);   // médias só com registro completo; "Por dia" lista todos
     var n = dias.length, l = [];
-    if (!n) return 'RESUMO DA SEMANA — Nutrição Hoje\nNenhum dia fechado ainda.';
+    if (!todos.length) return 'RESUMO DA SEMANA — Nutrição Hoje\nNenhum dia fechado ainda.';
+    if (!n) return 'RESUMO DA SEMANA — Nutrição Hoje\nNenhum dia com registro completo nestes 7 dias — sem médias.';
     var c = {}, m = {};
     ['kcal', 'p', 'c', 'g'].forEach(function (k) {
       c[k] = avg(dias.map(function (d) { return d.cons[k]; }));
@@ -182,16 +197,17 @@
     ['kcal', 'p', 'c', 'g'].forEach(function (k) { dif[k] = ri(c[k]) - ri(m[k]); });
     var ok = dias.filter(function (d) { return naMeta(d.cons, d.meta); }).length;
     var pOk = dias.filter(function (d) { return ri(d.cons.p) >= ri(d.meta.p); }).length;
-    var compl = dias.filter(function (d) { return d.registro === 'completo'; }).length;
+    var compl = n, total = todos.length;
     l.push('RESUMO DA SEMANA — Nutrição Hoje');
-    l.push('Período: ' + ddmm(dias[0].data) + ' a ' + ddmm(dias[n - 1].data) + ' · ' + n + ' dia' + (n > 1 ? 's' : '') + ' fechado' + (n > 1 ? 's' : ''));
+    l.push('Período: ' + ddmm(todos[0].data) + ' a ' + ddmm(todos[total - 1].data) + ' · ' + total + ' dia' + (total > 1 ? 's' : '') + ' fechado' + (total > 1 ? 's' : '') +
+      (n < total ? ' · médias de ' + n + ' com registro completo' : ''));
     l.push('');
     l.push('Média por dia: ' + ri(c.kcal) + ' kcal | P ' + ri(c.p) + ' | C ' + ri(c.c) + ' | G ' + ri(c.g));
     l.push('Meta: ' + ri(m.kcal) + ' kcal | P ' + ri(m.p) + ' | C ' + ri(m.c) + ' | G ' + ri(m.g));
     l.push('Diferença: kcal ' + sinalN(dif.kcal) + ' | P ' + sinalN(dif.p) + ' | C ' + sinalN(dif.c) + ' | G ' + sinalN(dif.g));
-    l.push('Dias na meta: ' + ok + ' de ' + n + ' · proteína batida: ' + pOk + ' de ' + n + ' · registro completo: ' + compl + ' de ' + n);
+    l.push('Dias na meta: ' + ok + ' de ' + n + ' · proteína batida: ' + pOk + ' de ' + n + ' · registro completo: ' + compl + ' de ' + total);
     // peso: só pesagens REAIS do período (estimativas não contam)
-    var ini = dias[0].data, fim = dias[n - 1].data;
+    var ini = todos[0].data, fim = todos[total - 1].data;
     var ps = (RES.pesos || []).filter(function (p) { return p.data >= ini && p.data <= fim && p.kg != null && !isNaN(Number(p.kg)); })
       .sort(function (a, b) { return a.data < b.data ? -1 : 1; });
     l.push('');
@@ -214,9 +230,10 @@
     }
     l.push('');
     l.push('Por dia:');
-    dias.forEach(function (d) {
+    todos.forEach(function (d) {
+      if (d.refeicoes === 0) { l.push('- ' + ddmm(d.data) + ': sem registro' + (d.peso != null ? ' | peso ' + kgStr(Number(d.peso)) + ' kg' : '') + ' (fora das médias)'); return; }
       l.push('- ' + ddmm(d.data) + ': ' + ri(d.cons.kcal) + ' kcal (' + sinalN(ri(d.cons.kcal) - ri(d.meta.kcal)) + ') | P ' + ri(d.cons.p) + ' | C ' + ri(d.cons.c) + ' | G ' + ri(d.cons.g) +
-        (d.peso != null ? ' | peso ' + kgStr(Number(d.peso)) + ' kg' : '') + (d.registro !== 'completo' ? ' | registro ' + (d.registro === 'parcial' ? 'parcial' : 'não confirmado') : ''));
+        (d.peso != null ? ' | peso ' + kgStr(Number(d.peso)) + ' kg' : '') + (d.registro !== 'completo' ? ' | registro ' + (d.registro === 'parcial' ? 'parcial' : 'não confirmado') + ' (fora das médias)' : ''));
     });
     if (RES.top && RES.top.kcal.length) {
       l.push('');
@@ -231,7 +248,7 @@
     if (o.p) at.push('Proteína abaixo da meta em média (' + sinalN(dif.p) + ' g/dia); batida em ' + pOk + ' de ' + n + ' dias.');
     if (o.c) at.push('Carboidrato acima da meta em média (' + sinalN(dif.c) + ' g/dia).');
     if (o.g) at.push('Gordura acima da meta em média (' + sinalN(dif.g) + ' g/dia).');
-    if (compl < n) at.push((n - compl) + ' dia(s) sem registro completo: as médias podem estar incompletas.');
+    if (n < total) at.push((total - n) + ' dia(s) sem registro completo ficaram fora das médias.');
     l.push('');
     l.push('Pontos de atenção:');
     if (!at.length) at.push('Nenhum: médias dentro da meta.');
@@ -347,7 +364,7 @@
       vals.forEach(function (v, i) {
         var x0 = L + slot * i + (slot - bw) / 2;
         if (v != null && v > 0) {
-          var yt = y(v), r = Math.min(4, (base - yt) / 2), cls = classe + (metaDe(porData[datas[i]]) ? ' bc-over' : '');
+          var yt = y(v), r = Math.min(4, (base - yt) / 2), cls = classe + (metaDe(porData[datas[i]]) ? ' bc-over' : '') + (contaMedia(porData[datas[i]]) ? '' : ' bc-inc');
           svg += '<path class="' + cls + '" d="M' + x0.toFixed(1) + ',' + base.toFixed(1) + 'V' + (yt + r).toFixed(1) + 'Q' + x0.toFixed(1) + ',' + yt.toFixed(1) + ' ' + (x0 + r).toFixed(1) + ',' + yt.toFixed(1) +
             'H' + (x0 + bw - r).toFixed(1) + 'Q' + (x0 + bw).toFixed(1) + ',' + yt.toFixed(1) + ' ' + (x0 + bw).toFixed(1) + ',' + (yt + r).toFixed(1) + 'V' + base.toFixed(1) + 'Z"/>';
         }
@@ -359,6 +376,7 @@
       svg += '<text x="' + L + '" y="' + (H - 4) + '" class="pc-ax">' + esc(labelDia(datas[0]).replace(/ \d{4}$/, '')) + '</text>' +
         '<text x="' + (W - R) + '" y="' + (H - 4) + '" class="pc-ax" text-anchor="end">' + esc(labelDia(ref).replace(/ \d{4}$/, '')) + '</text>';
       rotulo = rotulo.replace('{meta}', meta != null ? '<span class="bc-k-meta"></span> meta ' + ri(meta) : '');
+      if (datas.some(function (dt) { var d = porData[dt]; return d && d.refeicoes !== 0 && !contaMedia(d); })) rotulo += ' · apagada = registro incompleto';
       return '<div class="bc-rot">' + rotulo + '</div><svg class="pc-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(rotulo) + ' nos últimos 14 dias">' + svg + '</svg>';
     }
     function difTxt(v, m) { var x = ri(v) - ri(m); return x === 0 ? 'na meta' : (x > 0 ? '+' : '−') + Math.abs(x); }
@@ -372,8 +390,8 @@
     box.querySelectorAll('.pc-hit').forEach(function (h) {
       h.addEventListener('click', function () {
         var dt = datas[Number(h.getAttribute('data-i'))], d = porData[dt];
-        tip.textContent = labelDia(dt).replace(/ \d{4}$/, '') + ': ' + (d ? ri(d.cons.kcal) + ' kcal (' + difTxt(d.cons.kcal, d.meta.kcal) + ') · P' + ri(d.cons.p) + ' (' +
-          difTxt(d.cons.p, d.meta.p) + ') · C' + ri(d.cons.c) + ' · G' + ri(d.cons.g) : 'sem dia fechado');
+        tip.textContent = labelDia(dt).replace(/ \d{4}$/, '') + ': ' + (d && d.refeicoes === 0 ? 'sem registro' : d ? ri(d.cons.kcal) + ' kcal (' + difTxt(d.cons.kcal, d.meta.kcal) + ') · P' + ri(d.cons.p) + ' (' +
+          difTxt(d.cons.p, d.meta.p) + ') · C' + ri(d.cons.c) + ' · G' + ri(d.cons.g) + (contaMedia(d) ? '' : ' · registro ' + (d.registro === 'parcial' ? 'parcial' : 'não confirmado')) : 'sem dia fechado');
       });
     });
   }
@@ -389,6 +407,7 @@
     if (c.length >= 16 && c[13] === ':') { var hh = parseInt(c.slice(11, 13), 10); return hh < 11 ? 'Café' : hh < 15 ? 'Almoço' : hh < 19 ? 'Lanche' : 'Jantar'; }
     return null;
   }
+  function completo(dia) { return !!(dia && dia.fechado && dia.registro && dia.registro.status === 'completo' && (dia.lancado || []).length); }
   function renderProtRefeicao(days) {
     var box = document.getElementById('protRefCard');
     if (!box || !days.length) return;
@@ -399,7 +418,7 @@
     })).then(function (arqs) {
       var porH = {}, n = 0;
       arqs.forEach(function (dia) {
-        if (!dia || !dia.fechado) return;
+        if (!completo(dia)) return;
         n++;
         var noDia = {};
         (dia.lancado || []).forEach(function (r) {
@@ -413,7 +432,7 @@
       if (!n || !Object.keys(porH).length) return;
       var meds = HORARIOS.filter(function (h) { return porH[h]; }).map(function (h) { return { h: h, g: avg(porH[h]), dias: porH[h].length }; });
       var maior = Math.max.apply(null, meds.map(function (m) { return m.g; })) || 1;
-      box.innerHTML = '<div class="bc-rot">Proteína por refeição · média dos dias em que ela aconteceu (' + n + ' dia' + (n > 1 ? 's' : '') + ')</div>' +
+      box.innerHTML = '<div class="bc-rot">Proteína por refeição · média dos dias em que ela aconteceu (' + n + ' dia' + (n > 1 ? 's' : '') + ' com registro completo)</div>' +
         meds.map(function (m) {
           return '<div class="pr-linha"><span class="pr-nome">' + m.h + '</span><span class="pr-trilho"><span class="pr-barra" style="width:' + (100 * m.g / maior).toFixed(1) + '%"></span></span>' +
             '<span class="pr-val">' + ri(m.g) + '\u00a0g <i>' + m.dias + '/' + n + ' dias</i></span></div>';
@@ -428,7 +447,7 @@
     var box = document.getElementById('semTopCard');
     var porAli = {}, tot = 0, totG = 0, n = 0;
     arqs.forEach(function (dia) {
-      if (!dia || !dia.fechado) return;
+      if (!completo(dia)) return;
       n++;
       (dia.lancado || []).forEach(function (r) {
         (r.itens || []).forEach(function (it) {
@@ -451,7 +470,7 @@
     function li(x, un) {
       return '<li><span>' + esc(x.nome) + ' <i class="st-dias">' + x.dias + '/' + n + ' dias</i></span><b>' + ri(x.v) + '\u00a0' + un + '</b><i>' + x.pct + '%</i></li>';
     }
-    box.innerHTML = '<div class="bc-rot">Onde foram as calorias · ' + n + ' dia' + (n > 1 ? 's' : '') + ' fechado' + (n > 1 ? 's' : '') + '</div>' +
+    box.innerHTML = '<div class="bc-rot">Onde foram as calorias · ' + n + ' dia' + (n > 1 ? 's' : '') + ' com registro completo</div>' +
       '<div class="onde"><div class="onde-col"><div class="onde-t">Calorias (' + ri(tot) + ' kcal no total)</div><ol>' +
       RES.top.kcal.map(function (x) { return li(x, 'kcal'); }).join('') + '</ol></div>' +
       (RES.top.g.length ? '<div class="onde-col"><div class="onde-t">Gordura</div><ol>' + RES.top.g.map(function (x) { return li(x, 'g'); }).join('') + '</ol></div>' : '') + '</div>';
@@ -566,7 +585,8 @@
       var fim = sw.fim;
       var andamento = hoje < fim;
       var ate = andamento ? hoje : fim;
-      var ds = closed.filter(function (d) { return d.data >= ini && d.data <= fim; });
+      var dsTodos = closed.filter(function (d) { return d.data >= ini && d.data <= fim; });
+      var ds = dsTodos.filter(contaMedia);   // médias só com registro completo
       var ok = ds.filter(function (d) { return naMeta(d.cons, d.meta); }).length;
       var h = '<div class="ck-sem"><div class="ck-head"><b>Semana ' + w + '</b> <span>' + esc(N.curta(ini)) + ' → ' + esc(N.curta(fim)) +
         (andamento ? ' · em andamento (dia ' + (diasEntre(ini, hoje) + 1) + '/' + (diasEntre(ini, fim) + 1) + ')' : '') + '</span></div>';
@@ -579,8 +599,11 @@
       }
       if (ds.length) {
         h += '<div class="ck-l">Média ' + ri(avg(ds.map(function (d) { return d.cons.kcal; }))) + ' kcal · P' +
-          ri(avg(ds.map(function (d) { return d.cons.p; }))) + ' · ' + ok + ' de ' + ds.length + ' dia' + (ds.length > 1 ? 's' : '') + ' na meta</div>';
-        h += coberturaLinha(ds).replace('hist-summary-comp', 'ck-l ck-m');
+          ri(avg(ds.map(function (d) { return d.cons.p; }))) + ' · ' + ok + ' de ' + ds.length + ' dia' + (ds.length > 1 ? 's' : '') + ' na meta' +
+          (ds.length < dsTodos.length ? ' <span class="ck-m">(só dias com registro completo)</span>' : '') + '</div>';
+        h += coberturaLinha(dsTodos).replace('hist-summary-comp', 'ck-l ck-m');
+      } else if (dsTodos.length) {
+        h += '<div class="ck-l ck-m">Sem dia com registro completo nesta semana — sem médias.</div>' + coberturaLinha(dsTodos).replace('hist-summary-comp', 'ck-l ck-m');
       } else {
         h += '<div class="ck-l ck-m">Nenhum dia fechado ainda nesta semana.</div>';
       }
@@ -602,6 +625,12 @@
     days.forEach(function (d) {
       var o = isOrange(d.cons, d.meta);
       var peso = fmtPeso(d.peso);
+      if (d.refeicoes === 0) {   // nada lançado: não é "0 kcal (−1570)"
+        html += '<a href="./dia.html?d=' + encodeURIComponent(d.data) + '"><div><div class="d">' + esc(labelDia(d.data).replace(/ \d{4}$/, '')) +
+          ' · <span class="sem-reg">sem registro</span></div>' + (peso ? '<div class="m">Peso ' + esc(peso) + '</div>' : '') +
+          '<div class="m">' + (d.registro === 'parcial' ? 'Registro parcial · ' : '') + 'fora das médias</div></div></a>';
+        return;
+      }
       html += '<a href="./dia.html?d=' + encodeURIComponent(d.data) + '">';
       html += '<div>';
       html += '<div class="d">' + esc(labelDia(d.data).replace(/ \d{4}$/, '')) + ' · <span class="' + (o.kcal ? 'over' : '') + '">' +
@@ -692,7 +721,8 @@
           meta: meta,
           cons: cons,
           peso: data.peso_kg,
-          registro: (data.registro && data.registro.status) || 'desconhecido'
+          registro: (data.registro && data.registro.status) || 'desconhecido',
+          refeicoes: data.refeicoes != null ? data.refeicoes : (data.lancado || []).length
         });
       });
       closed.sort(function (a, b) {

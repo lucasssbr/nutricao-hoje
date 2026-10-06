@@ -1,0 +1,26 @@
+name: Vigia da publicação
+
+# De hora em hora: execução de "Conferir e publicar" parada em "waiting" há mais de 30 min (ambiente
+# github-pages travado — aconteceu em 06/10 e segurou os registros do Grok por 9 h) é cancelada e uma nova
+# é disparada (verificação completa + fechamento idempotente). Fila normal e execuções rodando não são tocadas.
+# Lógica e testes: scripts/vigia.py, tests/test_vigia.py.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Destravar a fila de publicação
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/vigia.py

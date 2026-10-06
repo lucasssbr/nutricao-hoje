@@ -317,6 +317,31 @@ async function checarRepetir(ctx) {
   return erros;
 }
 
+// Histórico: dia sem nada lançado não entra nas médias ("sem registro", não "0 kcal (−1570)")
+async function checarSemRegistro(ctx) {
+  const erros = [];
+  const resumo = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', 'resumo.json'), 'utf8'));
+  const corte = somaDias(hojeLA, -2);
+  const alvo = resumo.filter((x) => x.fechado && x.registro === 'completo' && x.data < corte).map((x) => x.data).sort().pop();
+  if (!alvo) return erros;
+  const mod = resumo.map((x) => x.data === alvo ? Object.assign({}, x, { refeicoes: 0, registro: 'desconhecido', cons: { kcal: 0, p: 0, c: 0, g: 0 } }) : x);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.route('**/dados/resumo.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mod) }));
+  await page.route('**/dados/' + alvo + '.json', (r) => r.fulfill({ status: 404, body: '' }));
+  await page.goto(BASE + '/historico.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  const rot = new Date(alvo + 'T12:00:00Z').getUTCDate();
+  const lista = await page.locator('#histList').innerText();
+  if (!new RegExp(rot + ' [a-z]{3} · sem registro').test(lista)) erros.push('dia sem nada lançado não aparece como "sem registro" (' + alvo + ')');
+  if (/0 kcal \(−\d+\)/.test(lista)) erros.push('lista ainda mostra "0 kcal (−meta)"');
+  const resumoTxt = await page.locator('#histSummary').innerText();
+  const naJanela = (Date.parse(resumo.map((x) => x.data).filter((d) => d <= hojeLA).sort().pop()) - Date.parse(alvo)) / 864e5 < 7;
+  if (naJanela && !/Fora das médias/.test(resumoTxt)) erros.push('cartão dos 7 dias não avisa o dia fora das médias');
+  await page.close();
+  return erros;
+}
+
 (async () => {
   const falhas = [];
   let rodou = 0;
@@ -336,7 +361,7 @@ async function checarRepetir(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -349,5 +374,5 @@ async function checarRepetir(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 9} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 10} checagens cada).`);
 })();

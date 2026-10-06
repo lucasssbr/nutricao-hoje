@@ -318,6 +318,8 @@
   .bc-kcal { fill: var(--kcal); }
   .bc-kcal.bc-over { fill: var(--over); }
   .bc-p { fill: var(--protein); }
+  .bc-inc { opacity: .35; }   /* dia com registro parcial/não confirmado: fora das médias */
+  .sem-reg { color: var(--muted); font-weight: 600; }
   .bc-k-over { width: 10px; height: 10px; border-radius: 3px; background: var(--over); display: inline-block; }
   .bc-k-meta { width: 14px; height: 0; border-top: 2px dashed #64D2FF; display: inline-block; opacity: .8; }
   #barrasCard[hidden] { display: none; }
