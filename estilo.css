@@ -458,6 +458,7 @@
   }
   .btn-csv[hidden] { display: none; }
   a.btn-csv { text-align: center; text-decoration: none; }
+  .peso-velho { color: #FFD60A; }
   .pc-dot.pc-est { fill: var(--surface); stroke: var(--text); stroke-width: 1.5; }
   .pc-k-est { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text); display: inline-block; box-sizing: border-box; }
   /* check-in semanal */

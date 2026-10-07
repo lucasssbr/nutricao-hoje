@@ -497,6 +497,9 @@
     if (todasReais.length) {
       var uR = todasReais[todasReais.length - 1];
       linha += '<div class="peso-delta">' + todasReais.length + ' pesage' + (todasReais.length > 1 ? 'ns' : 'm') + ' · última em ' + esc(labelDia(uR.data).replace(/ \d{4}$/, '')) + ' (pontos vazados = estimativa, não contam como medida)</div>';
+      // informativo, sem cobrança: a partir de 3 dias sem pesagem, deixa claro de onde partem média e projeção
+      var semPesar = diasEntre(uR.data, N.hojeLA());
+      if (semPesar >= 3) linha += '<div class="peso-delta peso-velho" id="pesoVelho">Sem pesagem há ' + semPesar + ' dias: média, ritmo e projeção partem da de ' + esc(labelDia(uR.data).replace(/ \d{4}$/, '')) + '.</div>';
       // variação só entre pesagens reais dos últimos 7 dias
       var semanaR = todasReais.filter(function (p) { return diasEntre(p.data, uR.data) < 7; });
       if (semanaR.length >= 2) {

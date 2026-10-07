@@ -562,6 +562,14 @@
                (barradas ? ' — ' + barradas + ' versão(ões) descartada(s) por passar delas' : '')] };
   }
 
+  // refeição pronta (ex.: uma das refeições frequentes do Lucas) no lugar da refeição iR: efeito no dia e se cabe
+  // nas MESMAS regras das alternativas (tetos, exclusões, claras só no jantar). Não ajusta nada sozinho.
+  function avaliarRefeicao(ctx, iR, itens) {
+    var antes = totalDoDia(ctx), t = totalDoDia(ctx, iR, itens), meta = ctx.base.meta;
+    return { itens: itens, total: t, efeito: efeito(antes, t), aproxima: custoMacros(t, meta) < custoMacros(antes, meta) - 1e-9,
+             problemas: problemasRefeicao(ctx, iR, itens) };
+  }
+
   // ---------------- armazenamento local (por navegador; não sincroniza) ----------------
 
   function armazem(storage) {
@@ -642,7 +650,7 @@
     novoRascunho: novoRascunho, calcular: calcular, revisar: revisar, aceitarBase: aceitarBase,
     restantes: restantes, totalDoDia: totalDoDia, gramas: gramas, equivalentes: equivalentes,
     problemasRefeicao: problemasRefeicao, mantida: mantida, manterRefeicao: manterRefeicao, alternativasItem: alternativasItem, porcao: porcao,
-    ajustarRefeicao: ajustarRefeicao, alternativasRefeicao: alternativasRefeicao,
+    ajustarRefeicao: ajustarRefeicao, alternativasRefeicao: alternativasRefeicao, avaliarRefeicao: avaliarRefeicao,
     armazem: armazem, chaveRascunho: chaveRascunho, limparAntigos: limparAntigos, textoGrok: textoGrok
   };
 })();

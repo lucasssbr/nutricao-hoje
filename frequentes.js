@@ -6,9 +6,6 @@
    - Aviso: depois das 21h (LA), se hoje ainda não tem nada lançado — só um lembrete neutro, sem cobrança. */
 (function () {
   var N = window.Nutri, R = window.NutriRepetir;
-  var box = document.getElementById('frequentes');
-  if (!box || !R || !document.body.hasAttribute('data-dia')) return;
-  var hoje = document.body.getAttribute('data-dia');
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function curto(nome) { return String(nome || '').replace(/\s*\(.*?\)\s*/g, ' ').trim(); }
@@ -17,8 +14,10 @@
     return parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Los_Angeles', hour: '2-digit', hour12: false }).format(new Date()), 10) % 24;
   }
 
-  // combos frequentes: [{ids, dias, itens (da vez mais recente), refeicao, data}]
-  function frequentes(dias) {
+  // combos frequentes: [{ids, n (dias), ult: {data, itens (da vez mais recente), refeicao}}]
+  // opcoes.aceita(refeicao): só refeições que passam no filtro (o Planejar usa por horário); opcoes.limite (3)
+  function frequentes(dias, opcoes) {
+    var aceita = (opcoes && opcoes.aceita) || function () { return true; }, limite = (opcoes && opcoes.limite) || 3;
     var combos = {};
     function anota(chave, ids, dia, itens, refeicao) {
       var c = combos[chave] || (combos[chave] = { ids: ids, dias: {}, ult: null });
@@ -27,6 +26,7 @@
     }
     dias.forEach(function (d) {
       (d.lancado || []).forEach(function (r) {
+        if (!aceita(r)) return;
         var porId = {};
         (r.itens || []).forEach(function (it) { if (it.alimento && Number(it.quantidade) > 0) porId[it.alimento] = it; });
         var ids = Object.keys(porId).sort();
@@ -41,7 +41,7 @@
       .sort(function (a, b) { return b.n - a.n || b.ids.length - a.ids.length || (a.ult.data < b.ult.data ? 1 : -1); });
     var out = [], usados = {};
     lista.forEach(function (c) {
-      if (out.length >= 3) return;
+      if (out.length >= limite) return;
       var chave = c.ids.join('+');
       if (usados[chave]) return;
       out.push(c);
@@ -49,6 +49,12 @@
     });
     return out;
   }
+
+  window.NutriFrequentes = { frequentes: frequentes };   // Hoje, Planejar e testes
+
+  var box = document.getElementById('frequentes');
+  if (!box || !R || !document.body.hasAttribute('data-dia')) return;
+  var hoje = document.body.getAttribute('data-dia');
 
   function render(lista, avisar) {
     var h = '';
@@ -84,6 +90,4 @@
     var avisar = !!deHoje && !deHoje.fechado && !(deHoje.lancado || []).length && horaLA() >= 21 && N.hojeLA() === hoje;
     render(frequentes(dias), avisar);
   });
-
-  window.NutriFrequentes = { frequentes: frequentes };   // para testes
 })();

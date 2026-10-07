@@ -386,6 +386,26 @@ async function checarSemana(ctx) {
   return erros;
 }
 
+// Histórico · peso: aviso neutro a partir de 3 dias sem pesagem (relógio fixo 5 dias depois da última pesagem real)
+async function checarPesoVelho(ctx) {
+  const erros = [];
+  const ult = dias.filter((d) => { const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'dados', d + '.json'), 'utf8')); return j.peso_kg != null && d <= hojeLA; }).pop();
+  if (!ult) return erros;
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => erros.push(e.message));
+  await page.clock.setFixedTime(new Date(somaDias(ult, 5) + 'T19:00:00Z'));
+  await page.goto(BASE + '/historico.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  const t = await page.locator('#pesoCard').innerText();
+  if (!/Sem pesagem há 5 dias: média, ritmo e projeção partem da de \d+ [a-z]{3}\./.test(t)) erros.push('sem o aviso "Sem pesagem há 5 dias" (última pesagem ' + ult + ')');
+  await page.clock.setFixedTime(new Date(somaDias(ult, 1) + 'T19:00:00Z'));
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(300);
+  if (await page.locator('#pesoVelho').count()) erros.push('aviso de pesagem antiga com só 1 dia sem pesar');
+  await page.close();
+  return erros;
+}
+
 // Alimentos: selo "novo" só nos cadastrados nos últimos 7 dias (relógio fixo: 3 dias depois de um cadastro)
 async function checarSeloNovo(ctx) {
   const erros = [];
@@ -461,7 +481,7 @@ async function checarFrequentes(ctx) {
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${p[0]}` + (erros.length ? ' — ' + erros.join('; ') : ''));
       if (erros.length) falhas.push(`${nav}: ${p[0]}`);
     }
-    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo], ['Hoje · frequentes e aviso da noite', checarFrequentes], ['Semana · relatório para imprimir', checarSemana]]) {
+    for (const [nome, fn] of [['Totais = Python', checarTotais], ['Planilha CSV', checarCsv], ['Aviso de dia não fechado', checarAvisoFechamento], ['Hoje · detalhes do objetivo', checarDetalhesObjetivo], ['Hoje · planejar amanhã', checarPlanejarAmanha], ['Histórico · resumo da semana', checarResumoSemana], ['Alimentos · ordem por proteína', checarOrdemProteina], ['Hoje · adicionar do rótulo', checarAdicionarRotulo], ['Dia · repetir refeição', checarRepetir], ['Histórico · dia sem registro fora das médias', checarSemRegistro], ['Alimentos · selo novo', checarSeloNovo], ['Hoje · frequentes e aviso da noite', checarFrequentes], ['Semana · relatório para imprimir', checarSemana], ['Histórico · pesagem antiga', checarPesoVelho]]) {
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
       console.log((erros.length ? '✗ ' : '✓ ') + `[${nav}] ${nome}` + (erros.length ? ' — ' + erros.join('; ') : ''));
@@ -474,5 +494,5 @@ async function checarFrequentes(ctx) {
     console.log(`::error::Páginas com problema: ${falhas.join(', ')}`);
     process.exit(1);
   }
-  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 13} checagens cada).`);
+  console.log(`Páginas OK (${rodou} navegador(es), ${PAGINAS.length + 14} checagens cada).`);
 })();

@@ -341,6 +341,44 @@ async function fluxoSomenteLeitura(ctx) {
   return erros.concat(e);
 }
 
+// Refeições frequentes no planejador: 2 dias sintéticos com o mesmo almoço (melancia 150 g + tomate 100 g) e
+// claras sozinhas num "almoço" (regra: claras só no jantar → aparece, mas "não cabe"). Aplicar troca a refeição.
+async function fluxoFrequentes(ctx) {
+  const erros = [];
+  const d1 = new Date(Date.parse(VESPERA + 'T00:00:00Z') - 3 * 86400000).toISOString().slice(0, 10);
+  const d2 = new Date(Date.parse(VESPERA + 'T00:00:00Z') - 2 * 86400000).toISOString().slice(0, 10);
+  const it = (id, q, un) => { const a = ali[id]; const f = un === 'g' ? q / 100 : q; return { nome: a.nome, qtd: q + ' ' + un, alimento: id, quantidade: q, kcal: a.kcal * f, p: a.p * f, c: a.c * f, g: a.g * f }; };
+  const dia = (d, mel) => ({ data: d, fechado: true, meta: { kcal: 1570, p: 180, c: 100, g: 50 }, registro: { status: 'completo' }, lancado: [
+    { refeicao: 'Almoço', consumido_em: d + 'T12:30:00-07:00', itens: [it('melancia', mel, 'g'), it('tomate', 100, 'g')] },
+    { refeicao: 'Almoço', consumido_em: d + 'T13:30:00-07:00', itens: [it('clara-un', 2, 'un')] }] });
+  const json = (b) => (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(b) });
+  const { page, erros: e } = await abrir(ctx, '/planejar.html?d=' + DIA, { rotas: [
+    ['**/dados/dias.json', json([d1, d2])], ['**/dados/' + d1 + '.json', json(dia(d1, 200))], ['**/dados/' + d2 + '.json', json(dia(d2, 150))]] });
+  await page.waitForTimeout(400);
+  let alm = page.locator('section.pl-ref[aria-label="Almoço"]');
+  if (!(await alm.count())) { await page.locator('[data-acao="novaRef"][data-nome="Almoço"]').click(); alm = page.locator('section.pl-ref[aria-label="Almoço"]'); }
+  // refeição vazia: botão próprio
+  const tinha = await alm.locator('.pl-item').count();
+  for (let i = 0; i < tinha; i++) await alm.locator('[data-acao="remover"]').first().click();
+  checar(await alm.locator('[data-acao="altRef"]', { hasText: 'Usar refeição frequente' }).count() === 1, 'almoço vazio sem "Usar refeição frequente"', erros);
+  await alm.locator('[data-acao="altRef"]').click();
+  const folha = await page.locator('#folhaCorpo').innerText();
+  checar(/Suas refeições frequentes/.test(folha), 'folha sem "Suas refeições frequentes"', erros);
+  checar(/Melancia 150\s?g · Tomate 100\s?g/i.test(folha), 'frequente sem as quantidades da vez mais recente (melancia 150 g, tomate 100 g)', erros);
+  checar(/Como em 2 dias/.test(folha), 'frequente sem "Como em 2 dias"', erros);
+  checar(new RegExp('Não cabe neste rascunho: ' + ali['clara-un'].nome.replace(/[()~]/g, '.') + ': só no jantar').test(folha), 'claras no almoço não marcadas como "não cabe"', erros);
+  await page.locator('#folhaCorpo [data-acao="aplicarRef"]').first().click();
+  checar(await page.locator('#folha').isHidden(), 'folha não fechou depois de aplicar', erros);
+  const q = await alm.locator('.pl-qtd input').evaluateAll((xs) => xs.map((x) => x.value));
+  checar(JSON.stringify(q) === '["150","100"]', 'almoço depois de aplicar: ' + JSON.stringify(q) + ' (esperado 150 e 100)', erros);
+  // a mesma refeição já está no rascunho: não é oferecida de novo
+  await alm.locator('[data-acao="altRef"]').click();
+  checar(!/Como em 2 dias \(quantidades[^)]*\)\s*kcal 0/.test(await page.locator('#folhaCorpo').innerText()) &&
+    !/Melancia 150\s?g · Tomate 100\s?g\s*Como em/i.test(await page.locator('#folhaCorpo').innerText()), 'refeição igual à do rascunho ainda oferecida como frequente', erros);
+  await page.close();
+  return erros.concat(e);
+}
+
 (async () => {
   const antes = hashDados();
   const falhas = [];
@@ -356,7 +394,8 @@ async function fluxoSomenteLeitura(ctx) {
     rodou++;
     for (const [nome, fn] of [['Planejador · editar/trocar/desfazer/recarregar', fluxoEdicao], ['Planejador · levar ao Grok', fluxoGrok],
                               ['Planejador · sem armazenamento', fluxoArmazenamento], ['Planejador · base mudou', fluxoBaseMudou],
-                              ['Planejador · dia passado e acesso', fluxoSomenteLeitura], ['Planejador · página aberta', fluxoPaginaAberta]]) {
+                              ['Planejador · dia passado e acesso', fluxoSomenteLeitura], ['Planejador · página aberta', fluxoPaginaAberta],
+                              ['Planejador · refeições frequentes', fluxoFrequentes]]) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
       let erros;
       try { erros = await fn(ctx); } catch (e) { erros = [e.message.split('\n')[0]]; }
@@ -369,5 +408,5 @@ async function fluxoSomenteLeitura(ctx) {
   if (hashDados() !== antes) falhas.push('dados/ mudou durante os testes do planejador');
   if (!rodou) { console.log('::error::nenhum navegador disponível'); process.exit(1); }
   if (falhas.length) { console.log(`::error::Planejador com problema: ${falhas.join(', ')}`); process.exit(1); }
-  console.log(`Planejador OK (${rodou} navegador(es), 6 fluxos cada; dia ${DIA}).`);
+  console.log(`Planejador OK (${rodou} navegador(es), 7 fluxos cada; dia ${DIA}).`);
 })();

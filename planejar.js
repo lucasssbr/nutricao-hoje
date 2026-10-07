@@ -185,7 +185,8 @@
       });
       if (!ro) {
         h += '<div class="pl-acoes pl-fim"><button type="button" class="pl-btn peq" data-acao="adicionar" data-r="' + iR + '">+ Alimento</button>' +
-          (r.itens.length ? '<button type="button" class="pl-btn peq" data-acao="altRef" data-r="' + iR + '">Alternativas da refeição</button>' : '') +
+          (r.itens.length ? '<button type="button" class="pl-btn peq" data-acao="altRef" data-r="' + iR + '">Alternativas da refeição</button>'
+            : freqDe(r).length ? '<button type="button" class="pl-btn peq" data-acao="altRef" data-r="' + iR + '">Usar refeição frequente</button>' : '') +
           '<button type="button" class="pl-btn peq" data-acao="tirarRef" data-r="' + iR + '">Tirar refeição</button></div>';
       }
       h += '</section>';
@@ -253,17 +254,64 @@
     abrirFolha('Trocar ' + al.nome, h);
   }
 
+  // ---------------- refeições frequentes (o que o Lucas mais repete neste horário, últimos 14 dias) ----------------
+  // carregadas em segundo plano depois da página; enquanto não chegam, a folha só mostra as alternativas calculadas
+  var FREQ = null;
+  function carregarFrequentes() {
+    var F = window.NutriFrequentes;
+    if (!F) return;
+    get('dados/dias.json', true).then(function (todas) {
+      var datas = (todas || []).filter(function (d) { return d <= hoje && N.diasEntre(d, hoje) < 14; });
+      return Promise.all(datas.map(function (d) { return get('dados/' + d + '.json', true).catch(function () { return null; }); }));
+    }).then(function (arqs) {
+      var dias = (arqs || []).filter(Boolean), porH = {};
+      P.HORARIOS.forEach(function (h) { porH[h] = F.frequentes(dias, { limite: 3, aceita: function (r) { return P.horario(r) === h; } }); });
+      FREQ = porH;
+      if (S.rasc && !S.somenteLeitura && document.getElementById('folha').hidden) render();   // botão "Usar refeição frequente"
+    }).catch(function () { FREQ = null; });
+  }
+  function freqDe(r) {
+    var h = P.horario(r);
+    return FREQ && h && FREQ[h] ? FREQ[h] : [];
+  }
+  function nomeItens(itens) {
+    return itens.map(function (x) { var al = S.ali[x.alimento]; return al ? al.nome + ' ' + P.textoQtd(al, x.quantidade) : x.alimento; }).join(' · ');
+  }
+
   function abrirAltRef(iR) {
-    var r = S.rasc.refeicoes[iR], a = P.alternativasRefeicao(ctx(), iR, 3);
-    var h = '<div class="pl-nota">Versões de <b>' + esc(r.refeicao) + '</b> calculadas com a biblioteca e as mesmas regras da sugestão automática (tetos do dia, claras só no jantar, exclusões). Nada é aplicado sem você tocar.</div>';
-    if (!a.opcoes.length) h += '<div class="pl-aviso">' + esc(a.conflitos.join(' ')) + '</div>';
-    a.opcoes.forEach(function (o, k) {
-      var desc = o.itens.map(function (x) { var al = S.ali[x.alimento]; return al ? al.nome + ' ' + P.textoQtd(al, x.quantidade) : x.alimento; }).join(' · ');
-      h += '<div class="pl-op"><div class="tit">' + (k + 1) + '. ' + esc(o.rotulo) + '</div><div class="ef">' + esc(desc) + '<br>' + efeitoHtml(o) + '</div>' +
-        '<button type="button" class="pl-btn peq prim" data-acao="aplicarRef" data-r="' + iR + '" data-k="' + k + '"' + (k ? '' : ' data-foco') + '>Aplicar no rascunho</button></div>';
+    var r = S.rasc.refeicoes[iR], h = '', k = 0, opcoes = [];
+    var atual = JSON.stringify(r.itens.map(function (x) { return [x.alimento, Number(x.quantidade)]; }).sort());
+    var freq = freqDe(r).filter(function (c) {   // igual à refeição que já está no rascunho: nada a oferecer
+      return JSON.stringify(c.ult.itens.map(function (x) { return [x.alimento, Number(x.quantidade)]; }).sort()) !== atual;
+    }).map(function (c) {
+      var itens = c.ult.itens.map(function (it) { return { alimento: it.alimento, quantidade: Number(it.quantidade) }; });
+      var o = P.avaliarRefeicao(ctx(), iR, itens);
+      o.rotulo = 'Como em ' + c.n + ' dias (quantidades de ' + c.ult.data.slice(8, 10) + '/' + c.ult.data.slice(5, 7) + ')';
+      return o;
     });
-    S._altRef = a.opcoes;
-    abrirFolha('Alternativas · ' + r.refeicao, h);
+    if (freq.length) {
+      h += '<div class="pl-nota"><b>Suas refeições frequentes</b> no ' + esc(r.refeicao.toLowerCase()) + ' (últimos 14 dias), com as quantidades da vez mais recente. Entram no rascunho como estão: ajuste depois se quiser.</div>';
+      freq.forEach(function (o) {
+        h += '<div class="pl-op"><div class="tit">' + esc(nomeItens(o.itens)) + '</div><div class="ef">' + esc(o.rotulo) + '<br>' + efeitoHtml(o) + '</div>';
+        if (o.problemas.length) h += '<div class="pl-nota">Não cabe neste rascunho: ' + esc(o.problemas.map(function (x) {
+          return x.replace(/^([\w-]+(?:\+[\w-]+)*):/, function (m, ids) { return ids.split('+').map(function (a) { return S.ali[a] ? S.ali[a].nome : a; }).join(' + ') + ':'; });
+        }).join('; ')) + '.</div>';
+        else { h += '<button type="button" class="pl-btn peq prim" data-acao="aplicarRef" data-r="' + iR + '" data-k="' + k + '"' + (k ? '' : ' data-foco') + '>Aplicar no rascunho</button>'; opcoes[k++] = o; }
+        h += '</div>';
+      });
+    }
+    if (r.itens.length) {
+      var a = P.alternativasRefeicao(ctx(), iR, 3);
+      h += '<div class="pl-nota">' + (freq.length ? '<b>Versões calculadas</b> de ' : 'Versões de ') + '<b>' + esc(r.refeicao) + '</b> com a biblioteca e as mesmas regras da sugestão automática (tetos do dia, claras só no jantar, exclusões). Nada é aplicado sem você tocar.</div>';
+      if (!a.opcoes.length) h += '<div class="pl-aviso">' + esc(a.conflitos.join(' ')) + '</div>';
+      a.opcoes.forEach(function (o, j) {
+        h += '<div class="pl-op"><div class="tit">' + (j + 1) + '. ' + esc(o.rotulo) + '</div><div class="ef">' + esc(nomeItens(o.itens)) + '<br>' + efeitoHtml(o) + '</div>' +
+          '<button type="button" class="pl-btn peq prim" data-acao="aplicarRef" data-r="' + iR + '" data-k="' + k + '"' + (k ? '' : ' data-foco') + '>Aplicar no rascunho</button></div>';
+        opcoes[k++] = o;
+      });
+    }
+    S._altRef = opcoes;
+    abrirFolha((r.itens.length ? 'Alternativas · ' : 'Refeições frequentes · ') + r.refeicao, h);
   }
 
   function abrirBusca(iR) {
@@ -535,6 +583,7 @@
       ultimaConferencia = Date.now();
       rodape();
       render();
+      carregarFrequentes();
     }).catch(function (e) { erro('Não consegui carregar os dados: ' + e.message); });
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') atualizarBase(false); });
     window.addEventListener('focus', function () { atualizarBase(false); });
