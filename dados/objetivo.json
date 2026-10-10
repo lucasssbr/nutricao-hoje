@@ -63,9 +63,9 @@
       "ingestao_media": 2072,
       "ingestao_fonte": "média de 4 dia(s) fechados com registro completo",
       "dias_completos": 4,
-      "dias_fechados": 10,
+      "dias_fechados": 11,
       "deficit_dia": 825,
-      "atualizado": "2026-10-09",
+      "atualizado": "2026-10-10",
       "meta_calculada_kg": 0.75,
       "meta_origem": "automática (déficit)"
     }
